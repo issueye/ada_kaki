@@ -1,0 +1,12 @@
+# Go build artifacts
+*.exe
+*.exe~
+*.test
+*.out
+
+# IDE
+.idea/
+.vscode/
+
+# Runtime state
+*.log

@@ -1,0 +1,758 @@
+package main
+
+import (
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/plugins/terminal"
+	"github.com/egoist/mygo/ui"
+	"adakaki/internal/audit"
+	"adakaki/internal/engine"
+	"adakaki/internal/shells"
+	"adakaki/internal/store"
+)
+
+// Colors of the session state dot.
+var (
+	colorRunning = ui.RGB(72, 199, 116)
+	colorExited  = ui.RGB(128, 128, 128)
+	colorStart   = ui.RGB(230, 180, 60)
+)
+
+// mainView builds the main window: a sidebar of sessions beside a tab
+// bar and the split panes of terminals, with the dialogs over them.
+func (a *app) mainView(c *ui.Context) {
+	t := c.Theme()
+	if a.pendingToast != "" {
+		c.Toast(a.pendingToast)
+		a.pendingToast = ""
+	}
+
+	// ---- keyboard shortcuts (window level, ahead of the terminals) ----
+	if c.Shortcut(ui.Cmd|ui.Shift, ui.KeyT) {
+		a.newSession(a.defaultShellID(), "", "")
+	}
+	if c.Shortcut(ui.Cmd, ui.KeyTab) {
+		a.cycleSession(1)
+	}
+	if c.Shortcut(ui.Cmd|ui.Shift, ui.KeyTab) {
+		a.cycleSession(-1)
+	}
+	if c.Shortcut(ui.Cmd|ui.Shift, ui.KeyW) {
+		if s := a.active(); s != nil {
+			a.closeSession(s)
+		}
+	}
+	if c.Shortcut(ui.Cmd|ui.Shift, ui.KeyP) {
+		if s := a.active(); s != nil {
+			a.popout(s)
+		}
+	}
+	if c.Shortcut(ui.Cmd, ui.KeyF) {
+		a.openFind()
+	}
+
+	ui.Split(c, &a.sidebarWidth, func() { a.sidebarView(c) }, func() { a.contentView(c) }).Fill()
+
+	if a.showQuit {
+		ui.Modal(c, &a.showQuit, func() {
+			agents := a.agentBusy()
+			ui.Column(c.Key("quit-dialog")).Width(380).Gap(12).Children(func() {
+				ui.Text(c, "退出 AdaKaki？").FontSize(16).Bold()
+				if agents > 0 {
+					ui.Text(c, fmt.Sprintf("⚠ AI Agent 正在操作 %d 个会话，退出会中断它！", agents)).TextColor(t.Danger)
+				}
+				ui.Text(c, "还有会话在运行，退出会关闭它们。").TextColor(t.TextMuted)
+				ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+					if ui.Button(c, "取消").Clicked() {
+						a.showQuit = false
+					}
+					if ui.PrimaryButton(c, "退出").Clicked() {
+						a.showQuit = false
+						a.quit()
+					}
+				})
+			})
+		})
+	}
+	if a.showGuardAsk {
+		m := ui.Modal(c, &a.showGuardAsk, func() {
+			req, rule := a.guardReq, a.guardRule
+			ui.Column(c.Key("guard-dialog")).Width(560).Gap(10).Children(func() {
+				ui.Text(c, "🛡 AI Agent 请求执行受控命令").FontSize(16).Bold()
+				if req != nil {
+					ui.Text(c, fmt.Sprintf("工具 %s · 客户端 %s · 会话 %s", req.Tool, orDash(req.Client), orDash(req.Session))).TextColor(t.TextMuted).FontSize(12)
+				}
+				ui.Box(c).Padding(10).Radius(6).Background(t.Surface).Children(func() {
+					ui.Text(c, orDash(req.Command)).Wrap()
+				})
+				if rule != nil {
+					ui.Text(c, "命中规则："+rule.Reason+"（"+rule.Source+"）").TextColor(t.TextMuted).FontSize(12)
+				}
+				ui.Text(c, "拒绝会返回错误给 Agent；允许本次只放行这一条。").FontSize(11).TextColor(t.TextMuted)
+				ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+					if ui.Button(c, "拒绝").Clicked() {
+						a.answerGuard(false)
+					}
+					if ui.PrimaryButton(c, "允许本次").Clicked() {
+						a.answerGuard(true)
+					}
+				})
+			})
+		})
+		if m.Dismissed() {
+			a.answerGuard(false) // Escape 或点击外部：当作拒绝
+		}
+	}
+	if a.showHostKey {
+		m := ui.Modal(c, &a.showHostKey, func() {
+			ui.Column(c.Key("hostkey-dialog")).Width(460).Gap(10).Children(func() {
+				ui.Text(c, "首次连接 "+a.hkHost).FontSize(16).Bold()
+				ui.Text(c, "无法确认主机身份，请核对指纹：").TextColor(t.TextMuted)
+				ui.Box(c).Padding(10).Radius(6).Background(t.Surface).Children(func() {
+					ui.Column(c).Gap(4).Children(func() {
+						ui.Text(c, "SHA256:"+a.hkFP).FontSize(12)
+						ui.Text(c, "主机身份以此指纹为准，可信网络下首次连接可直接信任。").FontSize(11).TextColor(t.TextMuted)
+					})
+				})
+				ui.Text(c, "⚠ 以后若该主机指纹变化，连接将被拒绝（防中间人）。").FontSize(11).TextColor(t.Danger)
+				ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+					if ui.Button(c, "拒绝").Clicked() {
+						a.answerHostKey(false)
+					}
+					if ui.PrimaryButton(c, "信任并保存").Clicked() {
+						a.answerHostKey(true)
+					}
+				})
+			})
+		})
+		if m.Dismissed() {
+			a.answerHostKey(false) // Escape 或点击外部：当作拒绝
+		}
+	}
+	if a.showSSH {
+		ui.Modal(c, &a.showSSH, func() {
+			t := c.Theme()
+			ui.Column(c.Key("ssh-dialog")).Width(460).Gap(10).Children(func() {
+				ui.Text(c, "SSH 连接").FontSize(16).Bold()
+				if len(a.store.Profiles) > 0 {
+					ui.MenuButton(c, "选择已存档案…", func(m *ui.Menu) {
+						for _, p := range a.store.Profiles {
+							if m.Item(p.Name).Chosen() {
+								a.fillSSH(p)
+							}
+						}
+					})
+				}
+				ui.Row(c).Gap(8).Children(func() {
+					ui.TextInput(c.Key("ssh-host"), &a.sshHost).Placeholder("主机").Grow(1)
+					ui.TextInput(c.Key("ssh-port"), &a.sshPort).Placeholder("端口(22)").Width(90)
+				})
+				ui.TextInput(c.Key("ssh-user"), &a.sshUser).Placeholder("用户名")
+				ui.MenuButton(c, "认证方式："+authLabel(a.sshAuth), func(m *ui.Menu) {
+					for _, k := range []string{"password", "key", "agent"} {
+						if m.Item(authLabel(k)).Chosen() {
+							a.sshAuth = k
+						}
+					}
+				})
+				switch a.sshAuth {
+				case "key":
+					ui.TextInput(c.Key("ssh-keypath"), &a.sshKeyPath).Placeholder(`私钥路径，如 C:\Users\you\.ssh\id_ed25519`)
+					ui.TextInput(c.Key("ssh-passphrase"), &a.sshPass).Placeholder("私钥口令（可空）").Password()
+				case "agent":
+					ui.Text(c, "使用系统 OpenSSH Agent（Windows 服务“OpenSSH Authentication Agent”需在运行）。").TextColor(t.TextMuted).FontSize(11)
+				default:
+					ui.TextInput(c.Key("ssh-password"), &a.sshPass).Placeholder("密码").Password()
+				}
+				ui.Text(c, "注意：v1 不校验主机指纹（见设计文档）。").TextColor(t.TextMuted).FontSize(11)
+				ui.Checkbox(c, &a.sshSave, "保存为档案")
+				if a.sshSave {
+					ui.TextInput(c.Key("ssh-saveas"), &a.sshSaveAs).Placeholder("档案名称")
+				}
+				ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+					if ui.Button(c, "取消").Clicked() {
+						a.showSSH = false
+					}
+					if ui.PrimaryButton(c, "连接").Clicked() {
+						a.connectSSH()
+					}
+				})
+			})
+		})
+	}
+	if a.showSettings {
+		ui.Modal(c, &a.showSettings, func() {
+			ui.Column(c.Key("settings-dialog")).Width(460).Gap(10).Children(func() {
+				ui.Text(c, "设置").FontSize(16).Bold()
+				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+					ui.Text(c, "终端字号（DIP）")
+					ui.TextInput(c.Key("set-font"), &a.setFont).Placeholder("默认").Width(80)
+				})
+				ui.Checkbox(c, &a.setMCPHTTP, "启动 MCP HTTP 端点（127.0.0.1，供 AI Agent 直连）")
+				if a.setMCPHTTP {
+					ui.TextInput(c.Key("set-mcp-port"), &a.setMCPPort).Placeholder("8731").Width(120)
+				}
+				ui.Divider(c)
+				ui.Checkbox(c, &a.setGuard, "安全护栏：危险命令确认/拦截（推荐开启）")
+				if a.setGuard {
+					builtin, custom := a.guard.Count()
+					ui.Text(c, fmt.Sprintf("内置规则 %d 条 · 自定义 %d 条 · 拦截与放行均记录于 audit.log（自定义规则见 config.json 的 guard_deny / guard_confirm）", builtin, custom)).TextColor(t.TextMuted).FontSize(11)
+				}
+				ui.Divider(c)
+				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+					ui.Text(c, "默认 Shell")
+					ui.MenuButton(c, a.defaultShellLabel(), func(m *ui.Menu) {
+						for _, sh := range a.shells {
+							if sh.Found {
+								if m.Item(sh.Name).Checked(a.store.Settings.DefaultShell == string(sh.ID)).Chosen() {
+									a.store.Settings.DefaultShell = string(sh.ID)
+								}
+							}
+						}
+					}).Grow(1)
+				})
+				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+					ui.Text(c, "SSH 主机密钥校验")
+					ui.MenuButton(c, strictLabel(a.store.Settings.StrictHostKey), func(m *ui.Menu) {
+						for _, v := range []struct{ val, label string }{
+							{"prompt", "首次连接弹窗确认（推荐）"},
+							{"accept_new", "自动信任新主机"},
+							{"off", "关闭校验（不安全）"},
+						} {
+							if m.Item(v.label).Chosen() {
+								a.store.Settings.StrictHostKey = v.val
+								_ = a.store.Save()
+							}
+						}
+					}).Grow(1)
+				})
+				if hosts := a.hostKeys.List(); len(hosts) > 0 {
+					ui.Text(c, "已信任主机（指纹变化会被拒绝连接）").TextColor(t.TextMuted).FontSize(12)
+					for _, k := range hosts {
+						name := k.Host
+						if k.Port != 22 {
+							name = fmt.Sprintf("%s:%d", k.Host, k.Port)
+						}
+						ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
+							ui.Text(c, name).Grow(1).FontSize(12)
+							if ui.Button(c, "忘记").Clicked() {
+								_ = a.hostKeys.Remove(k.Host, k.Port)
+							}
+						})
+					}
+				}
+				ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+					if ui.Button(c, "取消").Clicked() {
+						a.showSettings = false
+					}
+					if ui.PrimaryButton(c, "保存").Clicked() {
+						a.saveSettings()
+					}
+				})
+			})
+		})
+	}
+	if a.showCustom {
+		ui.Modal(c, &a.showCustom, func() {
+			ui.Column(c.Key("custom-dialog")).Width(440).Gap(12).Children(func() {
+				ui.Text(c, "自定义命令").FontSize(16).Bold()
+				ui.Text(c, "要在终端里运行的命令行，例如 ssh user@host").TextColor(t.TextMuted)
+				if ui.TextInput(c.Key("custom-cmd"), &a.customCmd).Placeholder("命令行").AutoFocus().Submitted() {
+					a.startCustom()
+				}
+				ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+					if ui.Button(c, "取消").Clicked() {
+						a.showCustom = false
+					}
+					if ui.PrimaryButton(c, "打开").Clicked() {
+						a.startCustom()
+					}
+				})
+			})
+		})
+	}
+}
+
+func (a *app) startCustom() {
+	cmd := a.customCmd
+	a.showCustom = false
+	a.customCmd = ""
+	if cmd != "" {
+		a.newSession(shells.Custom, "", cmd)
+	}
+}
+
+// sidebarView is the left pane: a header with the new-session menu and
+// the sessions grouped by kind.
+func (a *app) sidebarView(c *ui.Context) {
+	t := c.Theme()
+	ui.Column(c).Fill().Background(t.Background).Children(func() {
+		ui.Row(c).Padding(12, 10).Gap(8).AlignItems(ui.Center).Children(func() {
+			ui.Text(c, "AdaKaki").Bold().FontSize(15).Grow(1)
+			if ui.Button(c, "🛡").Padding(4, 8).Clicked() {
+				a.openAudit()
+			}
+			if ui.Button(c, "⚙").Padding(4, 8).Clicked() {
+				a.openSettings()
+			}
+			ui.Button(c, "＋ 新建").Menu(a.newSessionMenu)
+		})
+		if ui.Sidebar(c, &a.activeID, func() {
+			ui.SidebarSection(c, "本地 Shell", nil, func() {
+				for _, s := range a.sessionsOf(engine.Local) {
+					item := ui.SidebarItem(c.Key(s.ID()), s.ID(), nil, s.Title())
+					item.Children(func() { a.stateMark(c, s) })
+					item.ContextMenu(func(m *ui.Menu) { a.sessionMenu(m, s) })
+				}
+			})
+			ui.SidebarSection(c, "SSH", nil, func() {
+				for _, s := range a.sessionsOf(engine.SSH) {
+					item := ui.SidebarItem(c.Key(s.ID()), s.ID(), nil, s.Title())
+					item.Children(func() { a.stateMark(c, s) })
+					item.ContextMenu(func(m *ui.Menu) { a.sessionMenu(m, s) })
+				}
+			})
+		}).Fill().Changed() {
+			a.viewSession(a.activeID)
+		}
+	})
+}
+
+// newSessionMenu is the ＋ 新建 button's menu.
+func (a *app) newSessionMenu(m *ui.Menu) {
+	for _, sh := range a.shells {
+		if sh.Found {
+			if m.Item(sh.Name).Chosen() {
+				a.newSession(sh.ID, "", "")
+			}
+		}
+	}
+	m.Separator()
+	if m.Item("SSH 连接…").Chosen() {
+		a.showSSH = true
+	}
+	if m.Item("自定义命令…").Chosen() {
+		a.showCustom = true
+	}
+}
+
+// authLabel names an SSH auth kind.
+func authLabel(kind string) string {
+	switch kind {
+	case "key":
+		return "私钥文件"
+	case "agent":
+		return "OpenSSH Agent"
+	default:
+		return "密码"
+	}
+}
+
+// strictLabel names a host key verification mode.
+func strictLabel(v string) string {
+	switch v {
+	case "accept_new":
+		return "校验：自动信任新主机"
+	case "off":
+		return "校验：关闭（不安全）"
+	default:
+		return "校验：首次连接弹窗确认"
+	}
+}
+
+// defaultShellLabel names the default shell setting.
+func (a *app) defaultShellLabel() string {
+	if id := shells.ID(a.store.Settings.DefaultShell); id != "" {
+		if sh, ok := shells.Get(id); ok {
+			return sh.Name
+		}
+	}
+	return "自动（第一个可用）"
+}
+
+// fillSSH puts a saved profile into the SSH dialog's fields.
+func (a *app) fillSSH(p store.Profile) {
+	a.sshProfile = p.Name
+	a.sshHost = p.Host
+	a.sshPort = ""
+	if p.Port != 0 {
+		a.sshPort = fmt.Sprint(p.Port)
+	}
+	a.sshUser = p.User
+	a.sshAuth = p.AuthKind
+	if a.sshAuth == "" {
+		a.sshAuth = "password"
+	}
+	a.sshKeyPath = p.KeyPath
+	// The saved secret (a key passphrase) fills the pass field; a saved
+	// password is not shown, and is used when the field stays empty.
+	a.sshPass = ""
+	if p.AuthKind == "key" {
+		if plain, err := store.Unprotect(p.Secret); err == nil {
+			a.sshPass = plain
+		}
+	}
+}
+
+// sessionMenu is a session's right-click menu, in the sidebar and tabs;
+// closing is refused while an agent operates the session, and the mirror
+// window stays welcome: watching it is what masks are for.
+func (a *app) sessionMenu(m *ui.Menu, s *engine.Session) {
+	locked, _ := s.AgentLock()
+	if a.popouts[s.ID()] != nil {
+		if m.Item("关闭同屏窗口").Chosen() {
+			a.recall(s)
+		}
+	} else if m.Item("弹出同屏窗口").Chosen() {
+		a.popout(s)
+	}
+	if s.Kind() == engine.SSH && s.State() == engine.Exited {
+		if m.Item("重新连接").Chosen() {
+			a.reconnect(s)
+		}
+	}
+	m.Separator()
+	label := "关闭会话"
+	if s.State() == engine.Exited {
+		label = "移除"
+	}
+	if locked {
+		label += "（Agent 操作中）"
+	}
+	if m.Item(label).Disabled(locked).Chosen() {
+		a.closeSession(s)
+	}
+}
+
+// stateMark is the little dot that tells a session's state; a robot
+// while an AI agent operates it.
+func (a *app) stateMark(c *ui.Context, s *engine.Session) {
+	if on, _ := s.AgentLock(); on {
+		ui.Text(c, "🤖").FontSize(12)
+		return
+	}
+	color := colorRunning
+	switch s.State() {
+	case engine.Exited:
+		color = colorExited
+	case engine.Starting:
+		color = colorStart
+	}
+	ui.Text(c, "●").TextColor(color).FontSize(9)
+}
+
+// contentView is the right pane: the tab bar over the find bar (when it
+// is open) and the split panes of terminals.
+func (a *app) contentView(c *ui.Context) {
+	t := c.Theme()
+	ui.Column(c).Fill().Background(t.Background).Children(func() {
+		a.tabBar(c)
+		if a.findOpen {
+			a.findBar(c)
+		}
+		ui.Divider(c)
+		a.terminalArea(c)
+	})
+	if a.findOpen && c.Shortcut(0, ui.KeyEscape) {
+		a.closeFind()
+	}
+}
+
+// findBar is the terminal search bar: text, counter, prev and next.
+func (a *app) findBar(c *ui.Context) {
+	t := c.Theme()
+	ui.Row(c).Padding(6, 8).Gap(8).AlignItems(ui.Center).Children(func() {
+		in := ui.TextInput(c.Key("find-input"), &a.findText).Placeholder("搜索终端（回车下一个）").Width(240)
+		if in.Changed() {
+			a.searchFor(a.findText)
+		}
+		if in.Submitted() {
+			a.searchNext()
+		}
+		ui.Text(c, a.findStatus()).TextColor(t.TextMuted).FontSize(12).Grow(1)
+		if ui.Button(c, "↑").Clicked() {
+			a.searchPrev()
+		}
+		if ui.Button(c, "↓").Clicked() {
+			a.searchNext()
+		}
+		if ui.Button(c, "✕").Clicked() {
+			a.closeFind()
+		}
+	})
+}
+
+// tabBar is one tab per session, the active one highlighted.
+func (a *app) tabBar(c *ui.Context) {
+	t := c.Theme()
+	ui.Row(c).Gap(2).Padding(6, 8).AlignItems(ui.Center).Children(func() {
+		sessions := a.mgr.List()
+		if len(sessions) == 0 {
+			ui.Text(c, "无会话").TextColor(t.TextMuted)
+			return
+		}
+		for _, s := range sessions {
+			a.tab(c, s)
+		}
+	})
+}
+
+// tab is one session's tab: a title button beside a close button, with
+// the session's menu on a right click.
+func (a *app) tab(c *ui.Context, s *engine.Session) {
+	t := c.Theme()
+	active := s.ID() == a.activeID
+	bg := t.Background
+	if active {
+		bg = t.Surface
+	}
+	ui.Row(c.Key(s.ID())).Gap(2).AlignItems(ui.Center).Children(func() {
+		if ui.Button(c, "").Padding(6, 10).Radius(6).Background(bg).Children(func() {
+			ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
+				a.stateMark(c, s)
+				ui.Text(c, s.Title()).MaxWidth(170).Ellipsis("…")
+			})
+				}).Clicked() {
+					a.viewSession(s.ID())
+				}
+		if ui.Button(c, "✕").Padding(2, 6).Clicked() {
+			a.closeSession(s)
+		}
+	}).ContextMenu(func(m *ui.Menu) { a.sessionMenu(m, s) })
+}
+
+// buildPaneTree renders the split tree, leaves showing their sessions.
+func (a *app) buildPaneTree(c *ui.Context, n *paneNode) {
+	t := c.Theme()
+	if n == nil {
+		ui.Column(c).Fill().Center().Gap(6).Children(func() {
+			ui.Text(c, "点左上角“＋ 新建”打开一个终端").TextColor(t.TextMuted)
+			ui.Text(c, "右键终端可向右或向下分屏").TextColor(t.TextMuted).FontSize(12)
+		})
+		return
+	}
+	if n.split != nil {
+		ui.Split(c, &n.split.size,
+			func() { a.buildPaneTree(c, n.split.first) },
+			func() { a.buildPaneTree(c, n.split.second) }).Fill()
+		return
+	}
+	a.paneView(c, n)
+}
+
+// paneView is one leaf: the session's terminal with an accent border
+// while focused, an operation mask while an agent works it, and the
+// pane's menu on a right click.
+func (a *app) paneView(c *ui.Context, n *paneNode) {
+	t := c.Theme()
+	var session *engine.Session
+	if n.sessionID != "" {
+		session, _ = a.mgr.Get(n.sessionID)
+	}
+	focused := n == a.focus && n.sessionID != ""
+	box := ui.Box(c).Fill()
+	if focused {
+		box = box.Border(1, t.Accent)
+	}
+	box.Children(func() {
+		if n.sessionID == "" {
+			ui.Column(c).Fill().Center().Children(func() {
+				ui.Text(c, "正在启动…").TextColor(t.TextMuted)
+			})
+			return
+		}
+		if session == nil || session.Terminal() == nil {
+			ui.Column(c).Fill().Center().Children(func() {
+				ui.Text(c, "会话已关闭").TextColor(t.TextMuted)
+			})
+			return
+		}
+		v := terminal.View(c, session.Terminal()).Fill()
+		if focused {
+			v = v.AutoFocus()
+		}
+		if on, tool := session.AgentLock(); on {
+			a.agentMask(c, tool)
+		}
+	})
+	if box.Clicked() {
+		a.focus = n
+		a.activeID = n.sessionID
+	}
+	box.ContextMenu(func(m *ui.Menu) { a.paneMenu(m, n) })
+}
+
+// agentMask covers a pane an AI agent is operating: translucent, so the
+// human watches live, but it takes the pointer and the keyboard, so
+// nothing typed reaches the session. AutoFocus pulls the focus away from
+// the terminal the moment the mask appears.
+func (a *app) agentMask(c *ui.Context, tool string) {
+	t := c.Theme()
+	ui.Box(c).Absolute().Top(0).Bottom(0).Left(0).Right(0).
+		Background(ui.RGBA(8, 10, 18, 0.55)).AutoFocus().
+		Children(func() {
+			ui.Column(c).Fill().Center().Gap(10).Children(func() {
+				ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
+					ui.Spinner(c)
+					ui.Text(c, "AI Agent 操作中").Bold().FontSize(16)
+					ui.Spinner(c)
+				})
+				ui.Text(c, "正在运行："+tool).TextColor(t.TextMuted)
+				ui.Text(c, "可实时观看 · 输入已锁定 · 请勿打扰").TextColor(t.TextMuted).FontSize(12)
+			})
+		})
+}
+
+// paneMenu is a pane's right-click menu; destructive items refuse while
+// an agent operates their session.
+func (a *app) paneMenu(m *ui.Menu, n *paneNode) {
+	if m.Item("向右分屏").Chosen() {
+		a.splitFocused(true)
+	}
+	if m.Item("向下分屏").Chosen() {
+		a.splitFocused(false)
+	}
+	m.Separator()
+	label := "关闭分格"
+	disabled := false
+	if n.sessionID != "" {
+		if s, ok := a.mgr.Get(n.sessionID); ok {
+			if on, _ := s.AgentLock(); on {
+				label = "关闭分格（Agent 操作中）"
+				disabled = true
+			}
+		}
+	}
+	if m.Item(label).Disabled(disabled).Chosen() {
+		a.closePane(n, false)
+	}
+}
+
+// terminalArea shows the split panes of the terminal area.
+func (a *app) terminalArea(c *ui.Context) {
+	a.buildPaneTree(c, a.splitRoot)
+}
+
+// auditView is the audit window's content: the last calls, refreshed
+// every couple of seconds while the window shows.
+func (a *app) auditView(c *ui.Context) {
+	t := c.Theme()
+	var entries []audit.Entry
+	total := int64(0)
+	if a.auditLog != nil {
+		entries, _ = a.auditLog.Tail(200)
+		total = a.auditLog.Written()
+	}
+	ui.Column(c).Fill().Background(t.Background).Children(func() {
+		ui.Row(c).Padding(10, 8).Gap(8).AlignItems(ui.Center).Children(func() {
+			ui.Text(c, "MCP 审计日志").Bold().FontSize(15).Grow(1)
+			ui.Text(c, fmt.Sprintf("累计 %d 条 · 显示最近 %d 条", total, len(entries))).TextColor(t.TextMuted)
+		})
+		ui.Divider(c)
+		if len(entries) == 0 {
+			ui.Column(c).Fill().Center().Children(func() {
+				ui.Text(c, "暂无记录：AI Agent 调用 MCP 工具后将出现在这里").TextColor(t.TextMuted)
+			})
+		} else {
+			ui.Scroll(c).Fill().Children(func() {
+				ui.Column(c).Gap(2).Padding(4, 8).Children(func() {
+					for i := len(entries) - 1; i >= 0; i-- { // newest first
+						a.auditRow(c, entries[i])
+					}
+				})
+			})
+		}
+	})
+	// The window repaints with fresh entries on its own.
+	c.After(2 * time.Second)
+}
+
+// auditRow is one call: time, tool and client, the command, the outcome.
+func (a *app) auditRow(c *ui.Context, e audit.Entry) {
+	t := c.Theme()
+	when := e.Time.Format("01-02 15:04:05")
+	outcome := "✓"
+	color := colorRunning
+	if e.Guard != "" && strings.HasPrefix(e.Guard, "denied") {
+		outcome, color = "🛡", colorStart
+	} else if !e.OK {
+		outcome, color = "✗", t.Danger
+	} else if e.Guard == "confirmed" {
+		outcome, color = "☑", colorStart
+	}
+	ui.Row(c.Key(fmt.Sprintf("audit-%d-%s", e.Time.UnixNano(), e.Tool))).
+		Gap(8).Padding(4, 6).Radius(4).AlignItems(ui.Center).
+		Children(func() {
+			ui.Text(c, when).TextColor(t.TextMuted).FontSize(11)
+			ui.Text(c, outcome).TextColor(color).FontSize(11)
+			ui.Text(c, e.Tool).Bold().FontSize(12)
+			cmd := e.Command
+			if cmd == "" {
+				cmd = e.Tool
+			}
+			ui.Text(c, cmd).MaxWidth(360).Ellipsis("…").FontSize(12).Grow(1)
+			detail := e.Client
+			if e.Err != "" {
+				detail = strings.Join([]string{e.Client, "错误: " + firstLine(e.Err)}, " · ")
+			}
+			ui.Text(c, detail).TextColor(t.TextMuted).FontSize(11).MaxWidth(180).Ellipsis("…")
+		}).ContextMenu(func(m *ui.Menu) {
+		full := e.Command
+		if full != "" {
+			if m.Item("复制命令").Chosen() {
+				mygo.Clipboard.WriteText(full)
+			}
+		}
+		if e.Err != "" {
+			if m.Item("复制错误").Chosen() {
+				mygo.Clipboard.WriteText(e.Err)
+			}
+		}
+	})
+}
+
+func orDash(s string) string {
+	if s == "" {
+		return "—"
+	}
+	return s
+}
+
+func firstLine(s string) string {
+	if i := strings.IndexByte(s, '\n'); i >= 0 {
+		return s[:i]
+	}
+	return s
+}
+// popoutView is a synchronized popout window's content: the session's
+// mirror terminal, filling the window.
+func (a *app) popoutView(c *ui.Context, mv *engine.MirrorView) {
+	if term := mv.Terminal(); term != nil {
+		terminal.View(c, term).Fill().AutoFocus()
+		return
+	}
+	t := c.Theme()
+	ui.Column(c).Fill().Center().Children(func() {
+		ui.Text(c, "会话已结束").TextColor(t.TextMuted)
+	})
+}
+
+// ---- helpers ----
+
+func (a *app) active() *engine.Session {
+	s, _ := a.mgr.Get(a.activeID)
+	return s
+}
+
+func (a *app) sessionsOf(kind engine.Kind) []*engine.Session {
+	var out []*engine.Session
+	for _, s := range a.mgr.List() {
+		if s.Kind() == kind {
+			out = append(out, s)
+		}
+	}
+	return out
+}

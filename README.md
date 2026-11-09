@@ -22,8 +22,8 @@ go build -o adakaki.exe .
 ## 使用
 
 - 左上 **＋ 新建**：选择 shell（cmd/PowerShell/Git Bash/自定义命令）或 SSH 连接
-- 标签页：点击切换；右键：弹出为窗口 / 收回 / 关闭
-- **右键终端**：向右/向下分屏、关闭分格
+- 标签页：点击切换；右键：分屏 / 弹出同屏窗口 / 重新连接 / 关闭
+- 终端上右键：复制选区 / 无选区粘贴（Windows Terminal 惯例）；分屏与关闭在标签、侧栏和空分格的右键菜单里
 - **快捷键**：`Ctrl+Shift+T` 新建默认 shell · `Ctrl+Tab`/`Ctrl+Shift+Tab` 切换会话 · `Ctrl+Shift+W` 关闭会话 · `Ctrl+Shift+P` 弹出同屏窗口 · `Ctrl+F` 终端搜索（回车下一个，Esc 关闭）
 - **会话恢复**：正常重启后自动还原上次打开的会话（SSH 档案会话自动重拨）
 - **⚙ 设置**：终端字号（实时生效）、默认 shell、MCP HTTP、SSH 校验模式与已信任主机、安全护栏

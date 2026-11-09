@@ -53,7 +53,7 @@ func TestPaneTreeViewAndSplit(t *testing.T) {
 	if leaf := a.leafByID("s1"); leaf == nil {
 		t.Fatal("s1 pane lost")
 	}
-	a.viewSession("s1")
+	a.viewSession("s1") // s1 comes back into the pane
 	if a.focus.sessionID != "s1" || a.activeID != "s1" {
 		t.Fatalf("focus = %+v active = %q; want s1", a.focus, a.activeID)
 	}
@@ -63,7 +63,7 @@ func TestPaneTreeCollapse(t *testing.T) {
 	a := newTestApp()
 	defer a.mgr.CloseAll()
 
-	a.viewSession("s1")
+	a.viewSession("s1") // s1 comes back into the pane
 	a.splitFocused(true)  // root: s1 | pending
 	a.viewSession("s2")   // pending fills with s2
 	a.splitFocused(false) // s2's pane: s2 / pending
@@ -104,7 +104,7 @@ func TestPaneTreeClosedSessionCollapses(t *testing.T) {
 	a := newTestApp()
 	defer a.mgr.CloseAll()
 
-	a.viewSession("s1")
+	a.viewSession("s1") // s1 comes back into the pane
 	a.splitFocused(true)
 	a.viewSession("s2")
 
@@ -121,4 +121,34 @@ func TestPaneTreeClosedSessionCollapses(t *testing.T) {
 	if a.leafByID("s2") != nil {
 		t.Error("s2 pane still findable")
 	}
+}
+
+func TestSplitSession(t *testing.T) {
+	a := newTestApp()
+	defer a.mgr.CloseAll()
+
+	a.viewSession("s1")
+	a.viewSession("s2") // s2 takes the focused leaf; s1 stays only in tabs
+	a.viewSession("s1") // s1 comes back into the pane
+
+	// Splitting by session ID acts on that session's pane, whatever the
+	// focus was, and focuses the new pending pane.
+	a.splitSession("s1", true)
+	if a.splitRoot.split == nil || !a.splitRoot.split.vertical {
+		t.Fatal("splitSession did not split the session's pane")
+	}
+	if a.focus != a.splitRoot.split.second || a.activeID != "" {
+		t.Fatalf("focus = %+v; want the pending pane", a.focus)
+	}
+	a.viewSession("s2") // fill the pending pane
+
+	// s1's pane is still the first leaf; splitting it again nests deeper.
+	a.splitSession("s1", false)
+	first := a.splitRoot.split.first
+	if first.split == nil || first.split.vertical {
+		t.Fatal("s1's pane did not split horizontally")
+	}
+
+	// A session that is not in any pane does nothing.
+	a.splitSession("nope", true)
 }

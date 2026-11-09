@@ -113,6 +113,10 @@ func (m *Manager) CreateLocal(id shells.ID, cwd, custom string) (*Session, error
 		OnTitle:  s.setTitleFrom,
 		OnExit:   s.onExit,
 		OnSearch: s.onSearchStatus,
+		// Windows Terminal's secondary click: copy the selection, or
+		// paste when there is none. The pane's own menu (split, close)
+		// lives on the tab and the sidebar.
+		RightClick: terminal.RightClickCopyOrPaste,
 	}
 	if fontSize > 0 {
 		opts.Font = terminal.Font{Size: float32(fontSize)}
@@ -173,11 +177,12 @@ func sshTerminalOpts(conn Conn, s *Session) terminal.Options {
 	return terminal.Options{
 		Conn:     conn,
 		OnTitle:  s.setTitleFrom,
+		OnSearch: s.onSearchStatus,
+		RightClick: terminal.RightClickCopyOrPaste,
 		OnExit: func(code int) {
 			_ = conn.Close()
 			s.onExit(code)
 		},
-		OnSearch: s.onSearchStatus,
 	}
 }
 

@@ -516,6 +516,18 @@ func (a *app) splitFocused(vertical bool) {
 	a.newSession(a.defaultShellID(), "", "")
 }
 
+// splitSession splits the pane a session lives in, focusing it first:
+// the session menu's way to split, from wherever the right click was.
+func (a *app) splitSession(id string, vertical bool) {
+	leaf := a.leafByID(id)
+	if leaf == nil || leaf.split != nil {
+		return
+	}
+	a.focus = leaf
+	a.activeID = id
+	a.splitFocused(vertical)
+}
+
 // closePane closes a pane: its session with it, unless keep says the
 // session is already gone.
 func (a *app) closePane(n *paneNode, keep bool) {

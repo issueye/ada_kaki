@@ -436,10 +436,20 @@ func (a *app) fillSSH(p store.Profile) {
 	}
 }
 
-// sessionMenu is a session's right-click menu, in the sidebar and tabs;
-// closing is refused while an agent operates the session, and the mirror
-// window stays welcome: watching it is what masks are for.
+// sessionMenu is a session's right-click menu, in the sidebar and tabs.
+// Splitting acts on the pane the session lives in, so the menu carries
+// it wherever the right click landed. Closing is refused while an agent
+// operates the session; the mirror window stays welcome.
 func (a *app) sessionMenu(m *ui.Menu, s *engine.Session) {
+	if leaf := a.leafByID(s.ID()); leaf != nil {
+		if m.Item("向右分屏").Chosen() {
+			a.splitSession(s.ID(), true)
+		}
+		if m.Item("向下分屏").Chosen() {
+			a.splitSession(s.ID(), false)
+		}
+		m.Separator()
+	}
 	locked, _ := s.AgentLock()
 	if a.popouts[s.ID()] != nil {
 		if m.Item("关闭同屏窗口").Chosen() {
@@ -655,9 +665,15 @@ func (a *app) agentMask(c *ui.Context, tool string) {
 		})
 }
 
-// paneMenu is a pane's right-click menu; destructive items refuse while
-// an agent operates their session.
+// paneMenu is a pane's right-click menu. A right click focuses the pane
+// it landed on, so the actions apply to what the user pointed at, not to
+// whichever pane had the focus before; destructive items refuse while an
+// agent operates their session.
 func (a *app) paneMenu(m *ui.Menu, n *paneNode) {
+	if n.sessionID != "" {
+		a.focus = n
+		a.activeID = n.sessionID
+	}
 	if m.Item("向右分屏").Chosen() {
 		a.splitFocused(true)
 	}

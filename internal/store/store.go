@@ -34,6 +34,15 @@ type Settings struct {
 	// A KNOWN host whose key CHANGED is always refused.
 	StrictHostKey string `json:"strict_host_key,omitempty"`
 
+	// FontFamily is the terminal font, a comma-separated list as the
+	// terminal plugin takes it; empty means the system's monospace font.
+	FontFamily string `json:"font_family,omitempty"`
+	// TerminalTheme is a Ghostty color scheme by name; empty follows the
+	// window's light or dark appearance.
+	TerminalTheme string `json:"terminal_theme,omitempty"`
+	// RestoreDisabled turns the reopen-last-sessions behavior off.
+	RestoreDisabled bool `json:"restore_disabled,omitempty"`
+
 	// GuardDisabled turns the MCP command guardrail off (the default is
 	// on — that is the point of it).
 	GuardDisabled bool `json:"guard_disabled,omitempty"`

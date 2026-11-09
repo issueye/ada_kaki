@@ -5,13 +5,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/egoist/mygo"
-	"github.com/egoist/mygo/plugins/terminal"
-	"github.com/egoist/mygo/ui"
 	"adakaki/internal/audit"
 	"adakaki/internal/engine"
 	"adakaki/internal/shells"
 	"adakaki/internal/store"
+	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/plugins/terminal"
+	"github.com/egoist/mygo/ui"
 )
 
 // Semantic colors of the session states, the only literals outside the
@@ -204,83 +204,6 @@ func (a *app) mainView(c *ui.Context) {
 					}
 					if ui.PrimaryButton(c, "连接").Clicked() {
 						a.connectSSH()
-					}
-				})
-			})
-		})
-	}
-	if a.showSettings {
-		ui.Modal(c, &a.showSettings, func() {
-			ui.Column(c.Key("settings-dialog")).Width(460).Gap(12).Children(func() {
-				ui.Text(c, "设置").FontSize(16).Bold()
-
-				sectionLabel(c, "外观")
-				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
-					ui.Text(c, "终端字号（DIP）")
-					ui.TextInput(c.Key("set-font"), &a.setFont).Placeholder("默认").Width(80)
-				})
-				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
-					ui.Text(c, "默认 Shell")
-					ui.MenuButton(c, a.defaultShellLabel(), func(m *ui.Menu) {
-						for _, sh := range a.shells {
-							if sh.Found {
-								if m.Item(sh.Name).Checked(a.store.Settings.DefaultShell == string(sh.ID)).Chosen() {
-									a.store.Settings.DefaultShell = string(sh.ID)
-								}
-							}
-						}
-					}).Grow(1)
-				})
-
-				sectionLabel(c, "MCP")
-				ui.Checkbox(c, &a.setMCPHTTP, "启动 MCP HTTP 端点（127.0.0.1）")
-				if a.setMCPHTTP {
-					ui.TextInput(c.Key("set-mcp-port"), &a.setMCPPort).Placeholder("8731").Width(120)
-				}
-
-				sectionLabel(c, "安全")
-				ui.Checkbox(c, &a.setGuard, "危险命令护栏（确认/拦截，记录审计）")
-				if a.setGuard {
-					builtin, custom := a.guard.Count()
-					ui.Text(c, fmt.Sprintf("内置规则 %d 条，自定义 %d 条；自定义规则在 config.json 的 guard_deny / guard_confirm", builtin, custom)).TextColor(t.TextMuted).FontSize(12)
-				}
-				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
-					ui.Text(c, "SSH 主机密钥校验")
-					ui.MenuButton(c, strictLabel(a.store.Settings.StrictHostKey), func(m *ui.Menu) {
-						for _, v := range []struct{ val, label string }{
-							{"prompt", "首次连接弹窗确认"},
-							{"accept_new", "自动信任新主机"},
-							{"off", "关闭校验（不安全）"},
-						} {
-							if m.Item(v.label).Chosen() {
-								a.store.Settings.StrictHostKey = v.val
-								_ = a.store.Save()
-							}
-						}
-					}).Grow(1)
-				})
-				if hosts := a.hostKeys.List(); len(hosts) > 0 {
-					ui.Text(c, "已信任主机").TextColor(t.TextMuted).FontSize(12)
-					for _, k := range hosts {
-						name := k.Host
-						if k.Port != 22 {
-							name = fmt.Sprintf("%s:%d", k.Host, k.Port)
-						}
-						ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
-							ui.Text(c, name).Grow(1).FontSize(12)
-							if ui.Button(c, "忘记").Clicked() {
-								_ = a.hostKeys.Remove(k.Host, k.Port)
-							}
-						})
-					}
-				}
-
-				ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
-					if ui.Button(c, "取消").Clicked() {
-						a.showSettings = false
-					}
-					if ui.PrimaryButton(c, "保存").Clicked() {
-						a.saveSettings()
 					}
 				})
 			})

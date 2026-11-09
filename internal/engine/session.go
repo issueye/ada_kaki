@@ -181,6 +181,15 @@ func (s *Session) SetFont(f terminal.Font) {
 	}
 }
 
+// ApplyTheme switches the session's color scheme live; nil follows the
+// window's appearance.
+func (s *Session) ApplyTheme(theme, dark *terminal.Theme) {
+	if t := s.terminal(); t != nil {
+		t.SetTheme(theme, dark)
+		t.UseTheme(theme) // viewless terminals answer color queries with it
+	}
+}
+
 // Send writes data to the program, as typed. The agent's path: MCP tools
 // go through here whatever the lock says.
 func (s *Session) Send(data string) {
@@ -307,7 +316,7 @@ func (s *Session) Reconnect() error {
 		s.mgr.broadcast(Event{Kind: EventExited, ID: s.id, Kind2: s.kind, Title: s.Title(), Err: err.Error()})
 		return err
 	}
-	term, err := terminal.New(sshTerminalOpts(conn, s))
+	term, err := terminal.New(sshTerminalOpts(conn, s, s.mgr))
 	if err != nil {
 		_ = conn.Close()
 		s.mu.Lock()

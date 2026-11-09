@@ -151,3 +151,13 @@ P0✅ ─► P1 ─► P2 ─► P3 ─► P6
 8. MCP stdio：AI 客户端列 11 个工具 → run_command("echo ada_kaki") 返回输出
 9. MCP HTTP：携带 token POST /mcp tools/list 成功；无 token 401
 10. 离线启动（dll 已缓存/已 vendor）：一切正常
+
+## P14 设置页（外观/主题/字体）✅（已完成）
+
+- [x] 独立设置窗口，左右布局（左：分类导航 Sidebar；右：滚动内容区），⚙ 打开，替代原模态
+- [x] 外观：终端配色方案选择器——Ghostty 全目录（GhosttyThemes 缓存）+ 搜索过滤 + 当前项标记 + 一键跟随窗口；`Manager.SetTheme(name)`（校验名称、实时应用全部会话、新会话继承、nil 跟随窗口深浅）
+- [x] 终端：字体家族输入（即改即生效）+ 字号（保留实时应用）；`Manager.SetFont(terminal.Font)` 统一字体+字号通道
+- [x] 会话：默认 Shell、启动恢复开关（RestoreDisabled）
+- [x] MCP / 安全：HTTP 端点与端口、护栏开关、SSH 校验模式、已信任主机——由弹窗迁入对应页
+- [x] 全部改动即改即存（applyFont/applyTheme + saveSettingsNow）
+- [x] 测试：SetTheme 拒绝未知名/接受内置名并贯通真实会话、store 新字段往返

@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/egoist/mygo"
-	"github.com/egoist/mygo/plugins/terminal"
-	"github.com/egoist/mygo/ui"
 	"adakaki/internal/audit"
 	"adakaki/internal/engine"
 	"adakaki/internal/guard"
 	"adakaki/internal/shells"
 	"adakaki/internal/sshc"
 	"adakaki/internal/store"
+	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/plugins/terminal"
+	"github.com/egoist/mygo/ui"
 )
 
 // app is the whole console: the session engine, the main window and the
@@ -76,12 +76,14 @@ type app struct {
 	findOpen bool
 	findText string
 
-	// the settings dialog
-	showSettings bool
-	setFont      string
-	setMCPHTTP   bool
-	setMCPPort   string
-	setGuard     bool
+	// the settings window: a nav of categories, the content beside it
+	settingsWin   *mygo.Window
+	settingsCat   string   // 外观 | 终端 | 会话 | MCP | 安全
+	settingsNavW  float32  // the nav pane's width
+	themeFilter   string   // the theme list's search box
+	ghosttyThemes []string // the catalog, read once
+	sizeText      string   // the font size input, until parsed
+	setMCPPort    string   // the MCP port input, until parsed
 
 	// the split panes of the terminal area: a binary tree of leaves, one
 	// session each, and the focused leaf, which activeID names too
@@ -125,16 +127,35 @@ func newApp() *app {
 		log.Printf("audit: %v", err)
 	}
 	return &app{
-		mgr:          engine.NewManager(),
-		shells:       shells.Detect(),
-		sidebarWidth: 230,
-		popouts:      map[string]*mygo.Window{},
-		store:        cfg,
-		hostKeys:     keys,
-		auditLog:     auditLog,
+		mgr:           engine.NewManager(),
+		shells:        shells.Detect(),
+		sidebarWidth:  230,
+		popouts:       map[string]*mygo.Window{},
+		store:         cfg,
+		hostKeys:      keys,
+		auditLog:      auditLog,
+		ghosttyThemes: terminal.GhosttyThemes(),
+		settingsCat:   "外观",
+		settingsNavW:  170,
+		sizeText:      sizeTextFor(cfg.Settings.FontSize),
+		setMCPPort:    portTextFor(cfg.Settings.MCPHTTPPort),
 		guard: guard.FromSettings(cfg.Settings.GuardDisabled, cfg.Settings.GuardHeadless,
 			cfg.Settings.GuardDeny, cfg.Settings.GuardConfirm),
 	}
+}
+
+func sizeTextFor(n int) string {
+	if n == 0 {
+		return ""
+	}
+	return fmt.Sprint(n)
+}
+
+func portTextFor(n int) string {
+	if n == 0 {
+		return ""
+	}
+	return fmt.Sprint(n)
 }
 
 func mustAuditLogPath() string {
@@ -206,6 +227,9 @@ func (a *app) saveRestoreList() {
 // restoreSessions reopens what the last run had, off the main thread per
 // session; the last one takes the view, as it had at exit.
 func (a *app) restoreSessions() {
+	if a.store.Settings.RestoreDisabled {
+		return
+	}
 	specs := a.store.Restore
 	if len(specs) == 0 {
 		return
@@ -225,9 +249,7 @@ func (a *app) restoreSessions() {
 			a.connectSSHProfile(spec.Profile)
 		}
 	}
-	if a.store.Settings.FontSize > 0 {
-		a.mgr.SetFontSize(a.store.Settings.FontSize)
-	}
+
 }
 
 // sshSourceFor builds the dial for an SSH profile: the stored secret
@@ -404,9 +426,8 @@ func runGUI() {
 		a.mgr.CloseAll()
 	})
 	mygo.App.WhenReady(func() {
-		if a.store.Settings.FontSize > 0 {
-			a.mgr.SetFontSize(a.store.Settings.FontSize)
-		}
+		a.applyFont()
+		a.applyTheme()
 		a.startControlPlane()
 		a.restoreSessions()
 		a.win = mygo.NewWindow(mygo.WindowOptions{
@@ -812,43 +833,50 @@ func (a *app) quit() {
 	mygo.App.Quit()
 }
 
-// openSettings fills the settings dialog from the store.
+// ---- settings page ----
+
+// openSettings opens the settings window: a nav of categories on the
+// left, the category's content on the right. Changes apply live and save
+// as they are made.
 func (a *app) openSettings() {
-	a.setFont = ""
-	if a.store.Settings.FontSize > 0 {
-		a.setFont = fmt.Sprint(a.store.Settings.FontSize)
+	if a.win == nil || a.settingsWin != nil {
+		return
 	}
-	a.setMCPHTTP = a.store.Settings.MCPHTTP
-	a.setMCPPort = ""
-	if a.store.Settings.MCPHTTPPort > 0 {
-		a.setMCPPort = fmt.Sprint(a.store.Settings.MCPHTTPPort)
-	}
-	a.setGuard = !a.store.Settings.GuardDisabled
-	a.showSettings = true
+	a.settingsCat = "外观"
+	a.settingsWin = mygo.NewWindow(mygo.WindowOptions{
+		Title:  "设置",
+		Width:  860,
+		Height: 600,
+		Content: ui.View(func(c *ui.Context) {
+			a.settingsView(c)
+		}),
+	})
+	a.settingsWin.OnClosed(func() { a.settingsWin = nil })
 }
 
-// saveSettings persists the dialog and applies what applies live.
-func (a *app) saveSettings() {
-	var n int
-	fmt.Sscanf(a.setFont, "%d", &n)
-	a.store.Settings.FontSize = n
-	a.store.Settings.MCPHTTP = a.setMCPHTTP
-	var p int
-	fmt.Sscanf(a.setMCPPort, "%d", &p)
-	a.store.Settings.MCPHTTPPort = p
-	a.store.Settings.GuardDisabled = !a.setGuard
-	a.guard.Enabled = a.setGuard
-	a.mgr.SetFontSize(n)
-	if n > 0 {
-		// Live: every running terminal takes the size too.
-		for _, s := range a.mgr.List() {
-			s.SetFont(terminal.Font{Size: float32(n)})
-		}
-	}
-	a.showSettings = false
+// saveSettingsNow persists the configuration; the settings page calls it
+// after every change.
+func (a *app) saveSettingsNow() {
 	if err := a.store.Save(); err != nil {
 		a.pendingToast = "保存设置失败：" + err.Error()
-	} else {
-		a.pendingToast = "设置已保存（MCP HTTP 端口重启后生效）"
+		a.refreshUI()
+	}
+}
+
+// applyFont pushes the configured font to the engine: new sessions start
+// with it, running ones switch live.
+func (a *app) applyFont() {
+	a.mgr.SetFont(terminal.Font{
+		Family: a.store.Settings.FontFamily,
+		Size:   float32(a.store.Settings.FontSize),
+	})
+}
+
+// applyTheme pushes the configured color scheme to the engine; "" means
+// follow the window's appearance.
+func (a *app) applyTheme() {
+	if err := a.mgr.SetTheme(a.store.Settings.TerminalTheme); err != nil {
+		a.pendingToast = "配色方案 " + a.store.Settings.TerminalTheme + " 不存在"
+		a.refreshUI()
 	}
 }

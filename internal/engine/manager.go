@@ -18,7 +18,9 @@ type Manager struct {
 	sessions map[string]*Session
 	order    []string // creation order, for List
 	seq      atomic.Int64
-	fontSize int // DIPs, 0 means the plugin's default
+	font     terminal.Font    // what new sessions start with
+	theme    *terminal.Theme  // the color scheme; nil follows the window
+	dark     *terminal.Theme  // its dark-window variant, with theme
 
 	subsMu sync.Mutex
 	subs   map[int64]func(Event)
@@ -56,11 +58,51 @@ func (m *Manager) broadcast(ev Event) {
 	}
 }
 
-// SetFontSize sets the DIP size of the font new sessions start with.
-func (m *Manager) SetFontSize(px int) {
+// SetFont sets what new sessions start with, and applies it live to the
+// ones already running.
+func (m *Manager) SetFont(f terminal.Font) {
 	m.mu.Lock()
-	m.fontSize = px
+	m.font = f
 	m.mu.Unlock()
+	for _, s := range m.List() {
+		s.SetFont(f)
+	}
+}
+
+// SetTheme sets the terminal color scheme: a Ghostty theme by name, or
+// "" to follow the window's appearance. New sessions take it, running
+// ones switch live.
+func (m *Manager) SetTheme(name string) error {
+	var theme *terminal.Theme
+	if name != "" {
+		th, err := terminal.GhosttyTheme(name)
+		if err != nil {
+			return err
+		}
+		theme = th
+	}
+	m.mu.Lock()
+	m.theme = theme
+	m.dark = nil
+	m.mu.Unlock()
+	for _, s := range m.List() {
+		s.ApplyTheme(theme, nil)
+	}
+	return nil
+}
+
+// currentTheme returns the scheme new sessions start with.
+func (m *Manager) currentTheme() *terminal.Theme {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.theme
+}
+
+// currentFont returns the font new sessions start with.
+func (m *Manager) currentFont() terminal.Font {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.font
 }
 
 // CreateLocal starts a local shell session of the shell's ID, in cwd (the
@@ -104,9 +146,6 @@ func (m *Manager) CreateLocal(id shells.ID, cwd, custom string) (*Session, error
 	s.mu.Unlock()
 	s.id = fmt.Sprintf("local_%04d", m.seq.Add(1))
 
-	m.mu.RLock()
-	fontSize := m.fontSize
-	m.mu.RUnlock()
 	opts := terminal.Options{
 		Command:  cmd,
 		Dir:      cwd,
@@ -118,9 +157,10 @@ func (m *Manager) CreateLocal(id shells.ID, cwd, custom string) (*Session, error
 		// lives on the tab and the sidebar.
 		RightClick: terminal.RightClickCopyOrPaste,
 	}
-	if fontSize > 0 {
-		opts.Font = terminal.Font{Size: float32(fontSize)}
+	if f := m.currentFont(); f.Family != "" || f.Size > 0 {
+		opts.Font = f
 	}
+	opts.Theme = m.currentTheme()
 	term, err := terminal.New(opts)
 	if err != nil {
 		return nil, fmt.Errorf("engine: starting %s: %w", name, err)
@@ -157,7 +197,7 @@ func (m *Manager) CreateSSH(profile string, source SSHSource) (*Session, error) 
 	s.source = source
 	s.mu.Unlock()
 
-	term, err := terminal.New(sshTerminalOpts(conn, s))
+	term, err := terminal.New(sshTerminalOpts(conn, s, m))
 	if err != nil {
 		_ = conn.Close()
 		return nil, fmt.Errorf("engine: starting ssh session: %w", err)
@@ -173,8 +213,8 @@ func (m *Manager) CreateSSH(profile string, source SSHSource) (*Session, error) 
 
 // sshTerminalOpts builds the options of a terminal wired to an SSH
 // connection: its end closes the connection and marks the session.
-func sshTerminalOpts(conn Conn, s *Session) terminal.Options {
-	return terminal.Options{
+func sshTerminalOpts(conn Conn, s *Session, m *Manager) terminal.Options {
+	opts := terminal.Options{
 		Conn:     conn,
 		OnTitle:  s.setTitleFrom,
 		OnSearch: s.onSearchStatus,
@@ -184,6 +224,11 @@ func sshTerminalOpts(conn Conn, s *Session) terminal.Options {
 			s.onExit(code)
 		},
 	}
+	opts.Theme = m.currentTheme()
+	if f := m.currentFont(); f.Family != "" || f.Size > 0 {
+		opts.Font = f
+	}
+	return opts
 }
 
 // RestoreSpec describes a session well enough to open it again after a

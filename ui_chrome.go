@@ -14,12 +14,29 @@ import (
 	"adakaki/internal/store"
 )
 
-// Colors of the session state dot.
+// Semantic colors of the session states, the only literals outside the
+// theme: running, exited, starting, and the mask's veil.
 var (
 	colorRunning = ui.RGB(72, 199, 116)
-	colorExited  = ui.RGB(128, 128, 128)
+	colorExited  = ui.RGB(138, 138, 142)
 	colorStart   = ui.RGB(230, 180, 60)
+	colorMask    = ui.RGBA(8, 10, 18, 0.55)
 )
+
+// iconButton is an icon-only button, named and tipped: an icon alone is
+// invisible to assistive technology.
+func iconButton(c *ui.Context, svg *ui.SVG, name, tip string, fn func()) {
+	if ui.Button(c, "").Label(name).Tooltip(tip).Padding(4, 8).Children(func() {
+		ui.Icon(c, svg)
+	}).Clicked() {
+		fn()
+	}
+}
+
+// sectionLabel is a small heading that groups the rows of a dialog.
+func sectionLabel(c *ui.Context, text string) {
+	ui.Text(c, text).Bold().FontSize(12).TextColor(c.Theme().TextMuted)
+}
 
 // mainView builds the main window: a sidebar of sessions beside a tab
 // bar and the split panes of terminals, with the dialogs over them.
@@ -62,7 +79,10 @@ func (a *app) mainView(c *ui.Context) {
 			ui.Column(c.Key("quit-dialog")).Width(380).Gap(12).Children(func() {
 				ui.Text(c, "退出 AdaKaki？").FontSize(16).Bold()
 				if agents > 0 {
-					ui.Text(c, fmt.Sprintf("⚠ AI Agent 正在操作 %d 个会话，退出会中断它！", agents)).TextColor(t.Danger)
+					ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+						ui.Icon(c, icoAlert).TextColor(t.Danger)
+						ui.Text(c, fmt.Sprintf("AI Agent 正在操作 %d 个会话，退出会中断它们", agents)).TextColor(t.Danger)
+					})
 				}
 				ui.Text(c, "还有会话在运行，退出会关闭它们。").TextColor(t.TextMuted)
 				ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
@@ -80,8 +100,11 @@ func (a *app) mainView(c *ui.Context) {
 	if a.showGuardAsk {
 		m := ui.Modal(c, &a.showGuardAsk, func() {
 			req, rule := a.guardReq, a.guardRule
-			ui.Column(c.Key("guard-dialog")).Width(560).Gap(10).Children(func() {
-				ui.Text(c, "🛡 AI Agent 请求执行受控命令").FontSize(16).Bold()
+			ui.Column(c.Key("guard-dialog")).Width(560).Gap(12).Children(func() {
+				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+					ui.Icon(c, icoShield()) // see helper below
+					ui.Text(c, "AI Agent 请求执行受控命令").FontSize(16).Bold()
+				})
 				if req != nil {
 					ui.Text(c, fmt.Sprintf("工具 %s · 客户端 %s · 会话 %s", req.Tool, orDash(req.Client), orDash(req.Session))).TextColor(t.TextMuted).FontSize(12)
 				}
@@ -91,7 +114,7 @@ func (a *app) mainView(c *ui.Context) {
 				if rule != nil {
 					ui.Text(c, "命中规则："+rule.Reason+"（"+rule.Source+"）").TextColor(t.TextMuted).FontSize(12)
 				}
-				ui.Text(c, "拒绝会返回错误给 Agent；允许本次只放行这一条。").FontSize(11).TextColor(t.TextMuted)
+				ui.Text(c, "拒绝会返回错误给 Agent；允许只放行这一条命令。").FontSize(12).TextColor(t.TextMuted)
 				ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
 					if ui.Button(c, "拒绝").Clicked() {
 						a.answerGuard(false)
@@ -108,16 +131,19 @@ func (a *app) mainView(c *ui.Context) {
 	}
 	if a.showHostKey {
 		m := ui.Modal(c, &a.showHostKey, func() {
-			ui.Column(c.Key("hostkey-dialog")).Width(460).Gap(10).Children(func() {
+			ui.Column(c.Key("hostkey-dialog")).Width(460).Gap(12).Children(func() {
 				ui.Text(c, "首次连接 "+a.hkHost).FontSize(16).Bold()
 				ui.Text(c, "无法确认主机身份，请核对指纹：").TextColor(t.TextMuted)
 				ui.Box(c).Padding(10).Radius(6).Background(t.Surface).Children(func() {
 					ui.Column(c).Gap(4).Children(func() {
 						ui.Text(c, "SHA256:"+a.hkFP).FontSize(12)
-						ui.Text(c, "主机身份以此指纹为准，可信网络下首次连接可直接信任。").FontSize(11).TextColor(t.TextMuted)
+						ui.Text(c, "主机身份以此指纹为准。").FontSize(12).TextColor(t.TextMuted)
 					})
 				})
-				ui.Text(c, "⚠ 以后若该主机指纹变化，连接将被拒绝（防中间人）。").FontSize(11).TextColor(t.Danger)
+				ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
+					ui.Icon(c, icoAlert).TextColor(t.Danger).FontSize(14)
+					ui.Text(c, "以后该主机指纹若变化，连接将被拒绝。").FontSize(12).TextColor(t.Danger)
+				})
 				ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
 					if ui.Button(c, "拒绝").Clicked() {
 						a.answerHostKey(false)
@@ -135,7 +161,7 @@ func (a *app) mainView(c *ui.Context) {
 	if a.showSSH {
 		ui.Modal(c, &a.showSSH, func() {
 			t := c.Theme()
-			ui.Column(c.Key("ssh-dialog")).Width(460).Gap(10).Children(func() {
+			ui.Column(c.Key("ssh-dialog")).Width(460).Gap(12).Children(func() {
 				ui.Text(c, "SSH 连接").FontSize(16).Bold()
 				if len(a.store.Profiles) > 0 {
 					ui.MenuButton(c, "选择已存档案…", func(m *ui.Menu) {
@@ -148,7 +174,7 @@ func (a *app) mainView(c *ui.Context) {
 				}
 				ui.Row(c).Gap(8).Children(func() {
 					ui.TextInput(c.Key("ssh-host"), &a.sshHost).Placeholder("主机").Grow(1)
-					ui.TextInput(c.Key("ssh-port"), &a.sshPort).Placeholder("端口(22)").Width(90)
+					ui.TextInput(c.Key("ssh-port"), &a.sshPort).Placeholder("端口").Width(90)
 				})
 				ui.TextInput(c.Key("ssh-user"), &a.sshUser).Placeholder("用户名")
 				ui.MenuButton(c, "认证方式："+authLabel(a.sshAuth), func(m *ui.Menu) {
@@ -163,11 +189,11 @@ func (a *app) mainView(c *ui.Context) {
 					ui.TextInput(c.Key("ssh-keypath"), &a.sshKeyPath).Placeholder(`私钥路径，如 C:\Users\you\.ssh\id_ed25519`)
 					ui.TextInput(c.Key("ssh-passphrase"), &a.sshPass).Placeholder("私钥口令（可空）").Password()
 				case "agent":
-					ui.Text(c, "使用系统 OpenSSH Agent（Windows 服务“OpenSSH Authentication Agent”需在运行）。").TextColor(t.TextMuted).FontSize(11)
+					ui.Text(c, "使用系统 OpenSSH Agent（服务需在运行）。").TextColor(t.TextMuted).FontSize(12)
 				default:
 					ui.TextInput(c.Key("ssh-password"), &a.sshPass).Placeholder("密码").Password()
 				}
-				ui.Text(c, "注意：v1 不校验主机指纹（见设计文档）。").TextColor(t.TextMuted).FontSize(11)
+				ui.Text(c, "首次连接会请求确认主机指纹。").TextColor(t.TextMuted).FontSize(12)
 				ui.Checkbox(c, &a.sshSave, "保存为档案")
 				if a.sshSave {
 					ui.TextInput(c.Key("ssh-saveas"), &a.sshSaveAs).Placeholder("档案名称")
@@ -185,23 +211,14 @@ func (a *app) mainView(c *ui.Context) {
 	}
 	if a.showSettings {
 		ui.Modal(c, &a.showSettings, func() {
-			ui.Column(c.Key("settings-dialog")).Width(460).Gap(10).Children(func() {
+			ui.Column(c.Key("settings-dialog")).Width(460).Gap(12).Children(func() {
 				ui.Text(c, "设置").FontSize(16).Bold()
+
+				sectionLabel(c, "外观")
 				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
 					ui.Text(c, "终端字号（DIP）")
 					ui.TextInput(c.Key("set-font"), &a.setFont).Placeholder("默认").Width(80)
 				})
-				ui.Checkbox(c, &a.setMCPHTTP, "启动 MCP HTTP 端点（127.0.0.1，供 AI Agent 直连）")
-				if a.setMCPHTTP {
-					ui.TextInput(c.Key("set-mcp-port"), &a.setMCPPort).Placeholder("8731").Width(120)
-				}
-				ui.Divider(c)
-				ui.Checkbox(c, &a.setGuard, "安全护栏：危险命令确认/拦截（推荐开启）")
-				if a.setGuard {
-					builtin, custom := a.guard.Count()
-					ui.Text(c, fmt.Sprintf("内置规则 %d 条 · 自定义 %d 条 · 拦截与放行均记录于 audit.log（自定义规则见 config.json 的 guard_deny / guard_confirm）", builtin, custom)).TextColor(t.TextMuted).FontSize(11)
-				}
-				ui.Divider(c)
 				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
 					ui.Text(c, "默认 Shell")
 					ui.MenuButton(c, a.defaultShellLabel(), func(m *ui.Menu) {
@@ -214,11 +231,24 @@ func (a *app) mainView(c *ui.Context) {
 						}
 					}).Grow(1)
 				})
+
+				sectionLabel(c, "MCP")
+				ui.Checkbox(c, &a.setMCPHTTP, "启动 MCP HTTP 端点（127.0.0.1）")
+				if a.setMCPHTTP {
+					ui.TextInput(c.Key("set-mcp-port"), &a.setMCPPort).Placeholder("8731").Width(120)
+				}
+
+				sectionLabel(c, "安全")
+				ui.Checkbox(c, &a.setGuard, "危险命令护栏（确认/拦截，记录审计）")
+				if a.setGuard {
+					builtin, custom := a.guard.Count()
+					ui.Text(c, fmt.Sprintf("内置规则 %d 条，自定义 %d 条；自定义规则在 config.json 的 guard_deny / guard_confirm", builtin, custom)).TextColor(t.TextMuted).FontSize(12)
+				}
 				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
 					ui.Text(c, "SSH 主机密钥校验")
 					ui.MenuButton(c, strictLabel(a.store.Settings.StrictHostKey), func(m *ui.Menu) {
 						for _, v := range []struct{ val, label string }{
-							{"prompt", "首次连接弹窗确认（推荐）"},
+							{"prompt", "首次连接弹窗确认"},
 							{"accept_new", "自动信任新主机"},
 							{"off", "关闭校验（不安全）"},
 						} {
@@ -230,7 +260,7 @@ func (a *app) mainView(c *ui.Context) {
 					}).Grow(1)
 				})
 				if hosts := a.hostKeys.List(); len(hosts) > 0 {
-					ui.Text(c, "已信任主机（指纹变化会被拒绝连接）").TextColor(t.TextMuted).FontSize(12)
+					ui.Text(c, "已信任主机").TextColor(t.TextMuted).FontSize(12)
 					for _, k := range hosts {
 						name := k.Host
 						if k.Port != 22 {
@@ -244,6 +274,7 @@ func (a *app) mainView(c *ui.Context) {
 						})
 					}
 				}
+
 				ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
 					if ui.Button(c, "取消").Clicked() {
 						a.showSettings = false
@@ -276,6 +307,11 @@ func (a *app) mainView(c *ui.Context) {
 	}
 }
 
+// icoShield is the guard dialog's icon: a shield with a check.
+func icoShield() *ui.SVG {
+	return iconSVG(`<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>`)
+}
+
 func (a *app) startCustom() {
 	cmd := a.customCmd
 	a.showCustom = false
@@ -290,27 +326,26 @@ func (a *app) startCustom() {
 func (a *app) sidebarView(c *ui.Context) {
 	t := c.Theme()
 	ui.Column(c).Fill().Background(t.Background).Children(func() {
-		ui.Row(c).Padding(12, 10).Gap(8).AlignItems(ui.Center).Children(func() {
+		ui.Row(c).Padding(12, 10).Gap(6).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, "AdaKaki").Bold().FontSize(15).Grow(1)
-			if ui.Button(c, "🛡").Padding(4, 8).Clicked() {
-				a.openAudit()
-			}
-			if ui.Button(c, "⚙").Padding(4, 8).Clicked() {
-				a.openSettings()
-			}
-			ui.Button(c, "＋ 新建").Menu(a.newSessionMenu)
+			iconButton(c, icoHistory, "审计日志", "查看 MCP 调用审计", a.openAudit)
+			iconButton(c, icoSettings, "设置", "打开设置", a.openSettings)
+			ui.Button(c, "").Label("新建会话").Children(func() {
+				ui.Icon(c, icoPlus).FontSize(14)
+				ui.Text(c, "新建")
+			}).Menu(a.newSessionMenu)
 		})
 		if ui.Sidebar(c, &a.activeID, func() {
 			ui.SidebarSection(c, "本地 Shell", nil, func() {
 				for _, s := range a.sessionsOf(engine.Local) {
-					item := ui.SidebarItem(c.Key(s.ID()), s.ID(), nil, s.Title())
+					item := ui.SidebarItem(c.Key(s.ID()), s.ID(), icoTerminal, s.Title())
 					item.Children(func() { a.stateMark(c, s) })
 					item.ContextMenu(func(m *ui.Menu) { a.sessionMenu(m, s) })
 				}
 			})
 			ui.SidebarSection(c, "SSH", nil, func() {
 				for _, s := range a.sessionsOf(engine.SSH) {
-					item := ui.SidebarItem(c.Key(s.ID()), s.ID(), nil, s.Title())
+					item := ui.SidebarItem(c.Key(s.ID()), s.ID(), icoGlobe, s.Title())
 					item.Children(func() { a.stateMark(c, s) })
 					item.ContextMenu(func(m *ui.Menu) { a.sessionMenu(m, s) })
 				}
@@ -321,8 +356,12 @@ func (a *app) sidebarView(c *ui.Context) {
 	})
 }
 
-// newSessionMenu is the ＋ 新建 button's menu.
+// newSessionMenu is the 新建 button's menu, shortcuts annotated.
 func (a *app) newSessionMenu(m *ui.Menu) {
+	if m.Item("新建终端").Shortcut(ui.Cmd|ui.Shift, ui.KeyT).Chosen() {
+		a.newSession(a.defaultShellID(), "", "")
+	}
+	m.Separator()
 	for _, sh := range a.shells {
 		if sh.Found {
 			if m.Item(sh.Name).Chosen() {
@@ -427,11 +466,11 @@ func (a *app) sessionMenu(m *ui.Menu, s *engine.Session) {
 	}
 }
 
-// stateMark is the little dot that tells a session's state; a robot
-// while an AI agent operates it.
+// stateMark is the little dot that tells a session's state; the bot
+// stands for a session an AI agent is operating.
 func (a *app) stateMark(c *ui.Context, s *engine.Session) {
 	if on, _ := s.AgentLock(); on {
-		ui.Text(c, "🤖").FontSize(12)
+		ui.Icon(c, icoBot).FontSize(13)
 		return
 	}
 	color := colorRunning
@@ -441,7 +480,7 @@ func (a *app) stateMark(c *ui.Context, s *engine.Session) {
 	case engine.Starting:
 		color = colorStart
 	}
-	ui.Text(c, "●").TextColor(color).FontSize(9)
+	ui.Icon(c, icoDot).FontSize(9).TextColor(color)
 }
 
 // contentView is the right pane: the tab bar over the find bar (when it
@@ -465,7 +504,8 @@ func (a *app) contentView(c *ui.Context) {
 func (a *app) findBar(c *ui.Context) {
 	t := c.Theme()
 	ui.Row(c).Padding(6, 8).Gap(8).AlignItems(ui.Center).Children(func() {
-		in := ui.TextInput(c.Key("find-input"), &a.findText).Placeholder("搜索终端（回车下一个）").Width(240)
+		ui.Icon(c, icoSearch).TextColor(t.TextMuted)
+		in := ui.TextInput(c.Key("find-input"), &a.findText).Placeholder("搜索终端").Width(240)
 		if in.Changed() {
 			a.searchFor(a.findText)
 		}
@@ -473,13 +513,19 @@ func (a *app) findBar(c *ui.Context) {
 			a.searchNext()
 		}
 		ui.Text(c, a.findStatus()).TextColor(t.TextMuted).FontSize(12).Grow(1)
-		if ui.Button(c, "↑").Clicked() {
+		if ui.Button(c, "").Label("上一个匹配").Padding(3, 6).Children(func() {
+			ui.Icon(c, icoChevronUp)
+		}).Clicked() {
 			a.searchPrev()
 		}
-		if ui.Button(c, "↓").Clicked() {
+		if ui.Button(c, "").Label("下一个匹配").Padding(3, 6).Children(func() {
+			ui.Icon(c, icoChevronDown)
+		}).Clicked() {
 			a.searchNext()
 		}
-		if ui.Button(c, "✕").Clicked() {
+		if ui.Button(c, "").Label("关闭搜索").Padding(3, 6).Children(func() {
+			ui.Icon(c, icoX)
+		}).Clicked() {
 			a.closeFind()
 		}
 	})
@@ -515,10 +561,12 @@ func (a *app) tab(c *ui.Context, s *engine.Session) {
 				a.stateMark(c, s)
 				ui.Text(c, s.Title()).MaxWidth(170).Ellipsis("…")
 			})
-				}).Clicked() {
-					a.viewSession(s.ID())
-				}
-		if ui.Button(c, "✕").Padding(2, 6).Clicked() {
+		}).Clicked() {
+			a.viewSession(s.ID())
+		}
+		if ui.Button(c, "").Label("关闭会话").Padding(3, 5).Children(func() {
+			ui.Icon(c, icoX).FontSize(13)
+		}).Clicked() {
 			a.closeSession(s)
 		}
 	}).ContextMenu(func(m *ui.Menu) { a.sessionMenu(m, s) })
@@ -528,9 +576,10 @@ func (a *app) tab(c *ui.Context, s *engine.Session) {
 func (a *app) buildPaneTree(c *ui.Context, n *paneNode) {
 	t := c.Theme()
 	if n == nil {
-		ui.Column(c).Fill().Center().Gap(6).Children(func() {
-			ui.Text(c, "点左上角“＋ 新建”打开一个终端").TextColor(t.TextMuted)
-			ui.Text(c, "右键终端可向右或向下分屏").TextColor(t.TextMuted).FontSize(12)
+		ui.Column(c).Fill().Center().Gap(10).Children(func() {
+			ui.Icon(c, icoTerminal).FontSize(30).TextColor(t.TextMuted)
+			ui.Text(c, "从左上角「新建」开始").TextColor(t.TextMuted)
+			ui.Text(c, "支持 cmd / PowerShell / Git Bash / SSH，右键终端可分屏").TextColor(t.TextMuted).FontSize(12)
 		})
 		return
 	}
@@ -559,7 +608,8 @@ func (a *app) paneView(c *ui.Context, n *paneNode) {
 	}
 	box.Children(func() {
 		if n.sessionID == "" {
-			ui.Column(c).Fill().Center().Children(func() {
+			ui.Column(c).Fill().Center().Gap(8).Children(func() {
+				ui.Spinner(c)
 				ui.Text(c, "正在启动…").TextColor(t.TextMuted)
 			})
 			return
@@ -592,16 +642,15 @@ func (a *app) paneView(c *ui.Context, n *paneNode) {
 func (a *app) agentMask(c *ui.Context, tool string) {
 	t := c.Theme()
 	ui.Box(c).Absolute().Top(0).Bottom(0).Left(0).Right(0).
-		Background(ui.RGBA(8, 10, 18, 0.55)).AutoFocus().
+		Background(colorMask).AutoFocus().
 		Children(func() {
 			ui.Column(c).Fill().Center().Gap(10).Children(func() {
 				ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
-					ui.Spinner(c)
+					ui.Icon(c, icoBot).FontSize(20)
 					ui.Text(c, "AI Agent 操作中").Bold().FontSize(16)
-					ui.Spinner(c)
 				})
-				ui.Text(c, "正在运行："+tool).TextColor(t.TextMuted)
-				ui.Text(c, "可实时观看 · 输入已锁定 · 请勿打扰").TextColor(t.TextMuted).FontSize(12)
+				ui.Spinner(c).Label("Agent 正在运行 " + tool)
+				ui.Text(c, "正在运行 "+tool+"，输入已锁定，结束后自动恢复").TextColor(t.TextMuted).FontSize(12)
 			})
 		})
 }
@@ -648,13 +697,15 @@ func (a *app) auditView(c *ui.Context) {
 	}
 	ui.Column(c).Fill().Background(t.Background).Children(func() {
 		ui.Row(c).Padding(10, 8).Gap(8).AlignItems(ui.Center).Children(func() {
+			ui.Icon(c, icoHistory)
 			ui.Text(c, "MCP 审计日志").Bold().FontSize(15).Grow(1)
 			ui.Text(c, fmt.Sprintf("累计 %d 条 · 显示最近 %d 条", total, len(entries))).TextColor(t.TextMuted)
 		})
 		ui.Divider(c)
 		if len(entries) == 0 {
-			ui.Column(c).Fill().Center().Children(func() {
-				ui.Text(c, "暂无记录：AI Agent 调用 MCP 工具后将出现在这里").TextColor(t.TextMuted)
+			ui.Column(c).Fill().Center().Gap(8).Children(func() {
+				ui.Icon(c, icoHistory).FontSize(28).TextColor(t.TextMuted)
+				ui.Text(c, "还没有 MCP 调用记录").TextColor(t.TextMuted)
 			})
 		} else {
 			ui.Scroll(c).Fill().Children(func() {
@@ -670,24 +721,24 @@ func (a *app) auditView(c *ui.Context) {
 	c.After(2 * time.Second)
 }
 
-// auditRow is one call: time, tool and client, the command, the outcome.
+// auditRow is one call: time, outcome, tool, command and detail.
 func (a *app) auditRow(c *ui.Context, e audit.Entry) {
 	t := c.Theme()
 	when := e.Time.Format("01-02 15:04:05")
-	outcome := "✓"
-	color := colorRunning
-	if e.Guard != "" && strings.HasPrefix(e.Guard, "denied") {
-		outcome, color = "🛡", colorStart
-	} else if !e.OK {
-		outcome, color = "✗", t.Danger
-	} else if e.Guard == "confirmed" {
-		outcome, color = "☑", colorStart
+	ico, color := icoCheck, colorRunning
+	switch {
+	case e.Guard != "" && strings.HasPrefix(e.Guard, "denied"):
+		ico, color = icoAlert, colorStart
+	case !e.OK:
+		ico, color = icoCircleX, t.Danger
+	case e.Guard == "confirmed":
+		ico, color = icoCheck, colorStart
 	}
 	ui.Row(c.Key(fmt.Sprintf("audit-%d-%s", e.Time.UnixNano(), e.Tool))).
 		Gap(8).Padding(4, 6).Radius(4).AlignItems(ui.Center).
 		Children(func() {
 			ui.Text(c, when).TextColor(t.TextMuted).FontSize(11)
-			ui.Text(c, outcome).TextColor(color).FontSize(11)
+			ui.Icon(c, ico).FontSize(13).TextColor(color)
 			ui.Text(c, e.Tool).Bold().FontSize(12)
 			cmd := e.Command
 			if cmd == "" {
@@ -727,6 +778,7 @@ func firstLine(s string) string {
 	}
 	return s
 }
+
 // popoutView is a synchronized popout window's content: the session's
 // mirror terminal, filling the window.
 func (a *app) popoutView(c *ui.Context, mv *engine.MirrorView) {

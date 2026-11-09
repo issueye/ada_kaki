@@ -217,7 +217,7 @@ func (s *Server) toolsCall(req *request) (any, *rpcError) {
 				Command: call.Command, OK: false,
 				Guard: "denied:" + reason,
 			})
-			return errorToolResult("🛡 已被安全护栏拦截：%s", reason), nil
+			return errorToolResult("已被安全护栏拦截：%s", reason), nil
 		}
 		confirmed = verdict == "confirm_ok"
 	}

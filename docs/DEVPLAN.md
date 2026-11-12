@@ -161,3 +161,7 @@ P0✅ ─► P1 ─► P2 ─► P3 ─► P6
 - [x] MCP / 安全：HTTP 端点与端口、护栏开关、SSH 校验模式、已信任主机——由弹窗迁入对应页
 - [x] 全部改动即改即存（applyFont/applyTheme + saveSettingsNow）
 - [x] 测试：SetTheme 拒绝未知名/接受内置名并贯通真实会话、store 新字段往返
+
+---
+
+> **本计划（P0–P14）已全部完成。** 后续阶段（P15–P25，至 v1.0）见 [ROADMAP.md](./ROADMAP.md)。

@@ -103,7 +103,9 @@ AI Agent 经 MCP 工具操作某个会话期间，该会话的终端分格自动
 ## 文档
 
 - [设计文档](docs/DESIGN.md)：mygo 框架分析、架构、模块、协议、风险
-- [开发计划](docs/DEVPLAN.md)：里程碑、验收标准、任务清单
+- [路线图](docs/ROADMAP.md)：v0.2 → v1.0 长期任务计划（P15–P25）
+- [UI 评审](docs/UI-REVIEW.md)：界面评审结论与整改记录
+- [开发计划](docs/DEVPLAN.md)：P0–P14 里程碑、验收标准、任务清单（已完成）
 
 ## 测试
 

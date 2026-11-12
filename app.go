@@ -72,6 +72,9 @@ type app struct {
 	// the audit viewer window
 	auditWin *mygo.Window
 
+	// control plane state, for the status bar
+	mcpUp bool
+
 	// the find bar over the terminal area
 	findOpen bool
 	findText string
@@ -196,6 +199,7 @@ func (a *app) openAudit() {
 	}
 	a.auditWin = mygo.NewWindow(mygo.WindowOptions{
 		Title:  "MCP 审计日志",
+		TitleBarStyle: mygo.TitleBarHidden,
 		Width:  860,
 		Height: 560,
 		Content: ui.View(func(c *ui.Context) {
@@ -436,6 +440,7 @@ func runGUI() {
 			Height:    740,
 			MinWidth:  820,
 			MinHeight: 520,
+			TitleBarStyle: mygo.TitleBarHidden,
 			Content:   ui.View(a.mainView),
 		})
 		a.win.OnClose(func(e *mygo.CloseEvent) {
@@ -715,10 +720,11 @@ func (a *app) popout(s *engine.Session) {
 	}
 	w := mygo.NewWindow(mygo.WindowOptions{
 		Title:  s.Title() + " — 同屏",
+		TitleBarStyle: mygo.TitleBarHidden,
 		Width:  940,
 		Height: 600,
 		Content: ui.View(func(c *ui.Context) {
-			a.popoutView(c, mv)
+			a.popoutView(c, mv, s.Title())
 		}),
 	})
 	a.popouts[s.ID()] = w
@@ -845,7 +851,8 @@ func (a *app) openSettings() {
 	a.settingsCat = "外观"
 	a.settingsWin = mygo.NewWindow(mygo.WindowOptions{
 		Title:  "设置",
-		Width:  860,
+		TitleBarStyle: mygo.TitleBarHidden,
+			Width:  860,
 		Height: 600,
 		Content: ui.View(func(c *ui.Context) {
 			a.settingsView(c)

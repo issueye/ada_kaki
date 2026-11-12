@@ -14,20 +14,17 @@ import (
 	"github.com/egoist/mygo/ui"
 )
 
-// Semantic colors of the session states, the only literals outside the
-// theme: running, exited, starting, and the mask's veil.
-var (
-	colorRunning = ui.RGB(72, 199, 116)
-	colorExited  = ui.RGB(138, 138, 142)
-	colorStart   = ui.RGB(230, 180, 60)
-	colorMask    = ui.RGBA(8, 10, 18, 0.55)
-)
+// colorMask is the agent mask's translucent veil over a terminal.
+var colorMask = ui.RGBA(8, 10, 18, 0.55)
+
+// icoShield is the guard dialog's icon: a shield with a check.
+var icoShield = iconSVG(`<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>`)
 
 // iconButton is an icon-only button, named and tipped: an icon alone is
 // invisible to assistive technology.
 func iconButton(c *ui.Context, svg *ui.SVG, name, tip string, fn func()) {
-	if ui.Button(c, "").Label(name).Tooltip(tip).Padding(4, 8).Children(func() {
-		ui.Icon(c, svg)
+	if ui.Button(c, "").Label(name).Tooltip(tip).Padding(5, 8).Children(func() {
+		ui.Icon(c, svg).FontSize(15)
 	}).Clicked() {
 		fn()
 	}
@@ -38,10 +35,36 @@ func sectionLabel(c *ui.Context, text string) {
 	ui.Text(c, text).Bold().FontSize(12).TextColor(c.Theme().TextMuted)
 }
 
-// mainView builds the main window: a sidebar of sessions beside a tab
-// bar and the split panes of terminals, with the dialogs over them.
-func (a *app) mainView(c *ui.Context) {
+// kbd draws a keyboard key the way web UIs do: a small bordered chip.
+func kbd(c *ui.Context, key string) {
 	t := c.Theme()
+	ui.Box(c).Padding(2, 6).Radius(4).Border(1, t.Border).Background(t.Surface).Children(func() {
+		ui.Text(c, key).FontSize(11)
+	})
+}
+
+// titleStrip is a window's own title bar (TitleBarHidden): the title at
+// left, extra controls at right, the whole strip dragging the window and
+// keeping clear of the system's window controls.
+func titleStrip(c *ui.Context, title string, right func()) {
+	bar := c.TitleBar()
+	ui.Row(c).Height(max(bar.Height, 38)).Padding(0, bar.Right+10, 0, 12).
+		DragWindow().AlignItems(ui.Center).Gap(8).Children(func() {
+		if title != "" {
+			ui.Text(c, title).Bold().FontSize(13)
+		}
+		ui.Spacer(c)
+		if right != nil {
+			right()
+		}
+	})
+}
+
+// mainView builds the main window: a sidebar that runs to the top of the
+// window beside the content pane — the title strip with the actions, the
+// tab bar, the find bar, the terminal panes and the status bar — with
+// the dialogs over them.
+func (a *app) mainView(c *ui.Context) {
 	if a.pendingToast != "" {
 		c.Toast(a.pendingToast)
 		a.pendingToast = ""
@@ -71,8 +94,122 @@ func (a *app) mainView(c *ui.Context) {
 		a.openFind()
 	}
 
-	ui.Split(c, &a.sidebarWidth, func() { a.sidebarView(c) }, func() { a.contentView(c) }).Fill()
+	ui.Split(c, &a.sidebarWidth,
+		func() { a.sidebarPane(c) },
+		func() { a.contentPane(c) }).Fill()
 
+	a.mainDialogs(c)
+}
+
+// sidebarPane is the left column: the app identity (dragging the window)
+// over the sessions, running to the top of the window.
+func (a *app) sidebarPane(c *ui.Context) {
+	bar := c.TitleBar()
+	t := c.Theme()
+	ui.Column(c).Fill().Background(t.Background).Children(func() {
+		ui.Row(c).Height(max(bar.Bottom, 44)).Padding(0, 8, 0, bar.Left+12).
+			DragWindow().AlignItems(ui.Center).Gap(8).Children(func() {
+			ui.Icon(c, icoTerminal).FontSize(16).TextColor(t.Accent)
+			ui.Text(c, "AdaKaki").Bold().FontSize(14)
+		})
+		if ui.Sidebar(c, &a.activeID, func() {
+			ui.SidebarSection(c, "本地 Shell", nil, func() {
+				for _, s := range a.sessionsOf(engine.Local) {
+					item := ui.SidebarItem(c.Key(s.ID()), s.ID(), icoTerminal, s.Title())
+					item.Children(func() { a.stateMark(c, s) })
+					item.ContextMenu(func(m *ui.Menu) { a.sessionMenu(m, s) })
+				}
+			})
+			ui.SidebarSection(c, "SSH", nil, func() {
+				for _, s := range a.sessionsOf(engine.SSH) {
+					item := ui.SidebarItem(c.Key(s.ID()), s.ID(), icoGlobe, s.Title())
+					item.Children(func() { a.stateMark(c, s) })
+					item.ContextMenu(func(m *ui.Menu) { a.sessionMenu(m, s) })
+				}
+			})
+		}).Fill().Changed() {
+			a.viewSession(a.activeID)
+		}
+	})
+}
+
+// contentPane is the right column: the title strip (actions at the
+// window controls' left), the tab bar, the find bar, the panes and the
+// status bar.
+func (a *app) contentPane(c *ui.Context) {
+	bar := c.TitleBar()
+	t := c.Theme()
+	ui.Column(c).Fill().Background(t.Background).Children(func() {
+		// the title strip: draggable everywhere but the controls
+		ui.Row(c).Height(max(bar.Height, 38)).Padding(0, bar.Right+10, 0, 10).
+			DragWindow().AlignItems(ui.Center).Gap(6).Children(func() {
+			ui.Spacer(c)
+			ui.Button(c, "").Label("新建会话").Children(func() {
+				ui.Icon(c, icoPlus).FontSize(14)
+				ui.Text(c, "新建")
+			}).Menu(a.newSessionMenu)
+			iconButton(c, icoHistory, "审计日志", "查看 MCP 调用审计", a.openAudit)
+			iconButton(c, icoSettings, "设置", "打开设置", a.openSettings)
+		})
+		a.tabBar(c)
+		if a.findOpen {
+			a.findBar(c)
+		}
+		ui.Divider(c)
+		a.terminalArea(c)
+		a.statusBar(c)
+	})
+}
+
+// statusBar is the one-line summary along the bottom: sessions, the
+// agent at work, and the MCP endpoints.
+func (a *app) statusBar(c *ui.Context) {
+	t := c.Theme()
+	ui.Row(c).Height(26).Padding(0, 12).Background(t.Surface).
+		AlignItems(ui.Center).Gap(10).Children(func() {
+		n := len(a.mgr.List())
+		dot, dotColor := icoDot, t.Success
+		if n == 0 {
+			dotColor = t.TextMuted
+		}
+		ui.Icon(c, dot).FontSize(8).TextColor(dotColor)
+		ui.Text(c, fmt.Sprintf("%d 个会话", n)).FontSize(11).TextColor(t.TextMuted)
+		if s := a.active(); s != nil {
+			ui.Text(c, s.Title()).FontSize(11).MaxWidth(220).Ellipsis("…")
+		}
+		ui.Spacer(c)
+		if agents := a.agentBusy(); agents > 0 {
+			ui.Icon(c, icoBot).FontSize(13).TextColor(t.Warning)
+			ui.Text(c, fmt.Sprintf("Agent 运行中 ×%d", agents)).FontSize(11).TextColor(t.Warning)
+			ui.Divider(c).Height(14)
+		}
+		port := a.store.Settings.MCPHTTPPort
+		if port == 0 {
+			port = 8731
+		}
+		if a.mcpUp {
+			ui.Icon(c, icoDot).FontSize(8).TextColor(t.Success)
+			ui.Text(c, fmt.Sprintf("MCP :%d", port)).FontSize(11).TextColor(t.TextMuted)
+		} else {
+			ui.Text(c, "MCP HTTP 关").FontSize(11).TextColor(t.TextMuted)
+		}
+		ui.Text(c, "·").FontSize(11).TextColor(t.TextMuted)
+		ui.Text(c, "mcp stdio 可用").FontSize(11).TextColor(t.TextMuted)
+	})
+}
+
+func (a *app) startCustom() {
+	cmd := a.customCmd
+	a.showCustom = false
+	a.customCmd = ""
+	if cmd != "" {
+		a.newSession(shells.Custom, "", cmd)
+	}
+}
+
+// mainDialogs is every dialog of the main window.
+func (a *app) mainDialogs(c *ui.Context) {
+	t := c.Theme()
 	if a.showQuit {
 		ui.Modal(c, &a.showQuit, func() {
 			agents := a.agentBusy()
@@ -102,7 +239,7 @@ func (a *app) mainView(c *ui.Context) {
 			req, rule := a.guardReq, a.guardRule
 			ui.Column(c.Key("guard-dialog")).Width(560).Gap(12).Children(func() {
 				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
-					ui.Icon(c, icoShield()) // see helper below
+					ui.Icon(c, icoShield)
 					ui.Text(c, "AI Agent 请求执行受控命令").FontSize(16).Bold()
 				})
 				if req != nil {
@@ -230,55 +367,6 @@ func (a *app) mainView(c *ui.Context) {
 	}
 }
 
-// icoShield is the guard dialog's icon: a shield with a check.
-func icoShield() *ui.SVG {
-	return iconSVG(`<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>`)
-}
-
-func (a *app) startCustom() {
-	cmd := a.customCmd
-	a.showCustom = false
-	a.customCmd = ""
-	if cmd != "" {
-		a.newSession(shells.Custom, "", cmd)
-	}
-}
-
-// sidebarView is the left pane: a header with the new-session menu and
-// the sessions grouped by kind.
-func (a *app) sidebarView(c *ui.Context) {
-	t := c.Theme()
-	ui.Column(c).Fill().Background(t.Background).Children(func() {
-		ui.Row(c).Padding(12, 10).Gap(6).AlignItems(ui.Center).Children(func() {
-			ui.Text(c, "AdaKaki").Bold().FontSize(15).Grow(1)
-			iconButton(c, icoHistory, "审计日志", "查看 MCP 调用审计", a.openAudit)
-			iconButton(c, icoSettings, "设置", "打开设置", a.openSettings)
-			ui.Button(c, "").Label("新建会话").Children(func() {
-				ui.Icon(c, icoPlus).FontSize(14)
-				ui.Text(c, "新建")
-			}).Menu(a.newSessionMenu)
-		})
-		if ui.Sidebar(c, &a.activeID, func() {
-			ui.SidebarSection(c, "本地 Shell", nil, func() {
-				for _, s := range a.sessionsOf(engine.Local) {
-					item := ui.SidebarItem(c.Key(s.ID()), s.ID(), icoTerminal, s.Title())
-					item.Children(func() { a.stateMark(c, s) })
-					item.ContextMenu(func(m *ui.Menu) { a.sessionMenu(m, s) })
-				}
-			})
-			ui.SidebarSection(c, "SSH", nil, func() {
-				for _, s := range a.sessionsOf(engine.SSH) {
-					item := ui.SidebarItem(c.Key(s.ID()), s.ID(), icoGlobe, s.Title())
-					item.Children(func() { a.stateMark(c, s) })
-					item.ContextMenu(func(m *ui.Menu) { a.sessionMenu(m, s) })
-				}
-			})
-		}).Fill().Changed() {
-			a.viewSession(a.activeID)
-		}
-	})
-}
-
 // newSessionMenu is the 新建 button's menu, shortcuts annotated.
 func (a *app) newSessionMenu(m *ui.Menu) {
 	if m.Item("新建终端").Shortcut(ui.Cmd|ui.Shift, ui.KeyT).Chosen() {
@@ -399,38 +487,22 @@ func (a *app) sessionMenu(m *ui.Menu, s *engine.Session) {
 	}
 }
 
-// stateMark is the little dot that tells a session's state; the bot
-// stands for a session an AI agent is operating.
+// stateMark is the little dot that tells a session's state, in the
+// theme's own colors; the bot stands for a session an AI agent operates.
 func (a *app) stateMark(c *ui.Context, s *engine.Session) {
 	if on, _ := s.AgentLock(); on {
 		ui.Icon(c, icoBot).FontSize(13)
 		return
 	}
-	color := colorRunning
+	t := c.Theme()
+	color := t.Success
 	switch s.State() {
 	case engine.Exited:
-		color = colorExited
+		color = t.TextMuted
 	case engine.Starting:
-		color = colorStart
+		color = t.Warning
 	}
 	ui.Icon(c, icoDot).FontSize(9).TextColor(color)
-}
-
-// contentView is the right pane: the tab bar over the find bar (when it
-// is open) and the split panes of terminals.
-func (a *app) contentView(c *ui.Context) {
-	t := c.Theme()
-	ui.Column(c).Fill().Background(t.Background).Children(func() {
-		a.tabBar(c)
-		if a.findOpen {
-			a.findBar(c)
-		}
-		ui.Divider(c)
-		a.terminalArea(c)
-	})
-	if a.findOpen && c.Shortcut(0, ui.KeyEscape) {
-		a.closeFind()
-	}
 }
 
 // findBar is the terminal search bar: text, counter, prev and next.
@@ -464,41 +536,51 @@ func (a *app) findBar(c *ui.Context) {
 	})
 }
 
-// tabBar is one tab per session, the active one highlighted.
+// tabBar is the strip of session tabs, with a quick 新建 at its end.
 func (a *app) tabBar(c *ui.Context) {
 	t := c.Theme()
-	ui.Row(c).Gap(2).Padding(6, 8).AlignItems(ui.Center).Children(func() {
+	ui.Row(c).Background(t.Surface).Padding(4, 6).Gap(2).AlignItems(ui.Center).Children(func() {
 		sessions := a.mgr.List()
 		if len(sessions) == 0 {
 			ui.Text(c, "无会话").TextColor(t.TextMuted)
-			return
 		}
 		for _, s := range sessions {
 			a.tab(c, s)
 		}
+		ui.Spacer(c)
+		ui.Button(c, "").Label("新建会话").Tooltip("Ctrl+Shift+T").Padding(4, 7).
+			Children(func() { ui.Icon(c, icoPlus).FontSize(14) }).Menu(a.newSessionMenu)
 	})
 }
 
-// tab is one session's tab: a title button beside a close button, with
-// the session's menu on a right click.
+// tab is one session's tab: a title button beside a close button that
+// shows itself when the pointer is over the tab; the session's menu on a
+// right click.
 func (a *app) tab(c *ui.Context, s *engine.Session) {
 	t := c.Theme()
 	active := s.ID() == a.activeID
-	bg := t.Background
-	if active {
-		bg = t.Surface
-	}
-	ui.Row(c.Key(s.ID())).Gap(2).AlignItems(ui.Center).Children(func() {
-		if ui.Button(c, "").Padding(6, 10).Radius(6).Background(bg).Children(func() {
+	ui.Row(c.Key(s.ID())).Gap(1).AlignItems(ui.Center).Children(func() {
+		var hovered bool
+		bg := ui.Color{}
+		if active {
+			bg = t.Background
+		}
+		b := ui.Button(c, "").Padding(6, 10).Radius(6).Background(bg).Children(func() {
 			ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
 				a.stateMark(c, s)
 				ui.Text(c, s.Title()).MaxWidth(170).Ellipsis("…")
 			})
-		}).Clicked() {
+		})
+		hovered = b.Hovered()
+		if b.Clicked() {
 			a.viewSession(s.ID())
 		}
+		visible := active || hovered
 		if ui.Button(c, "").Label("关闭会话").Padding(3, 5).Children(func() {
-			ui.Icon(c, icoX).FontSize(13)
+			x := ui.Icon(c, icoX).FontSize(13)
+			if !visible {
+				x = x.TextColor(ui.RGBA(0, 0, 0, 0))
+			}
 		}).Clicked() {
 			a.closeSession(s)
 		}
@@ -509,10 +591,17 @@ func (a *app) tab(c *ui.Context, s *engine.Session) {
 func (a *app) buildPaneTree(c *ui.Context, n *paneNode) {
 	t := c.Theme()
 	if n == nil {
-		ui.Column(c).Fill().Center().Gap(10).Children(func() {
+		ui.Column(c).Fill().Center().Gap(12).Children(func() {
 			ui.Icon(c, icoTerminal).FontSize(30).TextColor(t.TextMuted)
-			ui.Text(c, "从左上角「新建」开始").TextColor(t.TextMuted)
-			ui.Text(c, "支持 cmd / PowerShell / Git Bash / SSH，右键终端可分屏").TextColor(t.TextMuted).FontSize(12)
+			ui.Text(c, "从标签栏的「新建」开始")
+			ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
+				kbd(c, "Ctrl+Shift+T")
+				ui.Text(c, "新建终端").TextColor(t.TextMuted).FontSize(12)
+				ui.Text(c, "·").TextColor(t.TextMuted).FontSize(12)
+				kbd(c, "Ctrl+F")
+				ui.Text(c, "搜索").TextColor(t.TextMuted).FontSize(12)
+			})
+			ui.Text(c, "右键标签或终端可分屏").TextColor(t.TextMuted).FontSize(12)
 		})
 		return
 	}
@@ -568,30 +657,37 @@ func (a *app) paneView(c *ui.Context, n *paneNode) {
 	box.ContextMenu(func(m *ui.Menu) { a.paneMenu(m, n) })
 }
 
-// agentMask covers a pane an AI agent is operating: translucent, so the
-// human watches live, but it takes the pointer and the keyboard, so
-// nothing typed reaches the session. AutoFocus pulls the focus away from
-// the terminal the moment the mask appears.
+// agentMask covers a pane an AI agent is operating: a translucent veil
+// with a card, so the human watches live while nothing typed reaches the
+// session. AutoFocus pulls the focus away from the terminal the moment
+// the mask appears.
 func (a *app) agentMask(c *ui.Context, tool string) {
 	t := c.Theme()
 	ui.Box(c).Absolute().Top(0).Bottom(0).Left(0).Right(0).
 		Background(colorMask).AutoFocus().
 		Children(func() {
-			ui.Column(c).Fill().Center().Gap(10).Children(func() {
-				ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
-					ui.Icon(c, icoBot).FontSize(20)
-					ui.Text(c, "AI Agent 操作中").Bold().FontSize(16)
+			ui.Column(c).Fill().Center().Children(func() {
+				ui.Box(c).Width(380).Padding(20, 24).Radius(10).
+					Background(t.Surface).Border(1, t.Border).Children(func() {
+					ui.Column(c).Center().Gap(12).Children(func() {
+						ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
+							ui.Icon(c, icoBot).FontSize(22).TextColor(t.Accent)
+							ui.Text(c, "AI Agent 操作中").Bold().FontSize(16)
+						})
+						ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+							ui.Spinner(c)
+							ui.Text(c, "正在运行 "+tool).FontSize(12)
+						})
+						ui.Text(c, "输入已锁定，结束后自动恢复").FontSize(12).TextColor(t.TextMuted)
+					})
 				})
-				ui.Spinner(c).Label("Agent 正在运行 " + tool)
-				ui.Text(c, "正在运行 "+tool+"，输入已锁定，结束后自动恢复").TextColor(t.TextMuted).FontSize(12)
 			})
 		})
 }
 
 // paneMenu is a pane's right-click menu. A right click focuses the pane
-// it landed on, so the actions apply to what the user pointed at, not to
-// whichever pane had the focus before; destructive items refuse while an
-// agent operates their session.
+// it landed on, so the actions apply to what the user pointed at;
+// destructive items refuse while an agent operates their session.
 func (a *app) paneMenu(m *ui.Menu, n *paneNode) {
 	if n.sessionID != "" {
 		a.focus = n
@@ -624,8 +720,8 @@ func (a *app) terminalArea(c *ui.Context) {
 	a.buildPaneTree(c, a.splitRoot)
 }
 
-// auditView is the audit window's content: the last calls, refreshed
-// every couple of seconds while the window shows.
+// auditView is the audit window: its own title strip over the entries,
+// refreshed every couple of seconds while the window shows.
 func (a *app) auditView(c *ui.Context) {
 	t := c.Theme()
 	var entries []audit.Entry
@@ -635,10 +731,8 @@ func (a *app) auditView(c *ui.Context) {
 		total = a.auditLog.Written()
 	}
 	ui.Column(c).Fill().Background(t.Background).Children(func() {
-		ui.Row(c).Padding(10, 8).Gap(8).AlignItems(ui.Center).Children(func() {
-			ui.Icon(c, icoHistory)
-			ui.Text(c, "MCP 审计日志").Bold().FontSize(15).Grow(1)
-			ui.Text(c, fmt.Sprintf("累计 %d 条 · 显示最近 %d 条", total, len(entries))).TextColor(t.TextMuted)
+		titleStrip(c, "MCP 审计日志", func() {
+			ui.Text(c, fmt.Sprintf("累计 %d 条 · 显示最近 %d 条", total, len(entries))).TextColor(t.TextMuted).FontSize(12)
 		})
 		ui.Divider(c)
 		if len(entries) == 0 {
@@ -664,14 +758,14 @@ func (a *app) auditView(c *ui.Context) {
 func (a *app) auditRow(c *ui.Context, e audit.Entry) {
 	t := c.Theme()
 	when := e.Time.Format("01-02 15:04:05")
-	ico, color := icoCheck, colorRunning
+	ico, color := icoCheck, t.Success
 	switch {
 	case e.Guard != "" && strings.HasPrefix(e.Guard, "denied"):
-		ico, color = icoAlert, colorStart
+		ico, color = icoAlert, t.Warning
 	case !e.OK:
 		ico, color = icoCircleX, t.Danger
 	case e.Guard == "confirmed":
-		ico, color = icoCheck, colorStart
+		ico, color = icoCheck, t.Warning
 	}
 	ui.Row(c.Key(fmt.Sprintf("audit-%d-%s", e.Time.UnixNano(), e.Tool))).
 		Gap(8).Padding(4, 6).Radius(4).AlignItems(ui.Center).
@@ -718,16 +812,20 @@ func firstLine(s string) string {
 	return s
 }
 
-// popoutView is a synchronized popout window's content: the session's
-// mirror terminal, filling the window.
-func (a *app) popoutView(c *ui.Context, mv *engine.MirrorView) {
-	if term := mv.Terminal(); term != nil {
-		terminal.View(c, term).Fill().AutoFocus()
-		return
-	}
+// popoutView is a synchronized popout window: its own title strip over
+// the session's mirror terminal.
+func (a *app) popoutView(c *ui.Context, mv *engine.MirrorView, title string) {
 	t := c.Theme()
-	ui.Column(c).Fill().Center().Children(func() {
-		ui.Text(c, "会话已结束").TextColor(t.TextMuted)
+	ui.Column(c).Fill().Background(t.Background).Children(func() {
+		titleStrip(c, title+" — 同屏", nil)
+		ui.Divider(c)
+		if term := mv.Terminal(); term != nil {
+			terminal.View(c, term).Fill().AutoFocus()
+			return
+		}
+		ui.Column(c).Fill().Center().Children(func() {
+			ui.Text(c, "会话已结束").TextColor(t.TextMuted)
+		})
 	})
 }
 

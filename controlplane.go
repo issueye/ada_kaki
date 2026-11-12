@@ -71,6 +71,7 @@ func (a *app) startControlPlane() {
 	})
 	mux := a.mcpMux(server, token)
 
+	a.mcpUp = true
 	go func() {
 		log.Printf("mcp http: serving on http://%s/mcp", ln.Addr())
 		if err := http.Serve(ln, mux); err != nil {

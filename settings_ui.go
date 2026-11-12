@@ -11,9 +11,15 @@ import (
 	"github.com/egoist/mygo/ui"
 )
 
-// settingsView lays the window out: nav | content.
+// settingsView lays the window out: its own title strip, then nav |
+// content.
 func (a *app) settingsView(c *ui.Context) {
-	ui.Split(c, &a.settingsNavW, func() { a.settingsNav(c) }, func() { a.settingsContent(c) }).Fill()
+	t := c.Theme()
+	ui.Column(c).Fill().Background(t.Background).Children(func() {
+		titleStrip(c, "设置", nil)
+		ui.Divider(c)
+		ui.Split(c, &a.settingsNavW, func() { a.settingsNav(c) }, func() { a.settingsContent(c) }).Fill()
+	})
 }
 
 // settingsNav is the category list on the left.

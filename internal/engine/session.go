@@ -5,8 +5,11 @@ package engine
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
 	"sync"
 
+	"adakaki/internal/procjob"
 	"adakaki/internal/shells"
 	"github.com/egoist/mygo/plugins/terminal"
 )
@@ -63,6 +66,8 @@ type Session struct {
 	exitCode int
 	exitErr  string
 	term     *terminal.Terminal
+	rootPID  int    // a local shell's process, for a force close
+	exeBase  string // its executable's name, to ignore a bare path title
 	agentMux sync.Mutex
 	agent    bool   // an AI agent tool call is operating this session
 	agentDo  string // the tool now running
@@ -82,6 +87,13 @@ func (s *Session) ID() string       { return s.id }
 func (s *Session) Kind() Kind       { return s.kind }
 func (s *Session) Shell() shells.ID { return s.shellID }
 func (s *Session) Profile() string  { return s.profile }
+
+// Cwd returns where a local session started, "" for an SSH one.
+func (s *Session) Cwd() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.cwd
+}
 
 // Title returns the session's title: the shell's display name until the
 // program sets its own (OSC 0/2).
@@ -273,6 +285,24 @@ func (s *Session) Close() {
 	s.mgr.remove(s.id)
 }
 
+// ForceClose ends a local session's whole process tree at once: its shell,
+// the command running in it, and whatever that started, without the hangup
+// and the wait Close allows. An SSH session, which has no local tree, is
+// closed by its connection as Close does.
+func (s *Session) ForceClose() error {
+	s.mu.Lock()
+	pid := s.rootPID
+	s.mu.Unlock()
+	if pid != 0 {
+		if err := procjob.KillTree(pid); err != nil {
+			s.mgr.remove(s.id)
+			return err
+		}
+	}
+	s.mgr.remove(s.id)
+	return nil
+}
+
 // onExit is the terminal's OnExit callback.
 func (s *Session) onExit(code int) {
 	s.mu.Lock()
@@ -321,6 +351,7 @@ func (s *Session) Reconnect() error {
 
 	var term *terminal.Terminal
 	var title string
+	pid := 0
 	switch s.kind {
 	case SSH:
 		conn, t, err := s.source(s)
@@ -338,7 +369,12 @@ func (s *Session) Reconnect() error {
 		if err != nil {
 			return fail(err)
 		}
-		term, err = terminal.New(s.mgr.localTerminalOpts(s, cmd, dir))
+		if len(cmd) > 0 {
+			s.mu.Lock()
+			s.exeBase = filepath.Base(cmd[0])
+			s.mu.Unlock()
+		}
+		term, pid, err = s.mgr.launchLocal(s, cmd, dir, nil)
 		if err != nil {
 			return fail(fmt.Errorf("engine: reconnecting %s: %w", s.id, err))
 		}
@@ -347,7 +383,10 @@ func (s *Session) Reconnect() error {
 	s.mu.Lock()
 	old := s.term
 	s.term = term
-	s.state = Running
+	s.rootPID = pid
+	if s.state == Starting {
+		s.state = Running
+	}
 	s.reconnecting = false
 	s.exitCode = 0
 	s.exitErr = ""
@@ -362,9 +401,18 @@ func (s *Session) Reconnect() error {
 	return nil
 }
 
-// setTitleFrom is the terminal's OnTitle callback.
+// setTitleFrom is the terminal's OnTitle callback. A shell reports its
+// executable's path as its first title; that is not a name worth showing,
+// so the shell's display name stays until the program sets a real title.
 func (s *Session) setTitleFrom(title string) {
-	if title != "" {
-		s.setTitle(title)
+	if title == "" {
+		return
 	}
+	s.mu.Lock()
+	exe := s.exeBase
+	s.mu.Unlock()
+	if exe != "" && filepath.IsAbs(title) && strings.EqualFold(filepath.Base(title), exe) {
+		return
+	}
+	s.setTitle(title)
 }

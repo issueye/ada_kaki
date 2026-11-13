@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sync"
 	"sync/atomic"
+	"time"
 
+	"adakaki/internal/procjob"
 	"adakaki/internal/shells"
 	"github.com/egoist/mygo/plugins/terminal"
 )
@@ -17,6 +20,7 @@ type Manager struct {
 	sessions map[string]*Session
 	order    []string // creation order, for List
 	seq      atomic.Int64
+	launchMu sync.Mutex      // one shell starts at a time, to learn its PID
 	font     terminal.Font   // what new sessions start with
 	theme    *terminal.Theme // the color scheme; nil follows the window
 	dark     *terminal.Theme // its dark-window variant, with theme
@@ -112,10 +116,15 @@ func (m *Manager) CreateLocal(id shells.ID, cwd, custom string) (*Session, error
 		return nil, err
 	}
 
+	exeBase := ""
+	if len(cmd) > 0 {
+		exeBase = filepath.Base(cmd[0])
+	}
 	s := &Session{
 		kind:    Local,
 		shellID: id,
 		state:   Starting,
+		exeBase: exeBase,
 		cwd:     dir,
 		custom:  custom,
 		mgr:     m,
@@ -125,16 +134,23 @@ func (m *Manager) CreateLocal(id shells.ID, cwd, custom string) (*Session, error
 	s.mu.Unlock()
 	s.id = fmt.Sprintf("local_%04d", m.seq.Add(1))
 
-	term, err := terminal.New(m.localTerminalOpts(s, cmd, dir))
+	_, pid, err := m.launchLocal(s, cmd, dir, func(t *terminal.Terminal) {
+		// Register the session before waiting for its PID: startup
+		// events (a title, a one-shot's exit) then come after Created.
+		s.mu.Lock()
+		s.term = t
+		if s.state != Exited {
+			s.state = Running
+		}
+		s.mu.Unlock()
+		m.put(s)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("engine: starting %s: %w", name, err)
 	}
 	s.mu.Lock()
-	s.term = term
-	s.state = Running
+	s.rootPID = pid
 	s.mu.Unlock()
-
-	m.put(s)
 	return s, nil
 }
 
@@ -164,6 +180,43 @@ func (m *Manager) localCommand(id shells.ID, cwd, custom string) (cmd []string, 
 		return nil, "", "", fmt.Errorf("engine: working directory %s does not exist", cwd)
 	}
 	return cmd, name, cwd, nil
+}
+
+// launchLocal starts a local terminal and learns the PID of its shell:
+// the shell is a direct child of this app, so a snapshot before and after
+// the start names it. The snapshot waits a moment for the terminal's
+// asynchronous launch. One start at a time keeps the diff unambiguous.
+func (m *Manager) launchLocal(s *Session, cmd []string, dir string,
+	register func(*terminal.Terminal)) (*terminal.Terminal, int, error) {
+	m.launchMu.Lock()
+	defer m.launchMu.Unlock()
+
+	before, err := procjob.DirectChildren()
+	if err != nil {
+		before = nil // no diff, so no PID: force close falls back to Close
+	}
+	term, err := terminal.New(m.localTerminalOpts(s, cmd, dir))
+	if err != nil {
+		return nil, 0, err
+	}
+	if register != nil {
+		register(term)
+	}
+	if before == nil {
+		return term, 0, nil
+	}
+	exe := ""
+	if len(cmd) > 0 {
+		exe = filepath.Base(cmd[0])
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		if pid := procjob.NewChild(before, exe); pid != 0 {
+			return term, pid, nil
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	return term, 0, nil
 }
 
 // localTerminalOpts builds the terminal options for a local session: the

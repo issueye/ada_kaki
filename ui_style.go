@@ -27,6 +27,11 @@ const (
 	sidebarWidth     float32 = 260
 	sidebarRailWidth float32 = 56
 	settingsNavWidth float32 = 208
+	// paneGap is the room between panes, paneHeaderHeight the strip over
+	// each pane's terminal, and paneRadius the panes' corners.
+	paneGap          float32 = 8
+	paneHeaderHeight float32 = 34
+	paneRadius       float32 = 12
 	// sidebarMinWidth and sidebarMaxWidth bound the drag of the session
 	// column, so its rows never squeeze into a distorted shape.
 	sidebarMinWidth float32 = 200

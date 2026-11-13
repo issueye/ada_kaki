@@ -112,10 +112,23 @@ type app struct {
 	sizeText      string   // the font size input, until parsed
 	setMCPPort    string   // the MCP port input, until parsed
 
-	// the split panes of the terminal area: a binary tree of leaves, one
-	// session each, and the focused leaf, which activeID names too
+	// the split panes of the active tab: a binary tree of leaves, one
+	// session each, and the focused leaf, which activeID names too; zoom
+	// is the leaf shown over the whole area, nil for none
 	splitRoot *paneNode
 	focus     *paneNode
+	zoom      *paneNode
+
+	// tabs are workspaces: each owns a split tree, so several terminals
+	// live in one tab; activeTab is the one whose tree the fields above
+	// mirror between frames
+	tabs      []*workspace
+	activeTab *workspace
+	tabSeq    int
+
+	// pending is the pane a split waits to fill with its new session,
+	// even when the user switches to another tab meanwhile
+	pending *panePending
 
 	pendingToast string // shown by the next frame, from out-of-view errors
 }
@@ -127,13 +140,30 @@ type paneNode struct {
 	split     *splitNode
 }
 
+// workspace is one tab: its own split tree, the focused pane and the pane
+// zoomed over it. A tab may hold several terminals.
+type workspace struct {
+	id       int
+	root     *paneNode
+	focus    *paneNode
+	zoom     *paneNode
+	activeID string
+}
+
+// panePending is a split's empty pane, waiting for the session it starts.
+type panePending struct {
+	tab  *workspace
+	pane *paneNode
+}
+
 // splitNode is an interior node: two subtrees beside or above one
-// another, the first taking size DIPs until the user drags the divider.
+// another, the first taking a share of the room until the user drags the
+// divider between them.
 type splitNode struct {
 	vertical bool // true: first|second side by side
 	first    *paneNode
 	second   *paneNode
-	size     float32
+	ratio    float32 // the first's share, 0.08–0.92
 }
 
 func newLeaf(sessionID string) *paneNode { return &paneNode{sessionID: sessionID} }
@@ -328,28 +358,6 @@ func (a *app) connectSSHProfile(name string) {
 
 // ---- keyboard shortcuts ----
 
-// cycleSession moves the view to the next (or previous) session.
-func (a *app) cycleSession(step int) {
-	sessions := a.mgr.List()
-	if len(sessions) == 0 {
-		return
-	}
-	idx := -1
-	for i, s := range sessions {
-		if s.ID() == a.activeID {
-			idx = i
-			break
-		}
-	}
-	next := 0
-	if idx >= 0 {
-		next = (idx + step + len(sessions)) % len(sessions)
-	} else {
-		next = 0
-	}
-	a.viewSession(sessions[next].ID())
-}
-
 // openFind shows the find bar and searches for what it holds.
 func (a *app) openFind() {
 	a.findOpen = true
@@ -513,7 +521,7 @@ func (a *app) onEngineEvent(ev engine.Event) {
 	win.Update(func() {
 		switch ev.Kind {
 		case engine.EventCreated:
-			a.viewSession(ev.ID)
+			a.placeCreated(ev.ID)
 			a.saveRestoreList()
 		case engine.EventClosed:
 			a.saveRestoreList()
@@ -521,7 +529,11 @@ func (a *app) onEngineEvent(ev engine.Event) {
 			if leaf := a.leafByID(ev.ID); leaf != nil {
 				a.closePane(leaf, false)
 			}
-			if ev.ID == a.activeID && a.focus == nil {
+			// The last pane closed with sessions still open: show one, so
+			// the area is not left empty beside a full sidebar.
+			if a.splitRoot == nil && len(a.mgr.List()) > 0 {
+				a.activateFallback()
+			} else if ev.ID == a.activeID && a.focus == nil {
 				a.activateFallback()
 			}
 			if w := a.popouts[ev.ID]; w != nil {
@@ -548,25 +560,141 @@ func (a *app) activateFallback() {
 
 // ---- split panes ----
 
-// viewSession shows a session in the focused pane: a pane already
-// showing it just takes the focus, an empty (pending) pane takes it, and
-// otherwise the focused pane's session gives way.
-func (a *app) viewSession(id string) {
-	if leaf := a.leafByID(id); leaf != nil {
-		a.focus = leaf
-		a.activeID = id
+// saveActive writes the active tab's fields into its workspace, so a
+// switch or a frame that shows another tab keeps what the user set.
+func (a *app) saveActive() {
+	ws := a.activeTab
+	if ws == nil {
 		return
 	}
-	if a.splitRoot == nil {
-		a.splitRoot = newLeaf(id)
-		a.focus = a.splitRoot
-	} else if a.focus != nil {
-		a.focus.sessionID = id
-	} else {
-		a.splitRoot = newLeaf(id)
-		a.focus = a.splitRoot
+	ws.root, ws.focus, ws.zoom, ws.activeID = a.splitRoot, a.focus, a.zoom, a.activeID
+}
+
+// loadActive makes ws the active tab and mirrors its fields.
+func (a *app) loadActive(ws *workspace) {
+	a.activeTab = ws
+	if ws == nil {
+		a.splitRoot, a.focus, a.zoom, a.activeID = nil, nil, nil, ""
+		return
 	}
-	a.activeID = id
+	a.splitRoot, a.focus, a.zoom, a.activeID = ws.root, ws.focus, ws.zoom, ws.activeID
+}
+
+// openTab starts a new tab with id in its only pane, and activates it.
+func (a *app) openTab(id string) *workspace {
+	a.saveActive()
+	a.tabSeq++
+	ws := &workspace{id: a.tabSeq}
+	leaf := newLeaf(id)
+	ws.root, ws.focus, ws.activeID = leaf, leaf, id
+	a.tabs = append(a.tabs, ws)
+	a.loadActive(ws)
+	return ws
+}
+
+// activateTab brings a tab forward, with the session its own focus had.
+func (a *app) activateTab(ws *workspace) {
+	if ws == nil || ws == a.activeTab {
+		return
+	}
+	a.saveActive()
+	a.loadActive(ws)
+	if a.focus != nil {
+		a.activeID = a.focus.sessionID
+	}
+}
+
+// dropTab removes a workspace from the strip. When it was active, the
+// nearest other tab takes its place, or the window is left with none.
+func (a *app) dropTab(ws *workspace) {
+	idx := -1
+	for i, w := range a.tabs {
+		if w == ws {
+			idx = i
+			break
+		}
+	}
+	if idx >= 0 {
+		a.tabs = append(a.tabs[:idx], a.tabs[idx+1:]...)
+	}
+	if idx < 0 {
+		if a.activeTab == ws {
+			a.loadActive(nil)
+		}
+		return
+	}
+	if a.activeTab != ws {
+		return
+	}
+	if len(a.tabs) > 0 {
+		next := a.tabs[min(idx, len(a.tabs)-1)]
+		a.loadActive(next)
+		if a.focus == nil {
+			a.focus = a.firstLeaf(a.splitRoot)
+		}
+		if a.focus != nil {
+			a.activeID = a.focus.sessionID
+		}
+	} else {
+		a.loadActive(nil)
+	}
+}
+
+// placeCreated puts a freshly created session where the UI meant it to
+// go: the pending pane of a split, even if another tab was selected
+// meanwhile, or a tab of its own.
+func (a *app) placeCreated(id string) {
+	if p := a.pending; p != nil {
+		a.pending = nil
+		if containsPane(p.tab.root, p.pane) && p.pane.sessionID == "" {
+			if p.tab != a.activeTab {
+				a.saveActive()
+				a.loadActive(p.tab)
+			}
+			p.pane.sessionID = id
+			a.focus = p.pane
+			a.activeID = id
+			a.zoom = nil
+			a.saveActive()
+			return
+		}
+	}
+	a.viewSession(id)
+}
+
+// viewSession shows a session: the tab that already holds it comes
+// forward, a pending pane of the active tab takes a new session, and
+// anything else opens a tab of its own.
+func (a *app) viewSession(id string) {
+	for _, ws := range a.tabs {
+		if leaf := leafByID(ws.root, id); leaf != nil {
+			if ws != a.activeTab {
+				a.saveActive()
+				a.loadActive(ws)
+			}
+			if a.zoom != nil && a.zoom != leaf {
+				a.zoom = nil // the split comes back with the pane chosen
+			}
+			a.focus = leaf
+			a.activeID = id
+			a.saveActive()
+			return
+		}
+	}
+	if a.splitRoot == nil {
+		if a.activeTab == nil {
+			a.openTab(id)
+		} else {
+			leaf := newLeaf(id)
+			a.splitRoot, a.focus, a.activeID = leaf, leaf, id
+		}
+	} else if a.focus != nil && a.focus.split == nil && a.focus.sessionID == "" {
+		a.focus.sessionID = id
+		a.activeID = id
+	} else {
+		a.openTab(id)
+	}
+	a.saveActive()
 }
 
 // splitFocused turns the focused pane into a split, whose new pane takes
@@ -575,16 +703,19 @@ func (a *app) splitFocused(vertical bool) {
 	if a.focus == nil || a.focus.split != nil {
 		return
 	}
+	a.zoom = nil // a split is what the user wants to see
 	old := *a.focus
 	a.focus.split = &splitNode{
 		vertical: vertical,
 		first:    &old,
 		second:   newLeaf(""),
-		size:     400,
+		ratio:    0.5,
 	}
 	a.focus.sessionID = ""
 	a.focus = a.focus.split.second
 	a.activeID = ""
+	a.pending = &panePending{tab: a.activeTab, pane: a.focus}
+	a.saveActive()
 	a.newSession(a.defaultShellID(), "", "")
 }
 
@@ -594,6 +725,9 @@ func (a *app) splitSession(id string, vertical bool) {
 	leaf := a.leafByID(id)
 	if leaf == nil || leaf.split != nil {
 		return
+	}
+	if ws := a.tabOf(leaf); ws != nil && ws != a.activeTab {
+		a.activateTab(ws)
 	}
 	a.focus = leaf
 	a.activeID = id
@@ -615,16 +749,29 @@ func (a *app) closePane(n *paneNode, keep bool) {
 	a.removePane(n)
 }
 
-// removePane collapses a pane out of the tree and moves the focus to the
-// pane that takes its place.
+// removePane collapses a pane out of its tab's tree and moves the focus
+// to the pane that takes its place; a tab left with no pane closes.
 func (a *app) removePane(n *paneNode) {
-	if a.splitRoot == n {
-		a.splitRoot = nil
-		a.focus = nil
-		a.activeID = ""
+	ws := a.tabOf(n)
+	if ws == nil {
 		return
 	}
-	parent := a.findParent(a.splitRoot, n)
+	active := ws == a.activeTab
+	if ws.zoom == n {
+		ws.zoom = nil
+		if active {
+			a.zoom = nil
+		}
+	}
+	if ws.root == n {
+		ws.root, ws.focus, ws.activeID = nil, nil, ""
+		if active {
+			a.splitRoot, a.focus, a.zoom, a.activeID = nil, nil, nil, ""
+		}
+		a.dropTab(ws)
+		return
+	}
+	parent := a.findParent(ws.root, n)
 	if parent == nil || parent.split == nil {
 		return
 	}
@@ -633,23 +780,62 @@ func (a *app) removePane(n *paneNode) {
 		other = parent.split.second
 	}
 	*parent = *other // the sibling takes the parent's place in the tree
-	if a.focus == n || a.focus == nil {
-		a.focus = a.firstLeaf(parent)
+	if ws.focus == n || ws.focus == nil {
+		ws.focus = a.firstLeaf(parent)
 	}
-	if a.focus != nil {
-		a.activeID = a.focus.sessionID
+	if active {
+		a.splitRoot = ws.root
+		a.focus = ws.focus
+		if a.focus != nil {
+			a.activeID = a.focus.sessionID
+		} else {
+			ws.activeID = ""
+			a.activeID = ""
+		}
 	}
+	a.saveActive()
 }
 
-// leafByID finds the pane showing a session, empty panes included.
+// leafByID finds the pane showing a session, in any tab, empty panes
+// included.
 func (a *app) leafByID(id string) *paneNode {
-	if a.splitRoot == nil {
-		return nil
+	for _, ws := range a.tabs {
+		if l := leafByID(ws.root, id); l != nil {
+			return l
+		}
 	}
-	return leafByID(a.splitRoot, id)
+	return nil
+}
+
+// tabOf finds the tab that owns a pane.
+func (a *app) tabOf(n *paneNode) *workspace {
+	for _, ws := range a.tabs {
+		if containsPane(ws.root, n) {
+			return ws
+		}
+	}
+	return nil
+}
+
+// containsPane reports whether n is anywhere in the tree rooted at root.
+func containsPane(root, n *paneNode) bool {
+	if root == nil || n == nil {
+		return false
+	}
+	if root == n {
+		return true
+	}
+	s := root.split
+	if s == nil {
+		return false
+	}
+	return containsPane(s.first, n) || containsPane(s.second, n)
 }
 
 func leafByID(n *paneNode, id string) *paneNode {
+	if n == nil {
+		return nil
+	}
 	if n.split == nil {
 		if n.sessionID == id {
 			return n
@@ -711,10 +897,16 @@ func (a *app) newSession(id shells.ID, cwd, custom string) {
 	if win == nil {
 		return
 	}
+	pending := a.pending
 	go func() {
 		_, err := a.mgr.CreateLocal(id, cwd, custom)
 		if err != nil {
-			win.Update(func() { a.pendingToast = err.Error() })
+			win.Update(func() {
+				if pending != nil && a.pending == pending {
+					a.pending = nil // the split's pane stays empty
+				}
+				a.pendingToast = err.Error()
+			})
 		}
 	}()
 }
@@ -749,6 +941,28 @@ func (a *app) closeSession(s *engine.Session) {
 		w.Close()
 	}
 	s.Close()
+}
+
+// forceCloseSession ends a local shell's whole process tree at once, for
+// a program that ignores the hangup (a Java service, say) or takes too
+// long to stop. The agent's lock still protects its workspace.
+func (a *app) forceCloseSession(s *engine.Session) {
+	if s.State() == engine.Exited {
+		a.closeSession(s)
+		return
+	}
+	if on, _ := s.AgentLock(); on {
+		a.pendingToast = "该会话正被 AI Agent 操作，已阻止关闭"
+		return
+	}
+	if w := a.popouts[s.ID()]; w != nil {
+		delete(a.popouts, s.ID())
+		w.Close()
+	}
+	if err := s.ForceClose(); err != nil {
+		a.pendingToast = "强制关闭失败：" + err.Error()
+		a.refreshUI()
+	}
 }
 
 // popout opens a synchronized window for the session: a second terminal

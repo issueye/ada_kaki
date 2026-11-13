@@ -57,6 +57,26 @@ var (
 
 	icoLayout = iconSVG(`<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18"/>`)
 
+	// icoSplitRight and icoSplitDown divide a pane in two.
+	icoSplitRight = iconSVG(`<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M12 4v16"/>`)
+
+	icoSplitDown = iconSVG(`<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 12h18"/>`)
+
+	// icoZoom fills the pane with its session; icoUnzoom gives the split
+	// back its other panes.
+	icoZoom = iconSVG(`<path d="M15 3h6v6"/><path d="M9 21H3v-6"/>` +
+		`<path d="M21 3l-7 7"/><path d="M3 21l7-7"/>`)
+
+	icoUnzoom = iconSVG(`<path d="M9 3v6H3"/><path d="M15 21v-6h6"/>` +
+		`<path d="M3 9l7-7"/><path d="M21 15l-7 7"/>`)
+
+	// icoMaximize restores a maximized pane button's meaning: the split
+	// with every pane, as it was.
+	icoMaximize = iconSVG(`<path d="M8 3H5a2 2 0 0 0-2 2v3"/>` +
+		`<path d="M16 3h3a2 2 0 0 1 2 2v3"/>` +
+		`<path d="M8 21H5a2 2 0 0 1-2-2v-3"/>` +
+		`<path d="M16 21h3a2 2 0 0 0 2-2v-3"/>`)
+
 	icoCopy = iconSVG(`<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 5H6a1 1 0 0 0-1 1v9"/>`)
 
 	icoArrowRight = iconSVG(`<path d="M5 12h13"/><path d="m12.5 6.5 6 5.5-6 5.5"/>`)

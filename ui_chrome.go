@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -28,6 +30,7 @@ var icoShieldX = iconSVG(`<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.0
 func (a *app) mainView(c *ui.Context) {
 	webTheme(c)
 	c.SetMenuPresentation(ui.PopoverMenus)
+	a.saveActive() // the tab bar and body show the active workspace
 	if a.pendingToast != "" {
 		c.Toast(a.pendingToast)
 		a.pendingToast = ""
@@ -38,14 +41,17 @@ func (a *app) mainView(c *ui.Context) {
 		a.newSession(a.defaultShellID(), "", "")
 	}
 	if c.Shortcut(ui.Cmd, ui.KeyTab) {
-		a.cycleSession(1)
+		a.cycleTab(1)
 	}
 	if c.Shortcut(ui.Cmd|ui.Shift, ui.KeyTab) {
-		a.cycleSession(-1)
+		a.cycleTab(-1)
 	}
 	if c.Shortcut(ui.Cmd|ui.Shift, ui.KeyW) {
+		a.closeTab(a.activeTab)
+	}
+	if c.Shortcut(ui.Cmd|ui.Shift, ui.KeyF12) {
 		if s := a.active(); s != nil {
-			a.closeSession(s)
+			a.forceCloseSession(s)
 		}
 	}
 	if c.Shortcut(ui.Cmd|ui.Shift, ui.KeyP) {
@@ -60,44 +66,39 @@ func (a *app) mainView(c *ui.Context) {
 		a.sidebarCollapsed = !a.sidebarCollapsed
 	}
 
-	if a.sidebarCollapsed {
-		ui.Row(c).Fill().Children(func() {
-			a.sidebarRail(c)
-			// Grow into the rest of the row; contentPane's own Fill then
-			// fills this column rather than asking for the whole window.
-			ui.Column(c).Grow(1).FillHeight().Children(func() { a.contentPane(c) })
+	ui.Column(c).Fill().Children(func() {
+		a.appHeader(c)
+		// The body alone collapses: the header and footer run across the
+		// whole window, over the sidebar and the content alike.
+		ui.Box(c).FillWidth().Grow(1).Children(func() {
+			if a.sidebarCollapsed {
+				ui.Row(c).Fill().Children(func() {
+					a.sidebarRail(c)
+					ui.Column(c).Grow(1).FillHeight().Children(func() { a.contentPane(c) })
+				})
+			} else {
+				// The drag writes the width; keep it within what the rows
+				// can still lay out in step.
+				a.sidebarWidth = clampSidebarWidth(a.sidebarWidth)
+				ui.Split(c, &a.sidebarWidth,
+					func() { a.sidebarPane(c) },
+					func() { a.contentPane(c) }).Fill()
+			}
 		})
-	} else {
-		// The drag writes the width; keep it within what the rows can
-		// still lay out in step.
-		a.sidebarWidth = clampSidebarWidth(a.sidebarWidth)
-		ui.Split(c, &a.sidebarWidth,
-			func() { a.sidebarPane(c) },
-			func() { a.contentPane(c) }).Fill()
-	}
+		a.appFooter(c)
+	})
 
 	a.mainDialogs(c)
 }
 
-// sidebarPane is the left column: the app identity (dragging the window)
-// over the primary action, the session filter and the sessions, with the
-// agent's live work and the MCP endpoint along the bottom.
+// sidebarPane is the left column below the shared header: the primary
+// action, the session filter and the sessions, with the agent's live work
+// at the foot.
 func (a *app) sidebarPane(c *ui.Context) {
-	bar := c.TitleBar()
 	t := c.Theme()
 	ui.Column(c).Fill().Background(t.Surface).
 		BorderWidth(0, 1, 0, 0).BorderColor(t.Border).Children(func() {
-		ui.Row(c).Height(chromeBarHeight(c)).Padding(0, 10, 0, bar.Left+14).
-			BorderWidth(0, 0, 1, 0).BorderColor(t.Border).
-			DragWindow().AlignItems(ui.Center).Gap(8).Children(func() {
-			a.logoMark(c)
-			ui.Text(c, "AdaKaki").FontSize(13.5).FontWeight(600)
-			chip(c, "v0.2", t.TextMuted, t.Background)
-			ui.Spacer(c)
-			ghostButton(c, icoPanelLeft, "收起侧栏", "收起侧栏（Ctrl+B）",
-				func() { a.sidebarCollapsed = true })
-		})
-		ui.Column(c).Padding(8, 10, 6, 10).Gap(8).Children(func() {
+		ui.Column(c).Padding(10, 10, 6, 10).Gap(8).Children(func() {
 			hint := "Ctrl + Shift + T"
 			if a.sidebarWidth < 230 {
 				hint = "" // the chip would crowd the label
@@ -110,28 +111,17 @@ func (a *app) sidebarPane(c *ui.Context) {
 		if n, tool, target := a.agentSummary(); n > 0 {
 			a.agentCard(c, n, tool, target)
 		}
-		a.mcpFooter(c)
 	})
 }
 
-// sidebarRail is the folded sidebar: a 56 px icon column on one grid.
-// The brand mark doubles as the expand button, the new-session button is
-// the only filled control, sessions are chips with their state dot in the
-// corner, and the MCP state sits alone at the foot.
+// sidebarRail is the folded sidebar below the shared header: the
+// new-session button, the filter and one chip per session. The header's
+// brand button expands it again, and the footer carries MCP state.
 func (a *app) sidebarRail(c *ui.Context) {
 	t := c.Theme()
 	ui.Column(c).Width(sidebarRailWidth).FillHeight().Shrink(0).
 		Background(t.Surface).BorderWidth(0, 1, 0, 0).BorderColor(t.Border).
 		Children(func() {
-			// The top band is the window controls' height, so its bottom
-			// line stays level with the content header's when folded.
-			ui.Row(c).FillWidth().Height(chromeBarHeight(c)).
-				Justify(ui.Center).AlignItems(ui.Center).
-				BorderWidth(0, 0, 1, 0).BorderColor(t.Border).
-				DragWindow().Children(func() {
-				a.railBrand(c)
-			})
-
 			// All spacing lives on the containers: the folded rail has no
 			// per-item margins for the layout to lose.
 			ui.Column(c).FillWidth().Padding(10, 0, 0, 0).Gap(8).
@@ -155,42 +145,7 @@ func (a *app) sidebarRail(c *ui.Context) {
 					}
 				})
 			})
-
-			port := a.store.Settings.MCPHTTPPort
-			if port == 0 {
-				port = 8731
-			}
-			tip := fmt.Sprintf("MCP 已就绪 · 127.0.0.1:%d", port)
-			color := t.Success
-			if !a.mcpUp {
-				tip, color = "MCP 未启动", t.TextMuted
-			}
-			ui.Row(c).FillWidth().Height(statusBarHeight).
-				Justify(ui.Center).AlignItems(ui.Center).
-				BorderWidth(1, 0, 0, 0).BorderColor(t.Border).
-				Tooltip(tip).Children(func() { dot(c, color, 6) })
 		})
-}
-
-// railBrand is the folded rail's identity and its expand button: the mark
-// on a hover tile, with a tooltip naming the shortcut.
-func (a *app) railBrand(c *ui.Context) {
-	t := c.Theme()
-	b := ui.Button(c, "").Label("展开侧栏").Width(30).Height(30).Radius(9).
-		Padding(0).Shrink(0).Background(ui.Transparent).BorderWidth(0).
-		Tooltip("展开侧栏（Ctrl+B）")
-	if b.Hovered() {
-		b = b.Background(t.SurfaceHover)
-	}
-	b.Children(func() {
-		ui.Box(c).Width(24).Height(24).Radius(7).Background(t.Accent).
-			AlignItems(ui.Center).Justify(ui.Center).Shrink(0).Children(func() {
-			ui.Icon(c, icoMark).FontSize(17).TextColor(t.AccentText)
-		})
-	})
-	if b.Clicked() {
-		a.sidebarCollapsed = false
-	}
 }
 
 // railAction is one folded-sidebar action: 36×36 on the rail's grid,
@@ -449,17 +404,19 @@ func (a *app) agentCard(c *ui.Context, n int, tool, target string) {
 	})
 }
 
-// mcpFooter is the endpoint's state along the sidebar's bottom, with the
-// port one click from the clipboard.
-func (a *app) mcpFooter(c *ui.Context) {
+// appFooter is the one status strip along the bottom of the whole window:
+// the MCP endpoint and its port at left, the session count and the active
+// session in the middle, the agent and stdio at right. It stays whole as
+// the sidebar folds.
+func (a *app) appFooter(c *ui.Context) {
 	t := c.Theme()
 	port := a.store.Settings.MCPHTTPPort
 	if port == 0 {
 		port = 8731
 	}
-	ui.Row(c).FillWidth().Height(statusBarHeight).Padding(0, 12).Gap(7).
-		BorderWidth(1, 0, 0, 0).BorderColor(t.Border).
-		AlignItems(ui.Center).Children(func() {
+	ui.Row(c).FillWidth().Height(statusBarHeight).Padding(0, 12).
+		Background(t.Surface).BorderWidth(1, 0, 0, 0).BorderColor(t.Border).
+		AlignItems(ui.Center).Gap(9).Children(func() {
 		if a.mcpUp {
 			dot(c, t.Success, 5)
 			ui.Text(c, "MCP 已就绪").FontSize(10.5).TextColor(t.TextMuted)
@@ -467,7 +424,6 @@ func (a *app) mcpFooter(c *ui.Context) {
 			dot(c, t.TextMuted, 5)
 			ui.Text(c, "MCP 未启动").FontSize(10.5).TextColor(t.TextMuted)
 		}
-		ui.Spacer(c)
 		mono(c, fmt.Sprintf(":%d", port)).FontSize(9.5).TextColor(t.TextMuted)
 		if ui.Button(c, "").Label("复制端口").Padding(2).Radius(4).
 			Background(ui.Transparent).BorderWidth(0).Tooltip("复制 MCP 端口").Children(func() {
@@ -477,28 +433,63 @@ func (a *app) mcpFooter(c *ui.Context) {
 			a.pendingToast = "MCP 端口已复制"
 			a.refreshUI()
 		}
+		verticalRule(c)
+
+		n := len(a.mgr.List())
+		color := t.Success
+		if n == 0 {
+			color = t.TextMuted
+		}
+		dot(c, color, 5)
+		ui.Text(c, fmt.Sprintf("%d 个会话", n)).FontSize(10.5).TextColor(t.TextMuted)
+		if s := a.active(); s != nil {
+			ui.Text(c, "·").FontSize(10.5).TextColor(t.TextMuted.Alpha(0.5))
+			ui.Text(c, s.Title()).FontSize(10.5).TextColor(t.TextMuted).
+				MaxWidth(220).SingleLine().Ellipsis("…")
+		}
+		ui.Spacer(c)
+		if agents := a.agentBusy(); agents > 0 {
+			ui.Icon(c, icoBot).FontSize(12).TextColor(t.Warning)
+			ui.Text(c, fmt.Sprintf("Agent ×%d", agents)).FontSize(10.5).
+				FontWeight(500).TextColor(t.Warning)
+			verticalRule(c)
+		}
+		ui.Text(c, "stdio 可用").FontSize(10.5).TextColor(t.TextMuted)
 	})
 }
 
-// contentPane is the right column: the title strip (actions at the
-// window controls' left), the tab bar, the panes and the status bar.
+// contentPane is the right column below the shared header: the tab bar
+// and the terminal panes.
 func (a *app) contentPane(c *ui.Context) {
 	ui.Column(c).Fill().Background(c.Theme().Background).Children(func() {
-		a.contentHeader(c)
 		a.tabBar(c)
 		a.terminalArea(c)
-		a.statusBar(c)
 	})
 }
 
-// contentHeader is the main window's title strip: the active session's
-// context at left, the agent's presence and the window actions at right.
-func (a *app) contentHeader(c *ui.Context) {
+// appHeader is the window's one title strip: the brand and the rail's
+// collapse button at left, the active session's context in the middle,
+// the agent's presence and the window actions at right. It runs across
+// the sidebar and the content, and stays whole as the sidebar folds.
+func (a *app) appHeader(c *ui.Context) {
 	bar := c.TitleBar()
 	t := c.Theme()
-	ui.Row(c).FillWidth().Height(chromeBarHeight(c)).Padding(0, bar.Right+10, 0, 16).
+	ui.Row(c).FillWidth().Height(chromeBarHeight(c)).
+		Padding(0, bar.Right+10, 0, bar.Left+14).
 		Background(t.Surface).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).
 		DragWindow().AlignItems(ui.Center).Gap(9).Children(func() {
+		a.logoMark(c)
+		ui.Text(c, "AdaKaki").FontSize(13.5).FontWeight(600)
+		chip(c, "v0.2", t.TextMuted, t.Background)
+		if a.sidebarCollapsed {
+			ghostButton(c, icoPanelLeft, "展开侧栏", "展开侧栏（Ctrl+B）",
+				func() { a.sidebarCollapsed = false })
+		} else {
+			ghostButton(c, icoPanelLeft, "收起侧栏", "收起侧栏（Ctrl+B）",
+				func() { a.sidebarCollapsed = true })
+		}
+		verticalRule(c)
+
 		if s := a.active(); s != nil {
 			a.stateMark(c, s)
 			ui.Text(c, s.Title()).FontSize(12.5).FontWeight(500).
@@ -535,47 +526,6 @@ func (a *app) contentHeader(c *ui.Context) {
 				a.setAppearance("dark")
 			}
 		})
-	})
-}
-
-// statusBar is the one-line summary along the bottom: sessions, the
-// agent at work, and the MCP endpoints.
-func (a *app) statusBar(c *ui.Context) {
-	t := c.Theme()
-	ui.Row(c).FillWidth().Height(statusBarHeight).Padding(0, 12).Background(t.Surface).
-		BorderWidth(1, 0, 0, 0).BorderColor(t.Border).
-		AlignItems(ui.Center).Gap(9).Children(func() {
-		n := len(a.mgr.List())
-		color := t.Success
-		if n == 0 {
-			color = t.TextMuted
-		}
-		dot(c, color, 5)
-		ui.Text(c, fmt.Sprintf("%d 个会话", n)).FontSize(10.5).TextColor(t.TextMuted)
-		if s := a.active(); s != nil {
-			ui.Text(c, "·").FontSize(10.5).TextColor(t.TextMuted.Alpha(0.5))
-			ui.Text(c, s.Title()).FontSize(10.5).TextColor(t.TextMuted).
-				MaxWidth(220).SingleLine().Ellipsis("…")
-		}
-		ui.Spacer(c)
-		if agents := a.agentBusy(); agents > 0 {
-			ui.Icon(c, icoBot).FontSize(12).TextColor(t.Warning)
-			ui.Text(c, fmt.Sprintf("Agent ×%d", agents)).FontSize(10.5).
-				FontWeight(500).TextColor(t.Warning)
-			verticalRule(c)
-		}
-		port := a.store.Settings.MCPHTTPPort
-		if port == 0 {
-			port = 8731
-		}
-		if a.mcpUp {
-			dot(c, t.Success, 5)
-			mono(c, fmt.Sprintf("MCP :%d", port)).FontSize(10).TextColor(t.TextMuted)
-		} else {
-			ui.Text(c, "MCP HTTP 关").FontSize(10.5).TextColor(t.TextMuted)
-		}
-		ui.Text(c, "·").FontSize(10.5).TextColor(t.TextMuted.Alpha(0.5))
-		ui.Text(c, "stdio 可用").FontSize(10.5).TextColor(t.TextMuted)
 	})
 }
 
@@ -872,6 +822,17 @@ func (a *app) sessionMenu(m *ui.Menu, s *engine.Session) {
 	if m.Item(label).Disabled(locked).Chosen() {
 		a.closeSession(s)
 	}
+	if s.State() != engine.Exited {
+		m.Separator()
+		force := "强制关闭会话"
+		if locked {
+			force += "（Agent 操作中）"
+		}
+		if m.Item(force).Disabled(locked).Danger().
+			Shortcut(ui.Cmd|ui.Shift, ui.KeyF12).Chosen() {
+			a.forceCloseSession(s)
+		}
+	}
 }
 
 // stateMark is the little dot that tells a session's state, in the
@@ -892,14 +853,115 @@ func (a *app) stateMark(c *ui.Context, s *engine.Session) {
 	dot(c, color, 6)
 }
 
-// terminalArea shows the split panes, with the find overlay above them
-// when it is open.
+// terminalArea shows the split panes as cards over the window's paper,
+// with the find overlay above them when it is open.
 func (a *app) terminalArea(c *ui.Context) {
-	ui.Box(c).Fill().Children(func() {
-		a.buildPaneTree(c, a.splitRoot)
+	t := c.Theme()
+	ui.Box(c).Fill().Background(t.Background).Children(func() {
+		ui.Box(c).Fill().Padding(paneGap, paneGap, paneGap, paneGap).Children(func() {
+			a.paneTree(c, a.splitRoot)
+		})
 		if a.findOpen {
 			a.findOverlay(c)
 		}
+	})
+}
+
+// paneTree lays out a node of the split tree: a pane's card, or two
+// subtrees with a divider between them that drags for the share of room.
+func (a *app) paneTree(c *ui.Context, n *paneNode) {
+	if n == nil {
+		a.emptyPanes(c)
+		return
+	}
+	if a.zoom != nil {
+		// A zoomed pane takes the whole area, whatever its split.
+		a.paneCard(c, a.zoom).Fill()
+		return
+	}
+	if n.split == nil {
+		a.paneCard(c, n).Fill()
+		return
+	}
+	split := n.split
+	var box ui.Element
+	if split.vertical {
+		// side by side: first at left, second at right
+		box = ui.Row(c.Key(spKey(n)))
+	} else {
+		// one above the other
+		box = ui.Column(c.Key(spKey(n)))
+	}
+	box.Fill().MinWidth(0).MinHeight(0).AlignItems(ui.Stretch)
+	bounds := box.Bounds()
+	first, second, ratio := split.first, split.second, split.ratio
+	box.Children(func() {
+		ui.Box(c).Grow(ratio).Basis(0).MinWidth(0).MinHeight(0).Children(func() {
+			a.paneTree(c, first)
+		})
+		a.paneDivider(c, split, bounds)
+		ui.Box(c).Grow(1 - ratio).Basis(0).MinWidth(0).MinHeight(0).Children(func() {
+			a.paneTree(c, second)
+		})
+	})
+}
+
+// spKey names a split's layout node, so its bounds survive a frame.
+func spKey(n *paneNode) string {
+	if n.split == nil {
+		return "pane-none"
+	}
+	return fmt.Sprintf("split-%s-%s-%v", n.split.first.sessionID, n.split.second.sessionID, n.split.vertical)
+}
+
+// paneDivider is the gap between two panes: it drags to move the line
+// between them, and a double click splits the room evenly again.
+func (a *app) paneDivider(c *ui.Context, split *splitNode, bounds ui.Rect) {
+	t := c.Theme()
+	div := ui.Box(c).Role(ui.RoleSplitter).Label("分格分隔线").Shrink(0)
+	if split.vertical {
+		div = div.Width(paneGap).Cursor(ui.CursorResizeColumn)
+	} else {
+		div = div.Height(paneGap).Cursor(ui.CursorResizeRow)
+	}
+	if dx, dy, ok := div.Dragged(); ok {
+		total, d := bounds.W, dx
+		if !split.vertical {
+			total, d = bounds.H, dy
+		}
+		if total > 0 {
+			split.ratio = min(max(split.ratio+d/total, 0.08), 0.92)
+		}
+	}
+	if div.DoubleClicked() {
+		split.ratio = 0.5
+	}
+	if div.Hovered() || div.Dragging() || div.Pressed() {
+		div.Draw(func(p *ui.Painter, r ui.Rect) {
+			if split.vertical {
+				p.Fill(ui.Rect{X: r.X + r.W/2 - 1.5, Y: r.Y + r.H/2 - 18, W: 3, H: 36}, t.TextMuted.Alpha(0.55), 1.5)
+			} else {
+				p.Fill(ui.Rect{X: r.X + r.W/2 - 18, Y: r.Y + r.H/2 - 1.5, W: 36, H: 3}, t.TextMuted.Alpha(0.55), 1.5)
+			}
+		})
+	}
+}
+
+// emptyPanes is the area with no session at all: the mark and the way to
+// start one.
+func (a *app) emptyPanes(c *ui.Context) {
+	t := c.Theme()
+	ui.Column(c).Fill().Center().Gap(12).Children(func() {
+		ui.Icon(c, icoTerminal).FontSize(28).TextColor(t.TextMuted)
+		ui.Text(c, "从左上角「新建会话」开始").FontSize(13).TextColor(t.Text)
+		ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
+			kbd(c, "Ctrl + Shift + T")
+			ui.Text(c, "新建终端").FontSize(11.5).TextColor(t.TextMuted)
+			ui.Text(c, "·").FontSize(11.5).TextColor(t.TextMuted)
+			kbd(c, "Ctrl + F")
+			ui.Text(c, "搜索").FontSize(11.5).TextColor(t.TextMuted)
+		})
+		ui.Text(c, "右键标签或终端可分屏").FontSize(11.5).TextColor(t.TextMuted)
 	})
 }
 
@@ -944,18 +1006,19 @@ func (a *app) findOverlay(c *ui.Context) {
 	})
 }
 
-// tabBar is the strip of session tabs, with a quick 新建 at its end.
+// tabBar is the strip of workspace tabs: several terminals in split
+// panes make one tab, and a quick 新建 at its end.
 func (a *app) tabBar(c *ui.Context) {
 	t := c.Theme()
+	a.saveActive()
 	ui.Row(c).FillWidth().Height(tabBarHeight).Background(t.Surface).
 		Padding(0, 8).Gap(2).AlignItems(ui.Center).
 		BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
-		sessions := a.mgr.List()
-		if len(sessions) == 0 {
-			ui.Text(c, "无会话").FontSize(11.5).TextColor(t.TextMuted)
+		if len(a.tabs) == 0 {
+			ui.Text(c, "无标签页").FontSize(11.5).TextColor(t.TextMuted)
 		}
-		for _, s := range sessions {
-			a.tab(c, s)
+		for _, ws := range a.tabs {
+			a.workspaceTab(c, ws)
 		}
 		ui.Spacer(c)
 		add := ui.Button(c, "").Label("新建会话").Tooltip("Ctrl+Shift+T").
@@ -971,14 +1034,20 @@ func (a *app) tabBar(c *ui.Context) {
 	})
 }
 
-// tab is one session's tab: a single pill carrying the state dot, the
-// title and the close button, filled while it is the session shown; the
-// session's menu on a right click.
-func (a *app) tab(c *ui.Context, s *engine.Session) {
+// workspaceTab is one tab: a session's short title, its state dot and,
+// when the tab holds several panes, their count; the close button closes
+// every session in the tab.
+func (a *app) workspaceTab(c *ui.Context, ws *workspace) {
 	t := c.Theme()
-	active := s.ID() == a.activeID
-	pill := ui.Row(c.Key(s.ID())).Height(tabPillHeight).Padding(0, 4, 0, 6).
-		Gap(1).Radius(7, 7, 0, 0).AlignItems(ui.Center).AlignSelf(ui.End)
+	active := ws == a.activeTab
+	s := a.representativeSession(ws)
+	title := "新标签页"
+	if s != nil {
+		title = shortSessionTitle(s)
+	}
+	pill := ui.Row(c.Key(fmt.Sprintf("tab-%d", ws.id))).Height(tabPillHeight).
+		Padding(0, 4, 0, 6).Gap(1).Radius(7, 7, 0, 0).
+		AlignItems(ui.Center).AlignSelf(ui.End)
 	switch {
 	case active:
 		pill = pill.Background(t.Background).Border(1, t.Border)
@@ -988,29 +1057,32 @@ func (a *app) tab(c *ui.Context, s *engine.Session) {
 	hovered := pill.Hovered() || active
 
 	pill.Children(func() {
-		title := ui.Button(c, "").Label(s.Title()).Height(26).Padding(0, 6).
+		titleBtn := ui.Button(c, "").Label(title).Height(26).Padding(0, 6).
 			Radius(5).Background(ui.Transparent).BorderWidth(0).Shrink(0)
-		title.Children(func() {
-			ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
-				a.stateMark(c, s)
+		titleBtn.Children(func() {
+			ui.Row(c).Gap(5).AlignItems(ui.Center).Children(func() {
+				if s != nil {
+					a.stateMark(c, s)
+				}
 				color := t.TextMuted
 				if active {
 					color = t.Text
 				}
-				ui.Text(c, s.Title()).FontSize(11.5).
+				ui.Text(c, title).FontSize(11.5).
 					FontWeight(weightOf(active, 500, 400)).
-					TextColor(color).MaxWidth(170).SingleLine().Ellipsis("…")
-				if a.paneCount(s.ID()) > 1 {
-					ui.Icon(c, icoLayout).FontSize(10).TextColor(t.TextMuted.Alpha(0.8))
+					TextColor(color).MaxWidth(96).SingleLine().Ellipsis("…")
+				if n := leafCount(ws.root); n > 1 {
+					ui.Text(c, fmt.Sprintf("×%d", n)).FontSize(9.5).
+						TextColor(t.TextMuted.Alpha(0.8))
 				}
 			})
 		})
-		title.PopoverMenu(func(m *ui.Menu) { a.sessionMenu(m, s) })
-		if title.Clicked() {
-			a.viewSession(s.ID())
+		titleBtn.PopoverMenu(func(m *ui.Menu) { a.tabMenu(m, ws) })
+		if titleBtn.Clicked() {
+			a.activateTab(ws)
 		}
 
-		closeBtn := ui.Button(c, "").Label("关闭会话").Padding(3).Radius(5).
+		closeBtn := ui.Button(c, "").Label("关闭标签页").Padding(3).Radius(5).
 			Background(ui.Transparent).BorderWidth(0).Shrink(0)
 		if closeBtn.Hovered() {
 			closeBtn = closeBtn.Background(t.SurfaceHover)
@@ -1023,105 +1095,342 @@ func (a *app) tab(c *ui.Context, s *engine.Session) {
 			ui.Icon(c, icoX).FontSize(11).TextColor(color)
 		})
 		if closeBtn.Clicked() {
-			a.closeSession(s)
+			a.closeTab(ws)
 		}
 	})
-	pill.PopoverMenu(func(m *ui.Menu) { a.sessionMenu(m, s) })
+	pill.PopoverMenu(func(m *ui.Menu) { a.tabMenu(m, ws) })
 }
 
-// paneCount counts the panes a session shows in.
-func (a *app) paneCount(id string) int {
-	n := 0
+// cycleTab moves the view to the next (or previous) tab.
+func (a *app) cycleTab(step int) {
+	if len(a.tabs) == 0 {
+		return
+	}
+	idx := 0
+	for i, ws := range a.tabs {
+		if ws == a.activeTab {
+			idx = i
+			break
+		}
+	}
+	a.activateTab(a.tabs[(idx+step+len(a.tabs))%len(a.tabs)])
+}
+
+// representativeSession is the session that names a tab: the focused
+// pane's, else the first pane with one.
+func (a *app) representativeSession(ws *workspace) *engine.Session {
+	if ws == nil {
+		return nil
+	}
+	if ws.focus != nil && ws.focus.sessionID != "" {
+		if s, ok := a.mgr.Get(ws.focus.sessionID); ok {
+			return s
+		}
+	}
+	var found *engine.Session
 	var walk func(*paneNode)
-	walk = func(p *paneNode) {
-		if p == nil {
+	walk = func(n *paneNode) {
+		if n == nil || found != nil {
 			return
 		}
-		if p.split == nil {
-			if p.sessionID == id {
-				n++
+		if n.split == nil {
+			if s, ok := a.mgr.Get(n.sessionID); ok {
+				found = s
 			}
 			return
 		}
-		walk(p.split.first)
-		walk(p.split.second)
+		walk(n.split.first)
+		walk(n.split.second)
 	}
-	walk(a.splitRoot)
-	return n
+	walk(ws.root)
+	return found
 }
 
-// buildPaneTree renders the split tree, leaves showing their sessions.
-func (a *app) buildPaneTree(c *ui.Context, n *paneNode) {
-	t := c.Theme()
-	if n == nil {
-		ui.Column(c).Fill().Center().Gap(12).Children(func() {
-			ui.Icon(c, icoTerminal).FontSize(28).TextColor(t.TextMuted)
-			ui.Text(c, "从左上角「新建会话」开始").FontSize(13).TextColor(t.Text)
-			ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
-				kbd(c, "Ctrl + Shift + T")
-				ui.Text(c, "新建终端").FontSize(11.5).TextColor(t.TextMuted)
-				ui.Text(c, "·").FontSize(11.5).TextColor(t.TextMuted)
-				kbd(c, "Ctrl + F")
-				ui.Text(c, "搜索").FontSize(11.5).TextColor(t.TextMuted)
-			})
-			ui.Text(c, "右键标签或终端可分屏").FontSize(11.5).TextColor(t.TextMuted)
-		})
-		return
+// shortSessionTitle names a tab in a few characters: a shell's display
+// name rather than its path, and at most 14 runes of a program's own
+// title.
+func shortSessionTitle(s *engine.Session) string {
+	title := strings.TrimSpace(s.Title())
+	for _, p := range []string{"管理员: ", "管理员：", "Administrator: "} {
+		title = strings.TrimPrefix(title, p)
 	}
-	if n.split != nil {
-		first := func() { a.buildPaneTree(c, n.split.first) }
-		second := func() { a.buildPaneTree(c, n.split.second) }
-		if n.split.vertical {
-			ui.Split(c, &n.split.size, first, second).Fill()
-		} else {
-			ui.SplitVertical(c, &n.split.size, first, second).Fill()
+	if s.Kind() == engine.Local {
+		switch s.Shell() {
+		case shells.Cmd:
+			title = "cmd"
+		case shells.PowerShell:
+			title = "PowerShell"
+		case shells.Pwsh:
+			title = "pwsh"
+		case shells.GitBash:
+			title = "Git Bash"
 		}
-		return
 	}
-	a.paneView(c, n)
+	if base := filepath.Base(title); strings.EqualFold(filepath.Ext(base), ".exe") {
+		title = strings.TrimSuffix(base, filepath.Ext(base))
+	}
+	if title == "" {
+		return "终端"
+	}
+	runes := []rune(title)
+	if len(runes) > 14 {
+		title = string(runes[:13]) + "…"
+	}
+	return title
 }
 
-// paneView is one leaf: the session's terminal with an accent border
-// while focused, an operation mask while an agent works it, and the
-// pane's menu on a right click.
-func (a *app) paneView(c *ui.Context, n *paneNode) {
+// leafCount counts the panes in a tab.
+func leafCount(n *paneNode) int {
+	if n == nil {
+		return 0
+	}
+	if n.split == nil {
+		return 1
+	}
+	return leafCount(n.split.first) + leafCount(n.split.second)
+}
+
+// tabSessions lists the sessions of a tab, pending panes aside.
+func (a *app) tabSessions(ws *workspace) []*engine.Session {
+	var out []*engine.Session
+	var walk func(*paneNode)
+	walk = func(n *paneNode) {
+		if n == nil {
+			return
+		}
+		if n.split == nil {
+			if s, ok := a.mgr.Get(n.sessionID); ok {
+				out = append(out, s)
+			}
+			return
+		}
+		walk(n.split.first)
+		walk(n.split.second)
+	}
+	walk(ws.root)
+	return out
+}
+
+// closeTab closes every session of a tab, refusing while an agent
+// operates one of them; the tab goes when its last pane does.
+func (a *app) closeTab(ws *workspace) {
+	if ws == nil {
+		return
+	}
+	for _, s := range a.tabSessions(ws) {
+		if on, _ := s.AgentLock(); on {
+			a.pendingToast = "标签页内有会话正被 AI Agent 操作，已阻止关闭"
+			a.refreshUI()
+			return
+		}
+	}
+	a.dropTab(ws)
+	for _, s := range a.tabSessions(ws) {
+		s.Close()
+	}
+}
+
+// tabMenu is a workspace tab's menu: a new tab, and closing this one or
+// the others.
+func (a *app) tabMenu(m *ui.Menu, ws *workspace) {
+	if m.Item("新建标签页").Shortcut(ui.Cmd|ui.Shift, ui.KeyT).Chosen() {
+		a.newSession(a.defaultShellID(), "", "")
+	}
+	m.Separator()
+	n := leafCount(ws.root)
+	if m.Item("关闭标签页").Disabled(n == 0).Chosen() {
+		a.closeTab(ws)
+	}
+	if m.Item("关闭其他标签页").Disabled(len(a.tabs) < 2).Chosen() {
+		for _, other := range append([]*workspace(nil), a.tabs...) {
+			if other != ws {
+				a.closeTab(other)
+			}
+		}
+	}
+}
+
+// paneCard is one pane: a rounded card with the session's header over its
+// terminal, brighter with a persimmon edge while it is the focused one.
+func (a *app) paneCard(c *ui.Context, n *paneNode) ui.Element {
 	t := c.Theme()
 	var session *engine.Session
 	if n.sessionID != "" {
 		session, _ = a.mgr.Get(n.sessionID)
 	}
 	focused := n == a.focus && n.sessionID != ""
-	box := ui.Box(c).Fill()
-	if focused {
-		box = box.Border(1, t.Accent.Alpha(0.6))
+
+	bg, border := t.Surface, t.Border
+	if !t.Dark {
+		bg = ui.RGBA(255, 255, 255, 1)
 	}
-	box.Children(func() {
-		if n.sessionID == "" {
-			ui.Column(c).Fill().Center().Gap(8).Children(func() {
-				ui.Spinner(c)
-				ui.Text(c, "正在启动…").FontSize(12).TextColor(t.TextMuted)
-			})
-			return
-		}
-		if session == nil || session.Terminal() == nil {
-			ui.Column(c).Fill().Center().Children(func() {
-				ui.Text(c, "会话已关闭").FontSize(12).TextColor(t.TextMuted)
-			})
-			return
-		}
-		v := terminal.View(c, session.Terminal()).Fill()
-		if focused {
-			v = v.AutoFocus()
-		}
-		if on, tool := session.AgentLock(); on {
-			a.agentMask(c, tool, session.Title())
-		}
+	if focused {
+		bg, border = paneCardFocused(c), t.Accent.Alpha(0.55)
+	}
+	card := ui.Column(c.Key("pane-"+n.sessionID)).Radius(paneRadius).Clip().
+		MinWidth(0).MinHeight(0).Background(bg).Border(1, border)
+	card.Children(func() {
+		a.paneHeader(c, n, session, focused)
+		body := ui.Box(c).Grow(1).MinHeight(0).Padding(0, 8, 8, 8)
+		body.Children(func() {
+			switch {
+			case n.sessionID == "":
+				ui.Column(c).Fill().Center().Gap(8).Children(func() {
+					ui.Spinner(c)
+					ui.Text(c, "正在启动…").FontSize(12).TextColor(t.TextMuted)
+				})
+			case session == nil || session.Terminal() == nil:
+				ui.Column(c).Fill().Center().Children(func() {
+					ui.Text(c, "会话已关闭").FontSize(12).TextColor(t.TextMuted)
+				})
+			default:
+				v := terminal.View(c, session.Terminal()).Fill()
+				if focused {
+					v = v.AutoFocus()
+				}
+				if on, tool := session.AgentLock(); on {
+					a.agentMask(c, tool, session.Title())
+				}
+			}
+		})
 	})
-	if box.Clicked() {
+	if card.Clicked() {
 		a.focus = n
 		a.activeID = n.sessionID
 	}
-	box.PopoverMenu(func(m *ui.Menu) { a.paneMenu(m, n) })
+	card.PopoverMenu(func(m *ui.Menu) { a.paneMenu(m, n) })
+	return card
+}
+
+// shortPath is a directory as a pane header shows it: the home directory
+// as ~ and the last part of a longer path.
+func shortPath(p string) string {
+	if home, err := os.UserHomeDir(); err == nil && home != "" {
+		if p == home {
+			return "~"
+		}
+		if rest, ok := strings.CutPrefix(p, home+string(filepath.Separator)); ok {
+			return "~" + string(filepath.Separator) + rest
+		}
+	}
+	return filepath.Base(p)
+}
+
+// paneCardFocused is the face of the pane with the keyboard: a touch
+// brighter than its neighbours, so the active one reads at a glance.
+func paneCardFocused(c *ui.Context) ui.Color {
+	if c.Theme().Dark {
+		return ui.RGBA(30, 33, 39, 1)
+	}
+	return ui.RGBA(255, 255, 255, 1)
+}
+
+// paneTextColor is a pane title's ink: full strength while focused, muted
+// otherwise.
+func paneTextColor(t *ui.Theme, focused bool) ui.Color {
+	if focused {
+		return t.Text
+	}
+	return t.TextMuted
+}
+
+// paneHeader is the strip over a pane's terminal: the session's state,
+// icon and title at left, its split and close buttons at right.
+func (a *app) paneHeader(c *ui.Context, n *paneNode, session *engine.Session, focused bool) {
+	t := c.Theme()
+	h := ui.Row(c).FillWidth().Height(paneHeaderHeight).Padding(0, 8, 0, 10).
+		Gap(7).AlignItems(ui.Center).MinWidth(0).Shrink(0)
+	if h.DoubleClicked() {
+		a.focus = n
+		a.toggleZoom(n)
+	}
+	if h.Clicked() {
+		a.focus = n
+		a.activeID = n.sessionID
+	}
+	h.Children(func() {
+		if session != nil {
+			a.stateMark(c, session)
+			icon := icoTerminal
+			if session.Kind() == engine.SSH {
+				icon = icoGlobe
+			}
+			ui.Icon(c, icon).FontSize(13).TextColor(t.TextMuted).Shrink(0)
+			// The name and directory give way to the buttons: a header
+			// narrows by ellipsis, never by hiding a control.
+			ui.Row(c).Grow(1).MinWidth(0).Gap(5).AlignItems(ui.Center).
+				ClipX().Children(func() {
+				title := session.Title()
+				if title == "" {
+					title = "新分格"
+				}
+				ui.Text(c, title).FontSize(12).FontWeight(weightOf(focused, 600, 500)).
+					TextColor(paneTextColor(t, focused)).
+					SingleLine().Ellipsis("…").Shrink(1).MinWidth(0)
+				if cwd := session.Cwd(); cwd != "" && session.Kind() == engine.Local {
+					ui.Text(c, "·").FontSize(11).TextColor(t.TextMuted.Alpha(0.5)).Shrink(0)
+					ui.Text(c, shortPath(cwd)).FontSize(11).TextColor(t.TextMuted).
+						SingleLine().Ellipsis("…").Shrink(1).MinWidth(0).MaxWidth(110)
+				}
+			})
+		} else {
+			ui.Icon(c, icoTerminal).FontSize(13).TextColor(t.TextMuted).Shrink(0)
+			ui.Row(c).Grow(1).MinWidth(0).ClipX().Children(func() {
+				ui.Text(c, "正在启动…").FontSize(12).TextColor(t.TextMuted).
+					SingleLine().Ellipsis("…").Shrink(1).MinWidth(0)
+			})
+		}
+		ui.Row(c).Gap(1).AlignItems(ui.Center).Shrink(0).Children(func() {
+			if session != nil {
+				if paneBtn(c, icoSplitRight, "向右分屏", "向右分屏").Clicked() {
+					a.focus = n
+					a.splitFocused(true)
+				}
+				if paneBtn(c, icoSplitDown, "向下分屏", "向下分屏").Clicked() {
+					a.focus = n
+					a.splitFocused(false)
+				}
+				zoomIcon, zoomTip := icoZoom, "放大分格"
+				if a.zoom == n {
+					zoomIcon, zoomTip = icoUnzoom, "还原分格"
+				}
+				if paneBtn(c, zoomIcon, zoomTip, zoomTip).Clicked() {
+					a.toggleZoom(n)
+				}
+			}
+			closeTip := "关闭分格"
+			if session != nil {
+				if on, _ := session.AgentLock(); on {
+					closeTip = "关闭分格（Agent 操作中）"
+				}
+			}
+			closeBtn := paneBtn(c, icoX, closeTip, closeTip)
+			if session != nil {
+				if on, _ := session.AgentLock(); on {
+					closeBtn = closeBtn.Disabled(true)
+				}
+			}
+			if closeBtn.Clicked() {
+				a.closePane(n, false)
+			}
+		})
+	})
+}
+
+// paneBtn is one of a pane header's quiet icon buttons.
+func paneBtn(c *ui.Context, svg *ui.SVG, label, tip string) ui.Element {
+	t := c.Theme()
+	b := ui.Button(c, "").Label(label).Width(26).Height(26).Padding(0).Radius(7).
+		Shrink(0).Background(ui.Transparent).BorderWidth(0)
+	color := t.TextMuted
+	if b.Hovered() {
+		b = b.Background(t.SurfaceHover)
+		color = t.Text
+	}
+	b.Tooltip(tip).Children(func() {
+		ui.Icon(c, svg).FontSize(13).TextColor(color)
+	})
+	return b
 }
 
 // agentMask covers a pane an AI agent is operating: a translucent veil
@@ -1165,6 +1474,21 @@ func (a *app) agentMask(c *ui.Context, tool, target string) {
 		})
 }
 
+// toggleZoom shows one pane over the whole area, or gives the split back:
+// the same as a double click on a pane's header.
+func (a *app) toggleZoom(n *paneNode) {
+	if a.zoom != nil {
+		a.zoom = nil
+		return
+	}
+	if n == nil || n.sessionID == "" {
+		return
+	}
+	a.zoom = n
+	a.focus = n
+	a.activeID = n.sessionID
+}
+
 // paneMenu is a pane's right-click menu. A right click focuses the pane
 // it landed on, so the actions apply to what the user pointed at;
 // destructive items refuse while an agent operates their session.
@@ -1178,6 +1502,15 @@ func (a *app) paneMenu(m *ui.Menu, n *paneNode) {
 	}
 	if m.Item("向下分屏").Chosen() {
 		a.splitFocused(false)
+	}
+	if a.zoom != nil {
+		if m.Item("还原分格").Chosen() {
+			a.zoom = nil
+		}
+	} else if n.sessionID != "" {
+		if m.Item("放大分格").Chosen() {
+			a.toggleZoom(n)
+		}
 	}
 	m.Separator()
 	label := "关闭分格"

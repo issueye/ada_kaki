@@ -10,3 +10,8 @@
 
 # Runtime state
 *.log
+
+# Local previews, scratch tests and notes
+.tmp/
+.workbuddy/
+ui_preview_tmp_test.go

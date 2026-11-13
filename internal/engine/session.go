@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/egoist/mygo/plugins/terminal"
 	"adakaki/internal/shells"
+	"github.com/egoist/mygo/plugins/terminal"
 )
 
 // Kind tells a local shell session from an SSH one.
@@ -78,8 +78,8 @@ type Session struct {
 	mgr *Manager
 }
 
-func (s *Session) ID() string   { return s.id }
-func (s *Session) Kind() Kind   { return s.kind }
+func (s *Session) ID() string       { return s.id }
+func (s *Session) Kind() Kind       { return s.kind }
 func (s *Session) Shell() shells.ID { return s.shellID }
 func (s *Session) Profile() string  { return s.profile }
 
@@ -286,11 +286,14 @@ func (s *Session) onExit(code int) {
 	s.mgr.broadcast(Event{Kind: EventExited, ID: s.id, Kind2: s.kind, Title: s.Title(), ExitCode: code})
 }
 
-// Reconnect dials the session's SSH connection again: same ID, same
-// pane, same tab — a fresh terminal over a fresh connection. Only an
-// exited SSH session reconnects.
+// Reconnect restarts an exited session in place: an SSH session dials its
+// connection again; a local session starts its shell or custom command
+// again, in the same directory. The ID, pane, tab and title stay.
 func (s *Session) Reconnect() error {
-	if s.kind != SSH || s.source == nil {
+	if s.kind != SSH && s.kind != Local {
+		return fmt.Errorf("engine: session %s cannot reconnect", s.id)
+	}
+	if s.kind == SSH && s.source == nil {
 		return fmt.Errorf("engine: session %s cannot reconnect", s.id)
 	}
 	s.mu.Lock()
@@ -307,8 +310,7 @@ func (s *Session) Reconnect() error {
 	s.mu.Unlock()
 	s.mgr.broadcast(Event{Kind: EventTitle, ID: s.id, Kind2: s.kind, Title: s.Title()})
 
-	conn, title, err := s.source(s)
-	if err != nil {
+	fail := func(err error) error {
 		s.mu.Lock()
 		s.state = Exited
 		s.reconnecting = false
@@ -316,14 +318,30 @@ func (s *Session) Reconnect() error {
 		s.mgr.broadcast(Event{Kind: EventExited, ID: s.id, Kind2: s.kind, Title: s.Title(), Err: err.Error()})
 		return err
 	}
-	term, err := terminal.New(sshTerminalOpts(conn, s, s.mgr))
-	if err != nil {
-		_ = conn.Close()
-		s.mu.Lock()
-		s.state = Exited
-		s.reconnecting = false
-		s.mu.Unlock()
-		return fmt.Errorf("engine: reconnecting %s: %w", s.id, err)
+
+	var term *terminal.Terminal
+	var title string
+	switch s.kind {
+	case SSH:
+		conn, t, err := s.source(s)
+		if err != nil {
+			return fail(err)
+		}
+		term, err = terminal.New(sshTerminalOpts(conn, s, s.mgr))
+		if err != nil {
+			_ = conn.Close()
+			return fail(fmt.Errorf("engine: reconnecting %s: %w", s.id, err))
+		}
+		title = t
+	case Local:
+		cmd, _, dir, err := s.mgr.localCommand(s.shellID, s.cwd, s.custom)
+		if err != nil {
+			return fail(err)
+		}
+		term, err = terminal.New(s.mgr.localTerminalOpts(s, cmd, dir))
+		if err != nil {
+			return fail(fmt.Errorf("engine: reconnecting %s: %w", s.id, err))
+		}
 	}
 
 	s.mu.Lock()

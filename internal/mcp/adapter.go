@@ -23,7 +23,7 @@ type AgentTracker func(sessionID, tool string) (release func())
 type EngineBackend struct {
 	mgr     *engine.Manager
 	store   *store.Config
-	tracker AgentTracker       // nil on stdio, where there is no GUI to mask
+	tracker AgentTracker        // nil on stdio, where there is no GUI to mask
 	policy  *sshc.HostKeyPolicy // nil: the headless TOFU default
 
 	mu      sync.Mutex
@@ -350,7 +350,8 @@ func (b *EngineBackend) SSHConnect(host string, port int, user, authKind, passwo
 	return toJSON(map[string]any{"id": s.ID(), "title": s.Title()})
 }
 
-// ReconnectSession redials an exited SSH session: same ID, same pane.
+// ReconnectSession restarts an exited session: same ID, same pane. An
+// SSH session dials again; a local one starts its shell or command again.
 func (b *EngineBackend) ReconnectSession(id string) (string, error) {
 	s, ok := b.mgr.Get(id)
 	if !ok {

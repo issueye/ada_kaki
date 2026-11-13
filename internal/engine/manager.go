@@ -7,10 +7,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/egoist/mygo/plugins/terminal"
 	"adakaki/internal/shells"
+	"github.com/egoist/mygo/plugins/terminal"
 )
-
 
 // Manager owns every session and broadcasts their events.
 type Manager struct {
@@ -18,9 +17,9 @@ type Manager struct {
 	sessions map[string]*Session
 	order    []string // creation order, for List
 	seq      atomic.Int64
-	font     terminal.Font    // what new sessions start with
-	theme    *terminal.Theme  // the color scheme; nil follows the window
-	dark     *terminal.Theme  // its dark-window variant, with theme
+	font     terminal.Font   // what new sessions start with
+	theme    *terminal.Theme // the color scheme; nil follows the window
+	dark     *terminal.Theme // its dark-window variant, with theme
 
 	subsMu sync.Mutex
 	subs   map[int64]func(Event)
@@ -108,36 +107,16 @@ func (m *Manager) currentFont() terminal.Font {
 // CreateLocal starts a local shell session of the shell's ID, in cwd (the
 // user's home when empty), running custom for shells.Custom.
 func (m *Manager) CreateLocal(id shells.ID, cwd, custom string) (*Session, error) {
-	var cmd []string
-	var name string
-	if id == shells.Custom {
-		cmd = shells.Launch(id, "", custom)
-		name = shells.CustomTitle(custom)
-	} else {
-		sh, ok := shells.Get(id)
-		if !ok || !sh.Found {
-			return nil, fmt.Errorf("engine: shell %s is not available", id)
-		}
-		cmd = shells.Launch(id, sh.Path, custom)
-		name = sh.Name
-	}
-	if len(cmd) == 0 {
-		return nil, fmt.Errorf("engine: no command for shell %s", id)
-	}
-	if cwd == "" {
-		home, err := os.UserHomeDir()
-		if err == nil {
-			cwd = home
-		}
-	} else if fi, err := os.Stat(cwd); err != nil || !fi.IsDir() {
-		return nil, fmt.Errorf("engine: working directory %s does not exist", cwd)
+	cmd, name, dir, err := m.localCommand(id, cwd, custom)
+	if err != nil {
+		return nil, err
 	}
 
 	s := &Session{
 		kind:    Local,
 		shellID: id,
 		state:   Starting,
-		cwd:     cwd,
+		cwd:     dir,
 		custom:  custom,
 		mgr:     m,
 	}
@@ -146,22 +125,7 @@ func (m *Manager) CreateLocal(id shells.ID, cwd, custom string) (*Session, error
 	s.mu.Unlock()
 	s.id = fmt.Sprintf("local_%04d", m.seq.Add(1))
 
-	opts := terminal.Options{
-		Command:  cmd,
-		Dir:      cwd,
-		OnTitle:  s.setTitleFrom,
-		OnExit:   s.onExit,
-		OnSearch: s.onSearchStatus,
-		// Windows Terminal's secondary click: copy the selection, or
-		// paste when there is none. The pane's own menu (split, close)
-		// lives on the tab and the sidebar.
-		RightClick: terminal.RightClickCopyOrPaste,
-	}
-	if f := m.currentFont(); f.Family != "" || f.Size > 0 {
-		opts.Font = f
-	}
-	opts.Theme = m.currentTheme()
-	term, err := terminal.New(opts)
+	term, err := terminal.New(m.localTerminalOpts(s, cmd, dir))
 	if err != nil {
 		return nil, fmt.Errorf("engine: starting %s: %w", name, err)
 	}
@@ -172,6 +136,55 @@ func (m *Manager) CreateLocal(id shells.ID, cwd, custom string) (*Session, error
 
 	m.put(s)
 	return s, nil
+}
+
+// localCommand resolves what a local session runs, where it starts and
+// its initial title, checking the shell and the directory exist.
+func (m *Manager) localCommand(id shells.ID, cwd, custom string) (cmd []string, name, dir string, err error) {
+	if id == shells.Custom {
+		cmd = shells.Launch(id, "", custom)
+		name = shells.CustomTitle(custom)
+	} else {
+		sh, ok := shells.Get(id)
+		if !ok || !sh.Found {
+			return nil, "", "", fmt.Errorf("engine: shell %s is not available", id)
+		}
+		cmd = shells.Launch(id, sh.Path, custom)
+		name = sh.Name
+	}
+	if len(cmd) == 0 {
+		return nil, "", "", fmt.Errorf("engine: no command for shell %s", id)
+	}
+	if cwd == "" {
+		home, herr := os.UserHomeDir()
+		if herr == nil {
+			cwd = home
+		}
+	} else if fi, serr := os.Stat(cwd); serr != nil || !fi.IsDir() {
+		return nil, "", "", fmt.Errorf("engine: working directory %s does not exist", cwd)
+	}
+	return cmd, name, cwd, nil
+}
+
+// localTerminalOpts builds the terminal options for a local session: the
+// program with its capture hooks, and the current font and theme.
+func (m *Manager) localTerminalOpts(s *Session, cmd []string, dir string) terminal.Options {
+	opts := terminal.Options{
+		Command:  cmd,
+		Dir:      dir,
+		OnTitle:  s.setTitleFrom,
+		OnExit:   s.onExit,
+		OnSearch: s.onSearchStatus,
+		// Windows Terminal's secondary click: copy the selection, or
+		// paste when there is none. The pane's own menu (split, close)
+		// lives on the tab and the sidebar.
+		RightClick: terminal.RightClickContextMenu,
+	}
+	if f := m.currentFont(); f.Family != "" || f.Size > 0 {
+		opts.Font = f
+	}
+	opts.Theme = m.currentTheme()
+	return opts
 }
 
 // CreateSSH is the SSH entry point: source dials the connection (the
@@ -215,10 +228,10 @@ func (m *Manager) CreateSSH(profile string, source SSHSource) (*Session, error) 
 // connection: its end closes the connection and marks the session.
 func sshTerminalOpts(conn Conn, s *Session, m *Manager) terminal.Options {
 	opts := terminal.Options{
-		Conn:     conn,
-		OnTitle:  s.setTitleFrom,
-		OnSearch: s.onSearchStatus,
-		RightClick: terminal.RightClickCopyOrPaste,
+		Conn:       conn,
+		OnTitle:    s.setTitleFrom,
+		OnSearch:   s.onSearchStatus,
+		RightClick: terminal.RightClickContextMenu,
 		OnExit: func(code int) {
 			_ = conn.Close()
 			s.onExit(code)

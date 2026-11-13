@@ -3,10 +3,13 @@ package main
 import (
 	"fmt"
 	"log"
+	"runtime"
+	"time"
 
 	"adakaki/internal/audit"
 	"adakaki/internal/engine"
 	"adakaki/internal/guard"
+	"adakaki/internal/procjob"
 	"adakaki/internal/shells"
 	"adakaki/internal/sshc"
 	"adakaki/internal/store"
@@ -23,8 +26,9 @@ type app struct {
 
 	win *mygo.Window // the main window
 
-	sidebarWidth float32
-	activeID     string // the session the main window shows
+	sidebarWidth     float32
+	sidebarCollapsed bool   // the session column folded away
+	activeID         string // the session the main window shows
 
 	popouts map[string]*mygo.Window // session ID → popped-out window
 
@@ -34,6 +38,7 @@ type app struct {
 	// dialog state, for ui.Modal
 	showQuit   bool
 	quitArmed  bool
+	quitting   bool // the app is closing all of its windows
 	showCustom bool
 	customCmd  string
 
@@ -72,12 +77,31 @@ type app struct {
 	// the audit viewer window
 	auditWin *mygo.Window
 
+	// the notification area icon, or nil when the system offers none,
+	// and its drawn menu while that shows; trayClosed damps a right click
+	// that closed the menu as it deactivated it
+	tray       *mygo.Tray
+	trayMenu   *mygo.Window
+	trayClosed time.Time
+
 	// control plane state, for the status bar
 	mcpUp bool
 
 	// the find bar over the terminal area
 	findOpen bool
 	findText string
+
+	// the sidebar's session filter
+	filter string
+
+	// the audit window: the chosen result filter, the search text and the
+	// selected call
+	auditFilter string // "" or "all" | "ok" | "error" | "denied"
+	auditQuery  string
+	auditSel    string
+
+	// fontFamilies caches the monospaced families the font setting offers.
+	fontFamilies []ui.FontFamily
 
 	// the settings window: a nav of categories, the content beside it
 	settingsWin   *mygo.Window
@@ -132,14 +156,14 @@ func newApp() *app {
 	return &app{
 		mgr:           engine.NewManager(),
 		shells:        shells.Detect(),
-		sidebarWidth:  230,
+		sidebarWidth:  260,
 		popouts:       map[string]*mygo.Window{},
 		store:         cfg,
 		hostKeys:      keys,
 		auditLog:      auditLog,
 		ghosttyThemes: terminal.GhosttyThemes(),
 		settingsCat:   "外观",
-		settingsNavW:  170,
+		settingsNavW:  208,
 		sizeText:      sizeTextFor(cfg.Settings.FontSize),
 		setMCPPort:    portTextFor(cfg.Settings.MCPHTTPPort),
 		guard: guard.FromSettings(cfg.Settings.GuardDisabled, cfg.Settings.GuardHeadless,
@@ -198,14 +222,15 @@ func (a *app) openAudit() {
 		return
 	}
 	a.auditWin = mygo.NewWindow(mygo.WindowOptions{
-		Title:  "MCP 审计日志",
+		Title:         "MCP 审计日志",
 		TitleBarStyle: mygo.TitleBarHidden,
-		Width:  860,
-		Height: 560,
+		Width:         1100,
+		Height:        720,
 		Content: ui.View(func(c *ui.Context) {
 			a.auditView(c)
 		}),
 	})
+	iconWindow(a.auditWin)
 	a.auditWin.OnClosed(func() { a.auditWin = nil })
 }
 
@@ -424,25 +449,43 @@ func (a *app) answerHostKey(ok bool) {
 }
 
 func runGUI() {
+	// Every shell and program this app starts belongs to the app's job:
+	// the system ends them when the app does.
+	if err := procjob.Guard(); err != nil {
+		log.Printf("process guard: %v", err)
+	}
+	registerBundledFonts()
 	a := newApp()
+	// The app's own text is Chinese; the framework's menus and dialogs
+	// follow it until P23 adds an interface language setting.
+	registerLocales()
+	mygo.App.SetLocale("zh-CN")
+	a.applyAppearance()
 	a.mgr.Subscribe(a.onEngineEvent)
 	mygo.App.OnBeforeQuit(func(e *mygo.QuitEvent) {
+		a.quitting = true
 		a.mgr.CloseAll()
 	})
 	mygo.App.WhenReady(func() {
 		a.applyFont()
 		a.applyTheme()
 		a.startControlPlane()
-		a.restoreSessions()
 		a.win = mygo.NewWindow(mygo.WindowOptions{
-			Title:     "AdaKaki 控制台",
-			Width:     1180,
-			Height:    740,
-			MinWidth:  820,
-			MinHeight: 520,
+			Title:         "AdaKaki 控制台",
+			Width:         1240,
+			Height:        800,
+			MinWidth:      900,
+			MinHeight:     560,
 			TitleBarStyle: mygo.TitleBarHidden,
-			Content:   ui.View(a.mainView),
+			Content:       ui.View(a.mainView),
 		})
+		iconWindow(a.win)
+		if runtime.GOOS == "darwin" {
+			if err := mygo.App.Dock.SetIcon(appIconPNG); err != nil {
+				log.Printf("dock icon: %v", err)
+			}
+		}
+		a.setupTray()
 		a.win.OnClose(func(e *mygo.CloseEvent) {
 			// Ask once while sessions run; the quit dialog's button
 			// closes again with quitArmed, and the app quits.
@@ -451,6 +494,9 @@ func runGUI() {
 				a.win.Update(func() { a.showQuit = true })
 			}
 		})
+		// Restore once the window exists: newSession refreshes it, and
+		// the shell sessions open in the background.
+		a.restoreSessions()
 	})
 	if err := mygo.App.Run(); err != nil {
 		log.Fatal(err)
@@ -719,14 +765,15 @@ func (a *app) popout(s *engine.Session) {
 		return
 	}
 	w := mygo.NewWindow(mygo.WindowOptions{
-		Title:  s.Title() + " — 同屏",
+		Title:         s.Title() + " — 同屏",
 		TitleBarStyle: mygo.TitleBarHidden,
-		Width:  940,
-		Height: 600,
+		Width:         940,
+		Height:        600,
 		Content: ui.View(func(c *ui.Context) {
 			a.popoutView(c, mv, s.Title())
 		}),
 	})
+	iconWindow(w)
 	a.popouts[s.ID()] = w
 	w.OnClosed(func() {
 		mv.Close()
@@ -744,8 +791,9 @@ func (a *app) recall(s *engine.Session) {
 	}
 }
 
-// reconnect redials an exited SSH session in place: the pane, the tab
-// and the sidebar entry all stay where they are.
+// reconnect restarts an exited session in place: an SSH session dials
+// again, a local one starts its shell or command again; the pane, the
+// tab and the sidebar entry all stay where they are.
 func (a *app) reconnect(s *engine.Session) {
 	if on, _ := s.AgentLock(); on {
 		a.pendingToast = "该会话正被 AI Agent 操作，已阻止重连"
@@ -850,14 +898,15 @@ func (a *app) openSettings() {
 	}
 	a.settingsCat = "外观"
 	a.settingsWin = mygo.NewWindow(mygo.WindowOptions{
-		Title:  "设置",
+		Title:         "设置",
 		TitleBarStyle: mygo.TitleBarHidden,
-			Width:  860,
-		Height: 600,
+		Width:         1040,
+		Height:        720,
 		Content: ui.View(func(c *ui.Context) {
 			a.settingsView(c)
 		}),
 	})
+	iconWindow(a.settingsWin)
 	a.settingsWin.OnClosed(func() { a.settingsWin = nil })
 }
 
@@ -886,4 +935,22 @@ func (a *app) applyTheme() {
 		a.pendingToast = "配色方案 " + a.store.Settings.TerminalTheme + " 不存在"
 		a.refreshUI()
 	}
+}
+
+// appearanceSource maps the setting to the framework's theme source.
+func (a *app) appearanceSource() mygo.ThemeSource {
+	switch a.store.Settings.Appearance {
+	case "dark":
+		return mygo.ThemeDark
+	case "light":
+		return mygo.ThemeLight
+	}
+	return mygo.ThemeSystem
+}
+
+// applyAppearance tells the framework the app's appearance: the palette,
+// the window controls of hidden title bars, the menus and the terminals'
+// light or dark defaults all follow it.
+func (a *app) applyAppearance() {
+	mygo.Theme.SetSource(a.appearanceSource())
 }

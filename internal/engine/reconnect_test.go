@@ -7,6 +7,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"adakaki/internal/shells"
 )
 
 // fakeSSHConn is a Conn that shows a banner and ends when closed: a
@@ -116,6 +118,62 @@ func TestSSHReconnect(t *testing.T) {
 	if _, ok := m.Get(id); !ok {
 		t.Error("session vanished from the manager")
 	}
+	s.Close()
+}
+
+// TestLocalReconnect checks that an exited local shell starts again in
+// the same session, and a running one refuses.
+func TestLocalReconnect(t *testing.T) {
+	m := NewManager()
+	defer m.CloseAll()
+
+	s, err := m.CreateLocal(shells.Cmd, t.TempDir(), "")
+	if err != nil {
+		t.Fatalf("CreateLocal: %v", err)
+	}
+	id := s.ID()
+	if err := s.Reconnect(); err == nil {
+		t.Fatal("reconnect on a running local session must fail")
+	}
+
+	s.Send("exit\r")
+	waitFor(t, 10*time.Second, func() bool { return s.State() == Exited })
+
+	if err := s.Reconnect(); err != nil {
+		t.Fatalf("reconnect: %v", err)
+	}
+	if s.ID() != id {
+		t.Errorf("id changed to %s", s.ID())
+	}
+	if s.State() != Running {
+		t.Fatalf("state after reconnect = %s", s.State())
+	}
+	s.Send("echo local_reconnect_ok\r")
+	waitFor(t, 10*time.Second, func() bool { return contains(s.Text(), "local_reconnect_ok") })
+	s.Close()
+}
+
+// TestLocalReconnectCustom checks that a custom session's command runs
+// again on reconnect, in its directory.
+func TestLocalReconnectCustom(t *testing.T) {
+	m := NewManager()
+	defer m.CloseAll()
+
+	dir := t.TempDir()
+	s, err := m.CreateLocal(shells.Custom, dir, "cmd.exe /c echo custom_reconnect_ok")
+	if err != nil {
+		t.Fatalf("CreateLocal: %v", err)
+	}
+	waitFor(t, 10*time.Second, func() bool {
+		return s.State() == Exited && contains(s.Text(), "custom_reconnect_ok")
+	})
+
+	if err := s.Reconnect(); err != nil {
+		t.Fatalf("reconnect: %v", err)
+	}
+	waitFor(t, 10*time.Second, func() bool {
+		return s.State() == Exited && contains(s.Text(), "custom_reconnect_ok")
+	})
 	s.Close()
 }
 

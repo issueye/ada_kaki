@@ -40,6 +40,9 @@ type Settings struct {
 	// TerminalTheme is a Ghostty color scheme by name; empty follows the
 	// window's light or dark appearance.
 	TerminalTheme string `json:"terminal_theme,omitempty"`
+	// Appearance is the window's color scheme: "" follows the system,
+	// "light" and "dark" force it. Terminals follow it too.
+	Appearance string `json:"appearance,omitempty"`
 	// RestoreDisabled turns the reopen-last-sessions behavior off.
 	RestoreDisabled bool `json:"restore_disabled,omitempty"`
 

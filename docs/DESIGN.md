@@ -182,7 +182,7 @@ type Session struct {
 |---|---|
 | 主窗口 | 常驻。Sidebar（会话树）+ TabBar + **分格区**（split panes）。每个会话的"主视图"显示在其所在分格 |
 | 标签页 | 自绘 TabsBase：每标签 = 标题 + 状态点（运行绿/退出灰）+ ✕ 关闭；点击 = 把该会话换入焦点分格 |
-| **分格（P8）** | 终端区是一棵二叉分格树：叶子 = 一个会话的终端，内部节点 = `ui.Split`（向右/向下，分隔条可拖）。右键分格：向右分屏 / 向下分屏 / 关闭分格。焦点分格有强调色边框；新会话（＋新建或分屏启动）进入焦点分格 |
+| **分格（P8）** | 终端区是一棵二叉分格树：叶子 = 一个会话的终端，内部节点 = `ui.Split`（向右）/ `ui.SplitVertical`（向下），分隔条可拖。右键分格：向右分屏 / 向下分屏 / 关闭分格。焦点分格有强调色边框；新会话（＋新建或分屏启动）进入焦点分格 |
 | **同屏弹出窗口（P7）** | "弹出同屏窗口"→ 引擎 `Session.OpenMirror()` 建第二个终端（`ResizeByConn` 模式）：帧泵 goroutine 以 33ms 周期拉 `Mirror.Frame()` → `Feed` 到镜像终端，并把镜像终端的尺寸同步为主会话尺寸；镜像终端的键盘输入经 Conn.Write 回传 `session.Send()`。主窗口标签与弹窗**实时同步、两处输入同时生效**；弹窗可随时关闭（`Mirror.Close`），会话不受影响 |
 | 焦点切换 | 焦点分格 = activeID 所指会话的分格；点击分格/标签/侧栏均切换焦点 |
 | 生命周期 | 主窗口关闭 = 应用退出（活跃会话 > 0 时确认）；`win.OnClosed` → 终端 `Close()`；会话关闭事件自动收拢其分格与弹窗 |
@@ -191,13 +191,18 @@ type Session struct {
 
 ### 4.6 原生 UI 设计（ui_chrome.go）
 
-- 布局：`ui.Row` [ Sidebar(220) | `ui.Column` [ TabBar(40) | 终端区 Fill ] ]，外层 `ui.Split` 可拖宽侧栏。
-- Sidebar：`ui.Sidebar` 两节——"本地"（每会话一项：shell 图标+标题+状态 badge）、"SSH"（会话项 + "＋ 新建连接"项 + 档案列表项）。选中项 = 当前主视图会话。
-- TabBar：`ui.TabsBase` 自绘（标签带关闭钮与状态色，超出滚动）。
-- 新建会话：`ui.MenuButton`（列出 `shells.Detect()` 可用项 + "自定义命令…"）。
-- SSH 连接对话框：`ui.Dialog` + 档案 Select + 密码 Input + 连接/保存档案 Checkbox。
-- Toast：`ui.Toast` 提示连接失败/会话退出。
-- 设置弹窗（P6）：默认 shell、字号（`term.SetFont`）、MCP 开关与端口。
+- 布局：`ui.Split` [ Sidebar(260) | `ui.Column` [ 标题条(= `c.TitleBar().Height`，Windows 32) | TabBar(40) | 终端区 Fill | 状态栏(28) ] ]，内容区标题条与侧栏品牌行共同承载自绘标题栏拖拽区，并与系统窗口按钮同高对齐。
+- 视觉：`ui_style.go` 的 `webTheme` 在系统主题之上叠加「柿（persimmon）」强调色与中性面，`Settings.Appearance`（""/"light"/"dark"）经 `mygo.Theme.SetSource` 强制明暗（窗口按钮、菜单、终端跟随）：深色 `#0E0F12/#15171B/#24272E`、浅色 `#FBFAF7/#F2F0EA/#E1DDD4`，强调色 `#E4633C / #C24E2B`，半径 8、滚动条 8。
+- Sidebar 宽度由 `ui.Split` 拖拽（夹在 200–560 DIP），品牌行右侧按钮或 `Ctrl+B` 折叠；折叠态 `sidebarRail` 是 56 DIP 的单列网格（控件 36×36、圆角 10、间距由容器的 `Padding`/`Gap` 给出），品牌标记兼任展开按钮。顶带与底带分别取 `chromeBarHeight` / `statusBarHeight`，与内容区标题条、状态栏的 1px 线保持同一行。
+- Sidebar：品牌行 + plain 风格「新建会话」（无底色、悬停着色，带菜单与快捷键）+ 会话筛选 + 两节会话行（图标/标题/状态点/Agent 标记，选中行带 2px 强调边）+ 底部 Agent 活动卡与 MCP 端点行。
+- TabBar：会话标签（激活项底色 + 边框、常显关闭；非激活悬停才显示）+ ＋ 快捷新建 + 分屏/搜索按钮。
+- 终端区：`ui.Box` 内绘分格树；`Ctrl+F` 搜索为右上浮层（420×40），不再占整条横带。
+- Agent 蒙版：半透明纱 + 卡片（bot 图标、工具名 chip、目标会话、锁定说明、审计入口），抢占焦点并拦截输入。
+- 字体：`assets/fonts/*.ttf` 经 `go:embed` 嵌入，启动时 `ui.RegisterFont(data, "Maple Mono NF CN")`；设置里的字体选择器用 `ui.FontFamilies()` 过滤 `Monospaced`，内置项带「（内置）」标记。
+- 设置（P14）：左分类右内容的独立窗口，分类带图标分组；外观页含界面明暗（跟随系统/浅色/深色）与终端配色，标题条右侧另有太阳/月亮一键切换；改动即存，字体/字号/配色即时下发引擎。
+- 菜单：每个窗口 `Context.SetMenuPresentation(ui.PopoverMenus)`，所有弹出菜单（含终端插件自带的复制/粘贴/全选/清空屏幕）都在窗口内按主题绘制；标签/侧栏的分屏等菜单仍用 `PopoverMenu`。`locales/zh.json` 以 `mygo.*` 键把框架文案补成中文。
+- 审计窗口：筛选（全部/成功/失败/被拦截）+ 搜索 + 列表（时间/结果/工具/命令/客户端/耗时）+ 右侧详情（元信息、命令块、护栏判定、复制命令/JSONL）。
+- Toast：`ui.Toast` 提示连接失败/会话退出/复制结果。
 
 ## 5. MCP 协议设计（internal/mcp）
 

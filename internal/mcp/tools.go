@@ -106,10 +106,10 @@ func toolDefs() []toolDef {
 		},
 		{
 			Name:        "reconnect_session",
-			Description: "Dial an exited SSH session again: same id, same pane, fresh connection. Fails with the dial error when the host is unreachable.",
+			Description: "Restart an exited session: same id, same pane. An SSH session dials again; a local one starts its shell or command again.",
 			InputSchema: schema{
 				Type:       "object",
-				Properties: map[string]schemaProp{"id": {Type: "string", Description: "The exited SSH session id"}},
+				Properties: map[string]schemaProp{"id": {Type: "string", Description: "The exited session id"}},
 				Required:   []string{"id"},
 			},
 		},

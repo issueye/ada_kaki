@@ -32,6 +32,8 @@ var (
 
 	icoX = iconSVG(`<path d="M18 6 6 18"/><path d="m6 6 12 12"/>`)
 
+	icoPower = iconSVG(`<path d="M12 2v10"/><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>`)
+
 	icoChevronUp = iconSVG(`<path d="m18 15-6-6-6 6"/>`)
 
 	icoChevronDown = iconSVG(`<path d="m6 9 6 6 6-6"/>`)
@@ -52,6 +54,33 @@ var (
 
 	icoAppWindow = iconSVG(`<path d="M2 6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z"/>` +
 		`<path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4v4"/>`)
+
+	icoLayout = iconSVG(`<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18"/>`)
+
+	icoCopy = iconSVG(`<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 5H6a1 1 0 0 0-1 1v9"/>`)
+
+	icoArrowRight = iconSVG(`<path d="M5 12h13"/><path d="m12.5 6.5 6 5.5-6 5.5"/>`)
+
+	icoSun = iconSVG(`<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/>` +
+		`<path d="m4.9 4.9 1.4 1.4"/><path d="m17.7 17.7 1.4 1.4"/>` +
+		`<path d="M2 12h2"/><path d="M20 12h2"/>` +
+		`<path d="m6.3 17.7-1.4 1.4"/><path d="m19.1 4.9-1.4 1.4"/>`)
+
+	icoMoon = iconSVG(`<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>`)
+
+	icoPanelLeft = iconSVG(`<rect x="3" y="4" width="18" height="16" rx="2.5"/>` +
+		`<path d="M9 4v16"/>`)
+
+	icoPalette = iconSVG(`<path d="M12 21a9 9 0 1 1 9-9c0 2.2-1.8 3.2-3.5 3.2H16a2 2 0 0 0-1.4 3.4c.6.7.2 2.4-2.6 2.4Z"/>` +
+		`<circle cx="8" cy="9" r="1"/><circle cx="12" cy="6.5" r="1"/><circle cx="16" cy="9" r="1"/>`)
+
+	icoServer = iconSVG(`<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/>` +
+		`<path d="M7 7.5h.01"/><path d="M7 16.5h.01"/>`)
+
+	// icoMark is the app's own mark: the prompt chevron and its cursor dot,
+	// the same three shapes as assets/icon.svg.
+	icoMark = iconSVG(`<path d="M5.8 6.2 10.9 12l-5.1 5.8" stroke-width="2.1"/>` +
+		`<circle cx="16.2" cy="17.8" r="1.9" fill="currentColor" stroke="none"/>`)
 
 	// icoDot is the state dot: filled, in the text color of its context.
 	icoDot = ui.MustParseSVG([]byte(

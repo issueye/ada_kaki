@@ -2,10 +2,8 @@ module adakaki
 
 go 1.27.3
 
-replace github.com/egoist/mygo => E:/codes/go_projects/mygo
-
 require (
-	github.com/egoist/mygo v0.0.0-00010101000000-000000000000
+	github.com/egoist/mygo v0.8.3
 	golang.org/x/crypto v0.57.0
 )
 

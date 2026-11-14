@@ -10,6 +10,7 @@ import (
 
 	"adakaki/internal/engine"
 	"adakaki/internal/store"
+	"adakaki/internal/tools"
 )
 
 // client is a test MCP client over pipes, mirroring what an AI client
@@ -26,7 +27,7 @@ func newClient(t *testing.T) (*client, *Server) {
 	or, ow := io.Pipe()
 	mgr := engine.NewManager()
 	t.Cleanup(mgr.CloseAll)
-	s := NewServer("adakaki-test", "0.0.1", NewEngineBackend(mgr, &store.Config{}))
+	s := NewServer("adakaki-test", "0.0.1", tools.NewBackend(mgr, &store.Config{}))
 	go func() { _ = s.ServeStdio(r, ow) }()
 	t.Cleanup(func() { w.Close(); or.Close() })
 	return &client{in: w, out: bufio.NewReader(or), server: s}, s
@@ -58,7 +59,7 @@ func (c *client) readResponse(t *testing.T, id int) map[string]any {
 			t.Fatalf("read response for %d: %v", id, err)
 		}
 		var resp struct {
-			ID    float64          `json:"id"`
+			ID    float64 `json:"id"`
 			Error *struct {
 				Code    int    `json:"code"`
 				Message string `json:"message"`
@@ -125,7 +126,7 @@ func TestBeforeInitializeRejected(t *testing.T) {
 	defer or.Close()
 	mgr := engine.NewManager()
 	defer mgr.CloseAll()
-	s := NewServer("t", "0", NewEngineBackend(mgr, &store.Config{}))
+	s := NewServer("t", "0", tools.NewBackend(mgr, &store.Config{}))
 	go func() { _ = s.ServeStdio(r, ow) }()
 	c := &client{in: w, out: bufio.NewReader(or)}
 

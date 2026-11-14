@@ -15,6 +15,7 @@ import (
 	"adakaki/internal/guard"
 	"adakaki/internal/mcp"
 	"adakaki/internal/store"
+	"adakaki/internal/tools"
 )
 
 // startControlPlane serves the MCP endpoint over HTTP on the loopback,
@@ -29,7 +30,7 @@ func (a *app) startControlPlane() {
 		port = 8731
 	}
 	token := a.loadToken()
-	backend := mcp.NewEngineBackend(a.mgr, a.store)
+	backend := tools.NewBackend(a.mgr, a.store)
 	// MCP-made SSH connections follow the same host key policy.
 	backend.SetHostKeyPolicy(a.sshPolicy())
 	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))

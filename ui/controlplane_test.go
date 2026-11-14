@@ -12,6 +12,7 @@ import (
 	"adakaki/internal/engine"
 	"adakaki/internal/mcp"
 	"adakaki/internal/store"
+	"adakaki/internal/tools"
 )
 
 // waitFor polls until fn is true, for tests.
@@ -33,7 +34,7 @@ func TestMCPEndpointAuthAndCall(t *testing.T) {
 		store: &store.Config{},
 	}
 	defer a.mgr.CloseAll()
-	server := mcp.NewServer("adakaki-test", "0", mcp.NewEngineBackend(a.mgr, a.store))
+	server := mcp.NewServer("adakaki-test", "0", tools.NewBackend(a.mgr, a.store))
 	ts := httptest.NewServer(a.mcpMux(server, "sekrit"))
 	defer ts.Close()
 
@@ -100,7 +101,7 @@ func TestMCPEndpointAuthAndCall(t *testing.T) {
 func TestMCPCallMasksSession(t *testing.T) {
 	a := &app{mgr: engine.NewManager(), store: &store.Config{}}
 	defer a.mgr.CloseAll()
-	backend := mcp.NewEngineBackend(a.mgr, a.store)
+	backend := tools.NewBackend(a.mgr, a.store)
 	backend.SetAgentTracker(func(id, tool string) func() {
 		s, ok := a.mgr.Get(id)
 		if !ok {

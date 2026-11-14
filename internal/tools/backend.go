@@ -1,4 +1,8 @@
-package mcp
+// Package tools is the console's tool layer: the session, SSH and command
+// operations the MCP transport and the built-in AI agent both call. Keeping
+// one implementation here is what makes the guard and audit rails cover both
+// entry points identically (docs/AI-功能规划与设计.md §F6).
+package tools
 
 import (
 	"encoding/json"
@@ -18,9 +22,9 @@ import (
 // the release to run when the call ends.
 type AgentTracker func(sessionID, tool string) (release func())
 
-// EngineBackend serves the MCP tools over the console's session engine.
+// Backend serves the MCP tools over the console's session engine.
 // The GUI and the stdio mode both use it.
-type EngineBackend struct {
+type Backend struct {
 	mgr     *engine.Manager
 	store   *store.Config
 	tracker AgentTracker        // nil on stdio, where there is no GUI to mask
@@ -32,14 +36,14 @@ type EngineBackend struct {
 
 // SetAgentTracker installs the tracker the GUI uses to mask sessions
 // under operation.
-func (b *EngineBackend) SetAgentTracker(t AgentTracker) {
+func (b *Backend) SetAgentTracker(t AgentTracker) {
 	b.mu.Lock()
 	b.tracker = t
 	b.mu.Unlock()
 }
 
 // begin marks a session as being operated for the duration of the call.
-func (b *EngineBackend) begin(id, tool string) func() {
+func (b *Backend) begin(id, tool string) func() {
 	b.mu.Lock()
 	t := b.tracker
 	b.mu.Unlock()
@@ -52,10 +56,10 @@ func (b *EngineBackend) begin(id, tool string) func() {
 	return func() {}
 }
 
-// NewEngineBackend returns a backend for a manager. The manager's own
+// NewBackend returns a backend for a manager. The manager's own
 // events clean the read cursors of closed sessions up.
-func NewEngineBackend(mgr *engine.Manager, cfg *store.Config) *EngineBackend {
-	b := &EngineBackend{mgr: mgr, store: cfg, cursors: map[string]string{}}
+func NewBackend(mgr *engine.Manager, cfg *store.Config) *Backend {
+	b := &Backend{mgr: mgr, store: cfg, cursors: map[string]string{}}
 	mgr.Subscribe(func(ev engine.Event) {
 		if ev.Kind == engine.EventClosed || ev.Kind == engine.EventExited {
 			b.mu.Lock()
@@ -87,7 +91,7 @@ type sessionInfo struct {
 	HasView  bool   `json:"has_view"` // shown in a GUI window (always false on stdio)
 }
 
-func (b *EngineBackend) sessionInfos() []sessionInfo {
+func (b *Backend) sessionInfos() []sessionInfo {
 	out := []sessionInfo{}
 	for _, s := range b.mgr.List() {
 		out = append(out, sessionInfo{
@@ -104,7 +108,7 @@ func (b *EngineBackend) sessionInfos() []sessionInfo {
 	return out
 }
 
-func (b *EngineBackend) ListShells() (string, error) {
+func (b *Backend) ListShells() (string, error) {
 	out := []map[string]any{}
 	for _, sh := range shells.Detect() {
 		out = append(out, map[string]any{"id": string(sh.ID), "name": sh.Name, "found": sh.Found, "path": sh.Path})
@@ -112,11 +116,11 @@ func (b *EngineBackend) ListShells() (string, error) {
 	return toJSON(out)
 }
 
-func (b *EngineBackend) ListSessions() (string, error) {
+func (b *Backend) ListSessions() (string, error) {
 	return toJSON(b.sessionInfos())
 }
 
-func (b *EngineBackend) CreateSession(shell, cwd, command string) (string, error) {
+func (b *Backend) CreateSession(shell, cwd, command string) (string, error) {
 	id := shells.ID(shell)
 	var s *engine.Session
 	var err error
@@ -134,7 +138,7 @@ func (b *EngineBackend) CreateSession(shell, cwd, command string) (string, error
 	return toJSON(map[string]any{"id": s.ID(), "title": s.Title()})
 }
 
-func (b *EngineBackend) WriteSession(id, data string) (string, error) {
+func (b *Backend) WriteSession(id, data string) (string, error) {
 	s, ok := b.mgr.Get(id)
 	if !ok {
 		return "", fmt.Errorf("no session %s", id)
@@ -144,7 +148,7 @@ func (b *EngineBackend) WriteSession(id, data string) (string, error) {
 	return toJSON(map[string]any{"ok": true})
 }
 
-func (b *EngineBackend) ReadSession(id string, waitMS, maxChars int) (string, error) {
+func (b *Backend) ReadSession(id string, waitMS, maxChars int) (string, error) {
 	s, ok := b.mgr.Get(id)
 	if !ok {
 		return "", fmt.Errorf("no session %s", id)
@@ -178,7 +182,7 @@ func (b *EngineBackend) ReadSession(id string, waitMS, maxChars int) (string, er
 	return delta, nil
 }
 
-func (b *EngineBackend) ScreenSession(id string) (string, error) {
+func (b *Backend) ScreenSession(id string) (string, error) {
 	s, ok := b.mgr.Get(id)
 	if !ok {
 		return "", fmt.Errorf("no session %s", id)
@@ -196,7 +200,7 @@ func (b *EngineBackend) ScreenSession(id string) (string, error) {
 	return strings.Join(lines, "\n"), nil
 }
 
-func (b *EngineBackend) ResizeSession(id string, cols, rows int) (string, error) {
+func (b *Backend) ResizeSession(id string, cols, rows int) (string, error) {
 	s, ok := b.mgr.Get(id)
 	if !ok {
 		return "", fmt.Errorf("no session %s", id)
@@ -209,7 +213,7 @@ func (b *EngineBackend) ResizeSession(id string, cols, rows int) (string, error)
 	return toJSON(map[string]any{"ok": true})
 }
 
-func (b *EngineBackend) CloseSession(id string) (string, error) {
+func (b *Backend) CloseSession(id string) (string, error) {
 	s, ok := b.mgr.Get(id)
 	if !ok {
 		return "", fmt.Errorf("no session %s", id)
@@ -219,7 +223,7 @@ func (b *EngineBackend) CloseSession(id string) (string, error) {
 	return toJSON(map[string]any{"ok": true})
 }
 
-func (b *EngineBackend) RunCommand(id, shell, cwd, command string, timeoutMS, quietMS int) (string, error) {
+func (b *Backend) RunCommand(id, shell, cwd, command string, timeoutMS, quietMS int) (string, error) {
 	if command == "" {
 		return "", fmt.Errorf("run_command: command is required")
 	}
@@ -313,7 +317,7 @@ func (b *EngineBackend) RunCommand(id, shell, cwd, command string, timeoutMS, qu
 
 // ---- ssh ----
 
-func (b *EngineBackend) SSHConnectProfile(profile string) (string, error) {
+func (b *Backend) SSHConnectProfile(profile string) (string, error) {
 	p, ok := b.store.Profile(profile)
 	if !ok {
 		return "", fmt.Errorf("no SSH profile %s", profile)
@@ -322,7 +326,7 @@ func (b *EngineBackend) SSHConnectProfile(profile string) (string, error) {
 	return b.SSHConnect(p.Host, p.Port, p.User, p.AuthKind, pass, p.KeyPath, pass)
 }
 
-func (b *EngineBackend) SSHConnect(host string, port int, user, authKind, password, keyPath, passphrase string) (string, error) {
+func (b *Backend) SSHConnect(host string, port int, user, authKind, password, keyPath, passphrase string) (string, error) {
 	if user == "" || host == "" {
 		return "", fmt.Errorf("ssh_connect: host and user are required")
 	}
@@ -352,7 +356,7 @@ func (b *EngineBackend) SSHConnect(host string, port int, user, authKind, passwo
 
 // ReconnectSession restarts an exited session: same ID, same pane. An
 // SSH session dials again; a local one starts its shell or command again.
-func (b *EngineBackend) ReconnectSession(id string) (string, error) {
+func (b *Backend) ReconnectSession(id string) (string, error) {
 	s, ok := b.mgr.Get(id)
 	if !ok {
 		return "", fmt.Errorf("no session %s", id)
@@ -366,7 +370,7 @@ func (b *EngineBackend) ReconnectSession(id string) (string, error) {
 
 // SetHostKeyPolicy installs the SSH host key policy the GUI uses, so
 // MCP-made connections follow the same TOFU rules and share the store.
-func (b *EngineBackend) SetHostKeyPolicy(p *sshc.HostKeyPolicy) {
+func (b *Backend) SetHostKeyPolicy(p *sshc.HostKeyPolicy) {
 	b.mu.Lock()
 	b.policy = p
 	b.mu.Unlock()
@@ -374,7 +378,7 @@ func (b *EngineBackend) SetHostKeyPolicy(p *sshc.HostKeyPolicy) {
 
 // hostKeyPolicy returns the installed policy, or the headless default:
 // accept new keys into the store, refuse changed ones.
-func (b *EngineBackend) hostKeyPolicy() *sshc.HostKeyPolicy {
+func (b *Backend) hostKeyPolicy() *sshc.HostKeyPolicy {
 	b.mu.Lock()
 	p := b.policy
 	b.mu.Unlock()
@@ -393,7 +397,7 @@ func mustKnownHostsPath() string {
 	return p
 }
 
-func (b *EngineBackend) ListSSHProfiles() (string, error) {
+func (b *Backend) ListSSHProfiles() (string, error) {
 	out := []map[string]any{}
 	for _, p := range b.store.Profiles {
 		out = append(out, map[string]any{

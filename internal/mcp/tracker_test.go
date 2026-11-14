@@ -7,6 +7,7 @@ import (
 	"adakaki/internal/engine"
 	"adakaki/internal/shells"
 	"adakaki/internal/store"
+	"adakaki/internal/tools"
 )
 
 // TestAgentTrackerCalled checks that a tool call marks the session it
@@ -14,7 +15,7 @@ import (
 func TestAgentTrackerCalled(t *testing.T) {
 	mgr := engine.NewManager()
 	defer mgr.CloseAll()
-	b := NewEngineBackend(mgr, &store.Config{})
+	b := tools.NewBackend(mgr, &store.Config{})
 
 	var mu sync.Mutex
 	var calls []string
@@ -59,7 +60,7 @@ func TestAgentTrackerCalled(t *testing.T) {
 	}
 
 	// A nil tracker (stdio mode) never blocks anything.
-	b2 := NewEngineBackend(mgr, &store.Config{})
+	b2 := tools.NewBackend(mgr, &store.Config{})
 	if _, err := b2.WriteSession(s.ID(), "echo hi\r\n"); err != nil {
 		t.Errorf("WriteSession without tracker: %v", err)
 	}

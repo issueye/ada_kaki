@@ -10,6 +10,7 @@ import (
 	"adakaki/internal/guard"
 	"adakaki/internal/mcp"
 	"adakaki/internal/store"
+	"adakaki/internal/tools"
 )
 
 // runMCPStdio runs the MCP server over stdio for AI agents: a headless
@@ -27,7 +28,7 @@ func runMCPStdio(args []string) {
 	mgr := engine.NewManager()
 	defer mgr.CloseAll()
 
-	backend := mcp.NewEngineBackend(mgr, cfg)
+	backend := tools.NewBackend(mgr, cfg)
 	server := mcp.NewServer("adakaki", "0.1.0", backend)
 	server.SetTransport("stdio")
 	// Headless rails: no human to ask, so Confirm follows the setting

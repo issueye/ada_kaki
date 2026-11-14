@@ -49,6 +49,7 @@ var settingsGroups = []settingsGroup{
 	{
 		title: "连接与自动化",
 		items: []settingsItem{
+			{"AI", icoMessage, "AI", "模型、凭据与 Agent 行为；改动立即保存，下一轮请求生效。"},
 			{"MCP", icoServer, "MCP 端点", "给 AI Agent 的 HTTP 端点：地址、端口与 token。"},
 			{"安全", icoShield, "安全与护栏", "危险命令护栏、SSH 主机密钥校验与已信任主机。"},
 		},
@@ -123,6 +124,8 @@ func (a *app) settingsContent(c *myui.Context) {
 					a.terminalSettings(c)
 				case "会话":
 					a.sessionSettings(c)
+				case "AI":
+					a.aiSettings(c)
 				case "MCP":
 					a.mcpSettings(c)
 				case "安全":

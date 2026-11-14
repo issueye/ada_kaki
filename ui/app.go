@@ -108,12 +108,25 @@ type app struct {
 
 	// the settings window: a nav of categories, the content beside it
 	settingsWin   *mygo.Window
-	settingsCat   string   // 外观 | 终端 | 会话 | MCP | 安全
+	settingsCat   string   // 外观 | 终端 | 会话 | AI | MCP | 安全
 	settingsNavW  float32  // the nav pane's width
 	themeFilter   string   // the theme list's search box
 	ghosttyThemes []string // the catalog, read once
 	sizeText      string   // the font size input, until parsed
 	setMCPPort    string   // the MCP port input, until parsed
+
+	// the AI settings page's editing state: segment indices, text inputs and
+	// the budget steppers live in fields because the widgets hold pointers
+	// to them across frames
+	aiProviderIdx int
+	aiReasonIdx   int
+	aiScopeIdx    int
+	aiGuardIdx    int
+	aiModelText   string
+	aiBaseText    string
+	aiKeyEnvText  string
+	aiMaxCalls    float64
+	aiTokens      float64
 
 	// the split panes of the active tab: a binary tree of leaves, one
 	// session each, and the focused leaf, which activeID names too; zoom
@@ -173,6 +186,7 @@ func newApp() *app {
 	cfg, err := store.Load()
 	if err != nil {
 		cfg = &store.Config{Settings: store.Settings{MCPHTTP: true}}
+		cfg.Settings.Normalize()
 		log.Printf("config: %v", err)
 	}
 	keys, err := sshc.LoadHostKeys(mustKnownHostsPath())
@@ -184,6 +198,7 @@ func newApp() *app {
 	if err != nil {
 		log.Printf("audit: %v", err)
 	}
+	aiCfg := cfg.Settings.AI
 	return &app{
 		mgr:           engine.NewManager(),
 		shells:        shells.Detect(),
@@ -197,6 +212,15 @@ func newApp() *app {
 		settingsNavW:  208,
 		sizeText:      sizeTextFor(cfg.Settings.FontSize),
 		setMCPPort:    portTextFor(cfg.Settings.MCPHTTPPort),
+		aiProviderIdx: aiIndex(aiCfg.Provider, aiProviderOptions),
+		aiReasonIdx:   aiIndex(aiCfg.Reasoning, aiReasoningOptions),
+		aiScopeIdx:    aiIndex(aiCfg.ToolScope, aiToolScopeOptions),
+		aiGuardIdx:    aiIndex(aiCfg.GuardMode, aiGuardModeOptions),
+		aiModelText:   aiCfg.Model,
+		aiBaseText:    aiCfg.BaseURL,
+		aiKeyEnvText:  aiCfg.APIKeyEnv,
+		aiMaxCalls:    float64(aiCfg.MaxToolCalls),
+		aiTokens:      float64(aiCfg.SessionTokenLimit),
 		guard: guard.FromSettings(cfg.Settings.GuardDisabled, cfg.Settings.GuardHeadless,
 			cfg.Settings.GuardDeny, cfg.Settings.GuardConfirm),
 	}

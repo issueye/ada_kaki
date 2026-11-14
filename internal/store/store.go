@@ -56,6 +56,194 @@ type Settings struct {
 	// built-in rule base.
 	GuardDeny    []string `json:"guard_deny,omitempty"`
 	GuardConfirm []string `json:"guard_confirm,omitempty"`
+
+	// AI configures the built-in AI operator (see
+	// docs/AI-功能规划与设计.md §7.1). A missing section means the
+	// documented defaults, so configs written before this feature keep
+	// working and Normalize fills the gaps.
+	AI AISettings `json:"ai,omitempty"`
+}
+
+// AI provider names.
+const (
+	AIProviderLocal = "local"
+	AIProviderCloud = "cloud"
+)
+
+// Defaults of the AI operator; docs/AI-功能规划与设计.md §7.1 is the source.
+const (
+	DefaultAIBaseURL       = "http://127.0.0.1:3050/v1"
+	DefaultAIModel         = "deepseek-v4.1-flash-eco"
+	DefaultAIKeyEnv        = "OPENDESIGN_API_KEY"
+	DefaultAIContextWindow = 1_000_000
+	DefaultAIMaxToolCalls  = 40
+	DefaultAISessionTokens = 200_000
+	DefaultAIDockWidth     = 340
+	AIDockWidthMin         = 280
+	AIDockWidthMax         = 420
+	DefaultAIRetentionDays = 30
+)
+
+// AISettings is the AI operator's configuration. The *bool fields default
+// to true and stay pointers so an explicit false survives a round trip.
+type AISettings struct {
+	Enabled   bool   `json:"enabled,omitempty"`
+	Provider  string `json:"provider,omitempty"` // "local" | "cloud"
+	BaseURL   string `json:"base_url,omitempty"`
+	Model     string `json:"model,omitempty"`
+	Reasoning string `json:"reasoning,omitempty"` // "off" | "low" | "medium" | "high"
+	APIKeyEnv string `json:"api_key_env,omitempty"`
+
+	ContextWindow     int `json:"context_window,omitempty"`
+	MaxToolCalls      int `json:"max_tool_calls,omitempty"`
+	SessionTokenLimit int `json:"session_token_limit,omitempty"`
+
+	DockOpen    *bool `json:"dock_open,omitempty"`
+	DockWidth   int   `json:"dock_width,omitempty"`
+	LockInput   *bool `json:"lock_input,omitempty"`
+	AutoRestore *bool `json:"auto_restore,omitempty"`
+
+	ToolScope string `json:"tool_scope,omitempty"` // "all" | "write" | "readonly"
+	GuardMode string `json:"guard_mode,omitempty"` // "confirm_all" | "high_only" | "allow"
+
+	AuditEnabled       *bool `json:"audit_enabled,omitempty"`
+	AuditRedact        *bool `json:"audit_redact,omitempty"`
+	AuditRetentionDays int   `json:"audit_retention_days,omitempty"`
+}
+
+func boolPtr(v bool) *bool { return &v }
+
+// Normalize fills absent values with the documented defaults and clamps
+// numeric fields into range. It is idempotent and runs on every Load.
+func (a *AISettings) Normalize() {
+	if a.Provider != AIProviderCloud {
+		a.Provider = AIProviderLocal
+	}
+	if a.Provider == AIProviderLocal && a.BaseURL == "" {
+		a.BaseURL = DefaultAIBaseURL
+	}
+	if a.Model == "" {
+		a.Model = DefaultAIModel
+	}
+	switch a.Reasoning {
+	case "off", "low", "medium", "high":
+	default:
+		a.Reasoning = "high"
+	}
+	if a.APIKeyEnv == "" {
+		a.APIKeyEnv = DefaultAIKeyEnv
+	}
+
+	if a.ContextWindow <= 0 {
+		a.ContextWindow = DefaultAIContextWindow
+	}
+	if a.MaxToolCalls <= 0 {
+		a.MaxToolCalls = DefaultAIMaxToolCalls
+	}
+	if a.MaxToolCalls > 200 {
+		a.MaxToolCalls = 200
+	}
+	if a.SessionTokenLimit <= 0 {
+		a.SessionTokenLimit = DefaultAISessionTokens
+	}
+	if a.SessionTokenLimit < 1_000 {
+		a.SessionTokenLimit = 1_000
+	}
+	if a.SessionTokenLimit > 1_000_000 {
+		a.SessionTokenLimit = 1_000_000
+	}
+
+	if a.DockOpen == nil {
+		a.DockOpen = boolPtr(true)
+	}
+	if a.DockWidth <= 0 {
+		a.DockWidth = DefaultAIDockWidth
+	}
+	if a.DockWidth < AIDockWidthMin {
+		a.DockWidth = AIDockWidthMin
+	}
+	if a.DockWidth > AIDockWidthMax {
+		a.DockWidth = AIDockWidthMax
+	}
+	if a.LockInput == nil {
+		a.LockInput = boolPtr(true)
+	}
+	if a.AutoRestore == nil {
+		a.AutoRestore = boolPtr(true)
+	}
+
+	switch a.ToolScope {
+	case "all", "write", "readonly":
+	default:
+		a.ToolScope = "all"
+	}
+	switch a.GuardMode {
+	case "confirm_all", "high_only", "allow":
+	default:
+		a.GuardMode = "confirm_all"
+	}
+
+	if a.AuditEnabled == nil {
+		a.AuditEnabled = boolPtr(true)
+	}
+	if a.AuditRedact == nil {
+		a.AuditRedact = boolPtr(true)
+	}
+	if a.AuditRetentionDays <= 0 {
+		a.AuditRetentionDays = DefaultAIRetentionDays
+	}
+	if a.AuditRetentionDays > 3_650 {
+		a.AuditRetentionDays = 3_650
+	}
+}
+
+// Validate reports values Normalize cannot repair: enums after a hand
+// edit, and a cloud provider missing its endpoint.
+func (a AISettings) Validate() error {
+	if a.Provider != AIProviderLocal && a.Provider != AIProviderCloud {
+		return fmt.Errorf("ai: provider %q must be %q or %q", a.Provider, AIProviderLocal, AIProviderCloud)
+	}
+	if a.Provider == AIProviderCloud && a.BaseURL == "" {
+		return fmt.Errorf("ai: base_url is required for the cloud provider")
+	}
+	switch a.Reasoning {
+	case "off", "low", "medium", "high":
+	default:
+		return fmt.Errorf("ai: reasoning %q must be off|low|medium|high", a.Reasoning)
+	}
+	switch a.ToolScope {
+	case "all", "write", "readonly":
+	default:
+		return fmt.Errorf("ai: tool_scope %q must be all|write|readonly", a.ToolScope)
+	}
+	switch a.GuardMode {
+	case "confirm_all", "high_only", "allow":
+	default:
+		return fmt.Errorf("ai: guard_mode %q must be confirm_all|high_only|allow", a.GuardMode)
+	}
+	if a.MaxToolCalls < 1 || a.MaxToolCalls > 200 {
+		return fmt.Errorf("ai: max_tool_calls %d must be 1–200", a.MaxToolCalls)
+	}
+	if a.SessionTokenLimit < 1_000 || a.SessionTokenLimit > 1_000_000 {
+		return fmt.Errorf("ai: session_token_limit %d must be 1k–1M", a.SessionTokenLimit)
+	}
+	if a.DockWidth < AIDockWidthMin || a.DockWidth > AIDockWidthMax {
+		return fmt.Errorf("ai: dock_width %d must be %d–%d", a.DockWidth, AIDockWidthMin, AIDockWidthMax)
+	}
+	return nil
+}
+
+// The boolean accessors keep callers free of nil checks after Normalize.
+
+func (a AISettings) DockOpenOn() bool     { return a.DockOpen == nil || *a.DockOpen }
+func (a AISettings) LockInputOn() bool    { return a.LockInput == nil || *a.LockInput }
+func (a AISettings) AutoRestoreOn() bool  { return a.AutoRestore == nil || *a.AutoRestore }
+func (a AISettings) AuditOn() bool        { return a.AuditEnabled == nil || *a.AuditEnabled }
+func (a AISettings) AuditRedactOn() bool  { return a.AuditRedact == nil || *a.AuditRedact }
+
+// Normalize fills the whole settings document's defaults.
+func (s *Settings) Normalize() {
+	s.AI.Normalize()
 }
 
 // AuditLogPath is where the MCP audit trail lives.
@@ -119,6 +307,7 @@ func Load() (*Config, error) {
 	cfg := &Config{Settings: Settings{MCPHTTP: true}}
 	data, err := os.ReadFile(p)
 	if os.IsNotExist(err) {
+		cfg.Settings.Normalize()
 		return cfg, nil
 	}
 	if err != nil {
@@ -127,6 +316,7 @@ func Load() (*Config, error) {
 	if err := json.Unmarshal(data, cfg); err != nil {
 		return nil, fmt.Errorf("store: %s: %w", p, err)
 	}
+	cfg.Settings.Normalize()
 	return cfg, nil
 }
 

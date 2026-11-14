@@ -102,6 +102,10 @@ var (
 	icoMark = iconSVG(`<path d="M5.8 6.2 10.9 12l-5.1 5.8" stroke-width="2.1"/>` +
 		`<circle cx="16.2" cy="17.8" r="1.9" fill="currentColor" stroke="none"/>`)
 
+	// icoMessage is the AI operator's speech bubble: the settings category
+	// and the title-bar AI button, matching the design boards 08–10.
+	icoMessage = iconSVG(`<path d="M20 11.8c0 3.3-3.6 6-8 6-1 0-1.9-.14-2.8-.4L4 19l1.2-3.3A5.9 5.9 0 0 1 4 11.8C4 8.5 7.6 5.8 12 5.8s8 2.7 8 6z"/>`)
+
 	// icoDot is the state dot: filled, in the text color of its context.
 	icoDot = myui.MustParseSVG([]byte(
 		`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">` +

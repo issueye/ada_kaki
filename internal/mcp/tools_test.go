@@ -1,6 +1,12 @@
 package mcp
 
-import "testing"
+import (
+	"encoding/json"
+	"reflect"
+	"testing"
+
+	"adakaki/internal/tools"
+)
 
 // The tool catalog is a public contract: an external AI client sees these
 // names, order and schemas. A regression here breaks every existing client,
@@ -32,8 +38,37 @@ func TestToolCatalogContract(t *testing.T) {
 	}
 }
 
-// run_command is the AI workhorse; its argument names, required set and
-// defaults-in-description are the part callers depend on most.
+// The in-app agent's catalog (internal/tools) and the transport's catalog
+// must describe the same twelve tools with the same schemas; prose may be
+// phrased for its reader, the wire contract may not drift.
+func TestToolSpecsMatchTransportCatalog(t *testing.T) {
+	specs := tools.Specs()
+	defs := toolDefs()
+	if len(specs) != len(defs) {
+		t.Fatalf("agent specs = %d, transport defs = %d", len(specs), len(defs))
+	}
+	for i := range defs {
+		if specs[i].Name != defs[i].Name {
+			t.Fatalf("tool %d: agent %q, transport %q", i, specs[i].Name, defs[i].Name)
+		}
+		want, err := json.Marshal(defs[i].InputSchema)
+		if err != nil {
+			t.Fatalf("marshal %q schema: %v", defs[i].Name, err)
+		}
+		var gotMap, wantMap map[string]any
+		if err := json.Unmarshal(specs[i].Schema, &gotMap); err != nil {
+			t.Fatalf("%q agent schema is not JSON: %v", defs[i].Name, err)
+		}
+		if err := json.Unmarshal(want, &wantMap); err != nil {
+			t.Fatalf("%q transport schema is not JSON: %v", defs[i].Name, err)
+		}
+		if !reflect.DeepEqual(gotMap, wantMap) {
+			t.Fatalf("%q schema drift:\n agent: %s\n transport: %s",
+				defs[i].Name, specs[i].Schema, want)
+		}
+	}
+}
+
 func TestRunCommandSchemaContract(t *testing.T) {
 	var def toolDef
 	for _, d := range toolDefs() {

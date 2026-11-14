@@ -23,17 +23,17 @@ const (
 
 // Rule is one dangerous pattern.
 type Rule struct {
-	Level    Level
-	Pattern  *regexp.Regexp
-	Source   string // the pattern text, for display
-	Reason   string
-	Custom   bool // user-configured
+	Level   Level
+	Pattern *regexp.Regexp
+	Source  string // the pattern text, for display
+	Reason  string
+	Custom  bool // user-configured
 }
 
 // Policy is the rule base plus the human-confirm channel.
 type Policy struct {
-	mu     sync.Mutex
-	rules  []Rule
+	mu    sync.Mutex
+	rules []Rule
 	// Confirm asks the user (GUI): it runs on the tool-call goroutine and
 	// may block until the user answers. nil means there is no human to
 	// ask — headless — and Confirm calls follow HeadlessConfirm.
@@ -43,6 +43,42 @@ type Policy struct {
 	HeadlessConfirm string
 	// Enabled turns the whole rail off.
 	Enabled bool
+	// Mode is how strictly a match is handled (docs/AI-功能规划与设计.md §F6):
+	// confirm_all asks for every Confirm rule, high_only asks only for
+	// Deny rules and lets Confirm rules through, allow disables the rail.
+	Mode Mode
+}
+
+// Mode is the guard's strictness, as the AI settings page names it.
+type Mode string
+
+const (
+	// ModeConfirmAll asks a human for every Confirm-level match (default).
+	ModeConfirmAll Mode = "confirm_all"
+	// ModeHighOnly asks a human only for Deny-level matches; Confirm-level
+	// matches are allowed without asking.
+	ModeHighOnly Mode = "high_only"
+	// ModeAllow lets everything through (debugging only).
+	ModeAllow Mode = "allow"
+)
+
+// ModeFromString parses a stored mode, defaulting to confirm_all.
+func ModeFromString(s string) Mode {
+	switch Mode(s) {
+	case ModeHighOnly:
+		return ModeHighOnly
+	case ModeAllow:
+		return ModeAllow
+	default:
+		return ModeConfirmAll
+	}
+}
+
+// SetMode changes the strictness; the zero value means confirm_all.
+func (p *Policy) SetMode(m Mode) {
+	p.mu.Lock()
+	p.Mode = m
+	p.mu.Unlock()
 }
 
 // Request is one call the policy may judge.
@@ -57,7 +93,7 @@ type Request struct {
 type Verdict string
 
 const (
-	Allow  Verdict = "allow"
+	Allow Verdict = "allow"
 	// ConfirmOK means a human approved a Confirm-level call.
 	ConfirmOK Verdict = "confirm_ok"
 	Denied    Verdict = "deny"
@@ -68,9 +104,9 @@ const (
 // destroys data or machines, not everyday work.
 func DefaultRules() []Rule {
 	defs := []struct {
-		level  Level
+		level   Level
 		pattern string
-		reason string
+		reason  string
 	}{
 		{Deny, `(?i)\bformat(\.com)?\s+[a-z]:`, "格式化磁盘"},
 		{Deny, `(?i)\bdiskpart\b`, "磁盘分区工具"},
@@ -85,7 +121,7 @@ func DefaultRules() []Rule {
 		{Confirm, `(?i)\bgit\s+reset\s+--hard\b`, "丢弃全部本地改动"},
 		{Confirm, `(?i)\bchmod\s+(-R\s+)?777\b`, "全开放权限"},
 		{Confirm, `(?i)\breg\s+add\s+HKLM`, "写系统注册表"},
-		{Confirm, `(?i):\(\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;?\s*:` , "fork 炸弹"},
+		{Confirm, `(?i):\(\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;?\s*:`, "fork 炸弹"},
 	}
 	out := make([]Rule, 0, len(defs))
 	for _, d := range defs {
@@ -162,7 +198,8 @@ func (p *Policy) Count() (builtin, custom int) {
 }
 
 // Check judges a request. A Confirm verdict without a human follows
-// HeadlessConfirm; a human's answer comes back as ConfirmOK.
+// HeadlessConfirm; a human's answer comes back as ConfirmOK. The policy's
+// Mode decides which matches ask at all.
 func (p *Policy) Check(req Request) (Verdict, *Rule) {
 	if !p.Enabled {
 		return Allow, nil
@@ -175,7 +212,34 @@ func (p *Policy) Check(req Request) (Verdict, *Rule) {
 	rules := append([]Rule(nil), p.rules...)
 	headless := p.HeadlessConfirm
 	confirmFn := p.Confirm
+	mode := p.Mode
 	p.mu.Unlock()
+
+	if mode == ModeAllow {
+		return Allow, nil
+	}
+
+	// high_only: a Deny match may still ask once, and Confirm matches
+	// never interrupt. Deny rules are judged first so a later Confirm
+	// rule cannot mask them.
+	if mode == ModeHighOnly {
+		for _, r := range rules {
+			if r.Level != Deny || !r.Pattern.MatchString(command) {
+				continue
+			}
+			if confirmFn != nil {
+				if confirmFn(req, r) {
+					return ConfirmOK, &r
+				}
+				return Denied, &r
+			}
+			if strings.EqualFold(headless, "allow") {
+				return ConfirmOK, &r
+			}
+			return Denied, &r
+		}
+		return Allow, nil
+	}
 
 	for _, r := range rules {
 		if !r.Pattern.MatchString(command) {

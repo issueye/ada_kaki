@@ -130,6 +130,7 @@ type app struct {
 	aiModelText   string
 	aiBaseText    string
 	aiKeyEnvText  string
+	aiKeyText     string // the API key draft, before it is encrypted
 	aiMaxCalls    float64
 	aiTokens      float64
 	aiProbe       string // the connection probe's last outcome
@@ -219,6 +220,13 @@ func newApp() *app {
 		cfg = &store.Config{Settings: store.Settings{MCPHTTP: true}}
 		cfg.Settings.Normalize()
 		log.Printf("config: %v", err)
+	}
+	// Older builds accepted a pasted API key in the "environment variable"
+	// field; move it into the encrypted slot so it starts working.
+	if migrateAIKeyEnv(cfg) {
+		if err := cfg.Save(); err != nil {
+			log.Printf("config: migrating AI key: %v", err)
+		}
 	}
 	keys, err := sshc.LoadHostKeys(mustKnownHostsPath())
 	if err != nil {

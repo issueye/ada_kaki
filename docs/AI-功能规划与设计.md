@@ -101,7 +101,7 @@ AdaKaki 目前的定位是「给 AI 用的终端」：它以 MCP 服务端身份
 
 - **职责**：屏蔽 provider 差异；凭据只存引用。
 - **provider**：`local`（默认 `http://127.0.0.1:3050/v1`，OpenAI-completions 兼容）与 `cloud`（`base_url` 可配）。同一 `chat/completions` 协议，流式读取。
-- **凭据**：`ai.api_key_env` 指定环境变量名；页面只显示环境变量名 + 掩码尾 4 位；「测试连接」发一次 1 token 探测（不写审计，失败展示上游错误）。
+- **凭据**：两种来源，**直接保存优先**。① 设置 → AI 直接粘贴 API Key，经 Windows DPAPI 加密写入 `config.json` 的 `ai.api_key_dpapi`（只有本机本用户可解密，界面只显示「已保存（DPAPI 加密）」不回显明文）；② 可选的环境变量兜底（`ai.api_key_env` 只存变量名）。旧版本把 Key 粘在环境变量框里的配置，启动时自动迁入加密槽。
 - **推理强度**：`off|low|medium|high` 透传为请求参数；模型不支持时 UI 置灰该档。
 - **落点**：`internal/ai/{provider.go,client.go,credentials.go}`。
 
@@ -168,7 +168,8 @@ Lock:   run ∈ {thinking,tool_running} && ai.lock_input ──► 分格输入�
 | `base_url` | string | `http://127.0.0.1:3050/v1` | 模型与推理 · 高级 | 云端时必填 |
 | `model` | string | `deepseek-v4.1-flash-eco` | 模型与推理 · 模型 | — |
 | `reasoning` | `off｜low｜medium｜high` | `high` | 模型与推理 · 推理强度 | — |
-| `api_key_env` | string | `OPENDESIGN_API_KEY` | 凭据与连接 | 只存变量名 |
+| `api_key_env` | string | `OPENDESIGN_API_KEY` | 凭据与连接 · 或环境变量 | 作为兜底的环境变量名；直接保存的 Key 优先 |
+| `api_key_dpapi` | string（base64） | — | 凭据与连接 · API Key | 直接填写的 Key，经 Windows DPAPI 加密后落盘；设置页只显示「已保存」状态，不回显明文 |
 | `context_window` | int | `1000000` | 上下文与预算 | 展示用 |
 | `max_tool_calls` | int | `40` | 上下文与预算 | 单轮上限 |
 | `session_token_limit` | int | `200000` | 上下文与预算 | 每会话上限 |
@@ -279,6 +280,7 @@ A1–A6 已完成并分阶段提交（提交信息以 `AI A<n>` 开头），`DES
 | 6 | `ai.lock_input` / `ai.auto_restore` 生效 | 只写入配置；引擎锁仍由 tool tracker 一次性开关 | 关掉开关目前不会放宽锁定 |
 | 7 | `ai.audit_retention_days` 清理 | 只写入配置 | 审计仍按 5MB×3 轮转 |
 | 8 | 会话 token 计数 | 内存计数，重启归零 | 预算跨重启不连续 |
+| 9 | 画板 10「API Key 环境变量」行 | 实现改为「API Key 直接填写（DPAPI 加密）+ 或环境变量」 | v0.2 追加：用户要求直接保存 Key；画板待同步更新 |
 
 已落实的关键契约：`tools.Specs()` 与 MCP 目录 schema 深度一致（测试锁定）；护栏三档与 MCP 共用策略；GUI 确认通道 `confirmGuard` 真正接线；审计 `inapp`/`adakaki-ai` 且对 `password/token/secret` 字段脱敏。
 

@@ -268,7 +268,7 @@ type Session struct {
 
 **与蒙版的互斥**（设计画板 08/09 的取舍）：dock 展开时不再盖整块蒙版，分格只留「AI 操作中」chip；dock 收起且 Agent 仍在运行时才走原蒙版。
 
-**配置**：`config.json` 的 `ai` 段（缺段即默认值），键与默认值见功能规划 §7.1；设置页改动即时保存，切换护栏档位会立刻重建策略。
+**配置**：`config.json` 的 `ai` 段（缺段即默认值），键与默认值见功能规划 §7.1；设置页改动即时保存，切换护栏档位会立刻重建策略。**凭据**：直接填写的 API Key 经 DPAPI 加密存 `ai.api_key_dpapi`（优先），`ai.api_key_env` 只作环境变量兜底；旧配置把 Key 粘在环境变量框里的，启动时自动迁入加密槽。
 
 ## 5. MCP 协议设计（internal/mcp）
 
@@ -365,6 +365,7 @@ tools/call(run_command, id=X) ──▶ Adapter.begin(X, "run_command")
 │                 #   ssh_profiles:[{name, host, port, user, auth_kind, key_path,
 │                 #                    secret_dpapi(base64)|password}],
 │                 #   ai:{enabled, provider, base_url, model, reasoning, api_key_env,
+│                 #       api_key_dpapi,
 │                 #       context_window, max_tool_calls, session_token_limit,
 │                 #       dock_open, dock_width, lock_input, auto_restore,
 │                 #       tool_scope, guard_mode, audit_enabled, audit_redact,

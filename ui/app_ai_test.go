@@ -220,3 +220,128 @@ func TestStartAITurnEndToEnd(t *testing.T) {
 		t.Fatal("timeline lost the tool name")
 	}
 }
+
+func TestValidEnvName(t *testing.T) {
+	cases := map[string]bool{
+		"OPENDESIGN_API_KEY": true,
+		"_KEY":               true,
+		"KEY1":               true,
+		"":                   false,
+		"1KEY":               false,
+		"sk-prune-ab520e8a":  false,
+		"sk-ant-api03-xxx":   false,
+		"has space":          false,
+	}
+	for in, want := range cases {
+		if got := validEnvName(in); got != want {
+			t.Fatalf("validEnvName(%q) = %v, want %v", in, got, want)
+		}
+	}
+}
+
+// A key pasted into the old "environment variable" field is neither valid
+// nor usable; startup moves it into the encrypted slot.
+func TestMigrateAIKeyEnv(t *testing.T) {
+	a := newAITestApp(t)
+	pasted := "sk-prune-ab520e8a5da85912c168d6de26477a1"
+	cfg := &a.store.Settings
+	cfg.AI.APIKeyEnv = pasted
+
+	if !migrateAIKeyEnv(a.store) {
+		t.Skip("DPAPI unavailable in this environment")
+	}
+	if cfg.AI.APIKey == "" {
+		t.Fatal("the pasted key did not move into the encrypted slot")
+	}
+	if cfg.AI.APIKeyEnv != "" {
+		t.Fatalf("the invalid env field survived migration: %q", cfg.AI.APIKeyEnv)
+	}
+	key, err := store.Unprotect(cfg.AI.APIKey)
+	if err != nil || key != pasted {
+		t.Fatalf("stored key = %q err=%v", key, err)
+	}
+
+	cfg.AI.APIKeyEnv = "OPENDESIGN_API_KEY"
+	if migrateAIKeyEnv(a.store) {
+		t.Fatal("a valid environment variable name must not be migrated")
+	}
+}
+
+func TestAIKeyResolution(t *testing.T) {
+	// A directly saved key wins over the environment.
+	a := newAITestApp(t)
+	enc, err := store.Protect("sk-direct")
+	if err != nil {
+		t.Skip("DPAPI unavailable in this environment")
+	}
+	a.store.Settings.AI.APIKey = enc
+	t.Setenv("ADAKAKI_ENV_KEY", "sk-env")
+	a.store.Settings.AI.APIKeyEnv = "ADAKAKI_ENV_KEY"
+	if key, err := a.aiKey(); err != nil || key != "sk-direct" {
+		t.Fatalf("aiKey = %q err=%v, want the saved key", key, err)
+	}
+
+	// Without a saved key the environment is the fallback.
+	b := newAITestApp(t)
+	t.Setenv("ADAKAKI_ENV_KEY", "sk-env")
+	b.store.Settings.AI.APIKey = ""
+	b.store.Settings.AI.APIKeyEnv = "ADAKAKI_ENV_KEY"
+	if key, err := b.aiKey(); err != nil || key != "sk-env" {
+		t.Fatalf("aiKey = %q err=%v, want the environment value", key, err)
+	}
+
+	// A corrupted stored value is reported, not silently ignored.
+	c := newAITestApp(t)
+	c.store.Settings.AI.APIKey = "not-a-dpapi-blob"
+	if _, err := c.aiKey(); err == nil || !strings.Contains(err.Error(), "无法解密") {
+		t.Fatalf("want a decrypt error, got %v", err)
+	}
+
+	// Nothing configured names the two ways to fix it.
+	d := newAITestApp(t)
+	d.store.Settings.AI.APIKey = ""
+	d.store.Settings.AI.APIKeyEnv = "ADAKAKI_ENV_KEY_UNSET"
+	if _, err := d.aiKey(); err == nil || !strings.Contains(err.Error(), "未配置") {
+		t.Fatalf("want a not-configured error, got %v", err)
+	}
+}
+
+func TestSaveAndClearAIKey(t *testing.T) {
+	a := newAITestApp(t)
+	t.Setenv("AppData", t.TempDir())
+	if _, err := store.Protect("x"); err != nil {
+		t.Skip("DPAPI unavailable in this environment")
+	}
+
+	a.aiKeyText = "sk-saved-by-user"
+	a.saveAIKey()
+	if a.store.Settings.AI.APIKey == "" {
+		t.Fatal("saveAIKey did not store anything")
+	}
+	key, err := store.Unprotect(a.store.Settings.AI.APIKey)
+	if err != nil || key != "sk-saved-by-user" {
+		t.Fatalf("stored key = %q err=%v", key, err)
+	}
+	if a.aiKeyText != "" {
+		t.Fatal("the draft should be cleared after saving")
+	}
+
+	a.clearAIKey()
+	if a.store.Settings.AI.APIKey != "" {
+		t.Fatal("clearAIKey left the key in place")
+	}
+}
+
+// The credentials section renders the direct-key field, its state chip and
+// the optional environment fallback.
+func TestSettingsAIShowsKeyField(t *testing.T) {
+	a := newAITestApp(t)
+	a.store.Settings.AI.APIKeyEnv = ""
+	tt := myui.NewTester(func(c *myui.Context) { a.aiSettings(c) }, 820, 1400)
+	tt.Frame()
+	for _, want := range []string{"API Key", "保存", "测试连接", "或环境变量", "未设置"} {
+		if !tt.HasText(want) {
+			t.Fatalf("settings page does not show %q; texts = %v", want, tt.Texts())
+		}
+	}
+}

@@ -17,6 +17,7 @@ import (
 	"adakaki/internal/ai"
 	"adakaki/internal/audit"
 	"adakaki/internal/guard"
+	"adakaki/internal/store"
 	"adakaki/internal/tools"
 )
 
@@ -34,6 +35,113 @@ func (a *app) aiProvider() ai.Provider {
 	}
 }
 
+// aiKey resolves the API key: the directly saved one first (DPAPI-encrypted
+// in config.json), then the optional environment variable.
+func (a *app) aiKey() (string, error) {
+	cfg := a.store.Settings.AI
+	if cfg.APIKey != "" {
+		key, err := store.Unprotect(cfg.APIKey)
+		if err != nil {
+			return "", fmt.Errorf("已保存的 API Key 无法解密：%w", err)
+		}
+		if key != "" {
+			return key, nil
+		}
+	}
+	env := strings.TrimSpace(cfg.APIKeyEnv)
+	if env == "" {
+		return "", fmt.Errorf("%w：未配置 API Key（设置 → AI 直接填写，或设一个环境变量）", ai.ErrNoAPIKey)
+	}
+	key := os.Getenv(env)
+	if key == "" {
+		return "", fmt.Errorf("%w：未配置可用的 API Key（环境变量 %s 为空，且没有已保存的 Key）", ai.ErrNoAPIKey, env)
+	}
+	return key, nil
+}
+
+// aiKeyEnvValue returns the value of the configured environment variable,
+// if it exists; the settings page shows that as an alternative source.
+func (a *app) aiKeyEnvValue() (string, bool) {
+	env := strings.TrimSpace(a.store.Settings.AI.APIKeyEnv)
+	if env == "" {
+		return "", false
+	}
+	v := os.Getenv(env)
+	return v, v != ""
+}
+
+// validEnvName reports whether s looks like an environment variable name.
+func validEnvName(s string) bool {
+	if s == "" || len(s) > 64 {
+		return false
+	}
+	for i, r := range s {
+		switch {
+		case r >= 'A' && r <= 'Z', r >= 'a' && r <= 'z', r == '_':
+		case r >= '0' && r <= '9':
+			if i == 0 {
+				return false
+			}
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+// migrateAIKeyEnv repairs configs written before direct key storage: a
+// pasted key in the "environment variable" field is not a valid name, so it
+// moves into the encrypted key slot. It reports whether anything changed.
+func migrateAIKeyEnv(cfg *store.Config) bool {
+	env := strings.TrimSpace(cfg.Settings.AI.APIKeyEnv)
+	if env == "" || validEnvName(env) {
+		return false
+	}
+	enc, err := store.Protect(env)
+	if err != nil {
+		return false
+	}
+	cfg.Settings.AI.APIKey = enc
+	cfg.Settings.AI.APIKeyEnv = ""
+	return true
+}
+
+// saveAIKey encrypts the draft with DPAPI and stores it, clearing the
+// environment-variable alternative so one source of truth remains.
+func (a *app) saveAIKey() {
+	key := strings.TrimSpace(a.aiKeyText)
+	if key == "" {
+		return
+	}
+	enc, err := store.Protect(key)
+	if err != nil {
+		a.pendingToast = "API Key 保存失败：" + err.Error()
+		a.refreshUI()
+		return
+	}
+	cfg := &a.store.Settings.AI
+	cfg.APIKey = enc
+	cfg.APIKeyEnv = ""
+	a.aiKeyText = ""
+	a.saveSettingsNow()
+	a.pendingToast = "API Key 已保存（DPAPI 加密，仅本机本用户可解密）"
+	a.refreshUI()
+	a.refreshSettingsWindow()
+}
+
+// clearAIKey forgets the stored key.
+func (a *app) clearAIKey() {
+	cfg := &a.store.Settings.AI
+	if cfg.APIKey == "" {
+		return
+	}
+	cfg.APIKey = ""
+	a.saveSettingsNow()
+	a.pendingToast = "已删除保存的 API Key"
+	a.refreshUI()
+	a.refreshSettingsWindow()
+}
+
 // probeAI asks the configured provider for a one-token answer, off the UI
 // thread, and reports the outcome beside the button.
 func (a *app) probeAI() {
@@ -45,10 +153,9 @@ func (a *app) probeAI() {
 	a.refreshSettingsWindow()
 
 	provider := a.aiProvider()
-	envName := provider.KeyEnv
 
 	go func() {
-		key, err := ai.KeyFromEnv(envName)
+		key, err := a.aiKey()
 		if err != nil {
 			a.finishProbe(false, err.Error())
 			return
@@ -131,7 +238,7 @@ func (a *app) startAITurn() {
 
 	provider := a.aiProvider()
 	cfg := a.store.Settings.AI
-	key, err := ai.KeyFromEnv(provider.KeyEnv)
+	key, err := a.aiKey()
 	if err != nil {
 		a.aiMu.Lock()
 		a.aiState = "error"

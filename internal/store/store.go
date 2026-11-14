@@ -93,6 +93,10 @@ type AISettings struct {
 	Model     string `json:"model,omitempty"`
 	Reasoning string `json:"reasoning,omitempty"` // "off" | "low" | "medium" | "high"
 	APIKeyEnv string `json:"api_key_env,omitempty"`
+	// APIKey holds a directly saved API key, DPAPI-encrypted and base64
+	// encoded like an SSH secret. It is used first; APIKeyEnv is the
+	// optional alternative for users who keep keys in the environment.
+	APIKey string `json:"api_key_dpapi,omitempty"`
 
 	ContextWindow     int `json:"context_window,omitempty"`
 	MaxToolCalls      int `json:"max_tool_calls,omitempty"`
@@ -235,11 +239,11 @@ func (a AISettings) Validate() error {
 
 // The boolean accessors keep callers free of nil checks after Normalize.
 
-func (a AISettings) DockOpenOn() bool     { return a.DockOpen == nil || *a.DockOpen }
-func (a AISettings) LockInputOn() bool    { return a.LockInput == nil || *a.LockInput }
-func (a AISettings) AutoRestoreOn() bool  { return a.AutoRestore == nil || *a.AutoRestore }
-func (a AISettings) AuditOn() bool        { return a.AuditEnabled == nil || *a.AuditEnabled }
-func (a AISettings) AuditRedactOn() bool  { return a.AuditRedact == nil || *a.AuditRedact }
+func (a AISettings) DockOpenOn() bool    { return a.DockOpen == nil || *a.DockOpen }
+func (a AISettings) LockInputOn() bool   { return a.LockInput == nil || *a.LockInput }
+func (a AISettings) AutoRestoreOn() bool { return a.AutoRestore == nil || *a.AutoRestore }
+func (a AISettings) AuditOn() bool       { return a.AuditEnabled == nil || *a.AuditEnabled }
+func (a AISettings) AuditRedactOn() bool { return a.AuditRedact == nil || *a.AuditRedact }
 
 // Normalize fills the whole settings document's defaults.
 func (s *Settings) Normalize() {

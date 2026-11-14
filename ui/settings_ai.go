@@ -11,7 +11,6 @@ package ui
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"adakaki/internal/store"
@@ -155,28 +154,41 @@ func (a *app) aiSettings(c *myui.Context) {
 	})
 
 	settingsSection(c, "凭据与连接", func() {
-		fieldRow(c, "API Key 环境变量", func() {
-			in := myui.TextInput(c.Key("ai-key-env"), &a.aiKeyEnvText).
-				Placeholder(store.DefaultAIKeyEnv).Grow(1).Height(28).FontSize(11.5)
-			if in.Changed() || in.Submitted() {
-				if v := strings.TrimSpace(a.aiKeyEnvText); v != "" {
-					cfg.APIKeyEnv = v
-					a.saveSettingsNow()
-				}
+		fieldRow(c, "API Key", func() {
+			in := myui.TextInput(c.Key("ai-key"), &a.aiKeyText).
+				Placeholder("粘贴 API Key 后点保存").Grow(1).Height(28).FontSize(11.5).
+				Password()
+			if in.Submitted() {
+				a.saveAIKey()
+			}
+			if myui.Button(c, "保存").Height(26).Padding(0, 10).Radius(6).
+				FontSize(10.5).Clicked() {
+				a.saveAIKey()
 			}
 		})
 		myui.Row(c).FillWidth().Gap(8).AlignItems(myui.Center).Children(func() {
-			name := cfg.APIKeyEnv
-			state, color := "未设置", t.Warning
-			if name != "" && os.Getenv(name) != "" {
-				state, color = "已设置", t.Success
+			set, color := "未设置", t.Warning
+			if cfg.APIKey != "" {
+				set, color = "已保存（DPAPI 加密）", t.Success
+			} else if _, ok := a.aiKeyEnvValue(); ok {
+				set, color = "环境变量可用", t.Success
 			}
-			chip(c, name+" · "+state, color, t.Surface)
-			myui.Text(c, "密钥只存变量名，不写入配置文件，也不显示明文。").
+			chip(c, set, color, t.Surface)
+			myui.Text(c, "直接填写的 Key 用 Windows DPAPI 加密后存进 config.json，只有本机本用户能解密；不会写进审计或界面回显。").
 				FontSize(10.5).TextColor(t.TextMuted).Wrap().Grow(1)
-			if myui.Button(c, "测试连接").Height(26).Padding(0, 10).Radius(6).
-				FontSize(10.5).Clicked() {
-				a.probeAI()
+			if cfg.APIKey != "" {
+				if myui.Button(c, "删除").Height(24).Padding(0, 8).Radius(5).
+					FontSize(10).Clicked() {
+					a.clearAIKey()
+				}
+			}
+		})
+		fieldRow(c, "或环境变量", func() {
+			in := myui.TextInput(c.Key("ai-key-env"), &a.aiKeyEnvText).
+				Placeholder(store.DefaultAIKeyEnv).Grow(1).Height(28).FontSize(11.5)
+			if in.Changed() || in.Submitted() {
+				cfg.APIKeyEnv = strings.TrimSpace(a.aiKeyEnvText)
+				a.saveSettingsNow()
 			}
 		})
 		if a.aiProbe != "" {
@@ -190,7 +202,14 @@ func (a *app) aiSettings(c *myui.Context) {
 					Wrap().Grow(1)
 			})
 		}
-		hint(c, "写入 config.json 的 ai.api_key_env；测试连接发一次 1 token 的探测请求，不写审计。")
+		myui.Row(c).FillWidth().Gap(8).AlignItems(myui.Center).Children(func() {
+			if myui.Button(c, "测试连接").Height(26).Padding(0, 10).Radius(6).
+				FontSize(10.5).Clicked() {
+				a.probeAI()
+			}
+			myui.Text(c, "测试连接发一次 1 token 的探测请求，不写审计。").
+				FontSize(10.5).TextColor(t.TextMuted).Wrap().Grow(1)
+		})
 	})
 
 	settingsSection(c, "上下文与预算", func() {

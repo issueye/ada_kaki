@@ -1,4 +1,4 @@
-package main
+package ui
 
 // The notification area icon: a quick way back to the console, a new
 // session, and a quit that asks first, as the window's close button does.
@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo"
-	"github.com/egoist/mygo/ui"
+	myui "github.com/egoist/mygo/ui"
 )
 
 // setupTray adds the app's icon to the notification area (Windows) or the
@@ -90,7 +90,7 @@ func (a *app) createTrayMenu() {
 		Focusable:    true,
 		Shadow:       true,
 		CornerRadius: 10,
-		Content:      ui.View(a.trayMenuView),
+		Content:      myui.View(a.trayMenuView),
 	})
 	menu.OnClose(func(e *mygo.CloseEvent) {
 		// Keep the window for the next click; App.Quit still closes it.
@@ -134,13 +134,13 @@ func (a *app) closeTrayMenu() {
 
 // trayMenuView is the drawn menu: the app's identity over the three
 // actions, with the console's own icons and hover.
-func (a *app) trayMenuView(c *ui.Context) {
+func (a *app) trayMenuView(c *myui.Context) {
 	webTheme(c)
 	// The flyout itself is transparent: no opaque window fill may show
 	// through the rounded corners.
-	c.Root().Background(ui.Transparent)
+	c.Root().Background(myui.Transparent)
 	t := c.Theme()
-	root := ui.Column(c).Fill()
+	root := myui.Column(c).Fill()
 	if c.Vibrancy() {
 		// the system's material shows through
 	} else {
@@ -149,14 +149,14 @@ func (a *app) trayMenuView(c *ui.Context) {
 		root = root.Background(t.Surface).Radius(10).Border(1, t.Border)
 	}
 	root.Padding(6).Children(func() {
-		ui.Row(c).FillWidth().Height(38).Padding(0, 8).Gap(9).
-			AlignItems(ui.Center).Children(func() {
+		myui.Row(c).FillWidth().Height(38).Padding(0, 8).Gap(9).
+			AlignItems(myui.Center).Children(func() {
 			a.logoMark(c)
-			ui.Column(c).Gap(1).Children(func() {
-				ui.Text(c, "AdaKaki 控制台").FontSize(12.5).FontWeight(600)
-				ui.Text(c, "桌面多路终端").FontSize(9.5).TextColor(t.TextMuted)
+			myui.Column(c).Gap(1).Children(func() {
+				myui.Text(c, "AdaKaki 控制台").FontSize(12.5).FontWeight(600)
+				myui.Text(c, "桌面多路终端").FontSize(9.5).TextColor(t.TextMuted)
 			})
-			ui.Spacer(c)
+			myui.Spacer(c)
 			if n := a.mgr.Count(); n > 0 {
 				chip(c, fmt.Sprintf("%d 个会话", n), t.TextMuted, t.Background)
 			}
@@ -182,22 +182,22 @@ func (a *app) trayMenuView(c *ui.Context) {
 
 // trayMenuRow is one action of the drawn menu: an icon, a label, the fast
 // path's keys, and a hover tint.
-func trayMenuRow(c *ui.Context, svg *ui.SVG, label, hint string, danger bool, fn func()) {
+func trayMenuRow(c *myui.Context, svg *myui.SVG, label, hint string, danger bool, fn func()) {
 	t := c.Theme()
 	color := t.Text
 	iconColor := t.TextMuted
 	if danger {
 		color, iconColor = t.Danger, t.Danger
 	}
-	b := ui.Button(c, "").Label(label).FillWidth().Height(34).Padding(0, 8).
-		Radius(7).Background(ui.Transparent).BorderWidth(0).Shrink(0)
+	b := myui.Button(c, "").Label(label).FillWidth().Height(34).Padding(0, 8).
+		Radius(7).Background(myui.Transparent).BorderWidth(0).Shrink(0)
 	if b.Hovered() {
 		b = b.Background(t.SurfaceHover)
 	}
 	b.Children(func() {
-		ui.Icon(c, svg).FontSize(14).TextColor(iconColor)
-		ui.Text(c, label).FontSize(12).FontWeight(500).TextColor(color)
-		ui.Spacer(c)
+		myui.Icon(c, svg).FontSize(14).TextColor(iconColor)
+		myui.Text(c, label).FontSize(12).FontWeight(500).TextColor(color)
+		myui.Spacer(c)
 		if hint != "" {
 			kbd(c, hint)
 		}
@@ -208,8 +208,8 @@ func trayMenuRow(c *ui.Context, svg *ui.SVG, label, hint string, danger bool, fn
 }
 
 // trayMenuDivider separates the menu's groups.
-func trayMenuDivider(c *ui.Context) {
-	ui.Box(c).FillWidth().Height(1).Margin(4, 3).
+func trayMenuDivider(c *myui.Context) {
+	myui.Box(c).FillWidth().Height(1).Margin(4, 3).
 		Background(c.Theme().Border)
 }
 

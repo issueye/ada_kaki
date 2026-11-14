@@ -1,4 +1,4 @@
-package main
+package ui
 
 // The app's own text is Chinese; the framework's menus and dialogs come
 // in English only, so this catalog teaches them the words the app uses.

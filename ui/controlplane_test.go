@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"bytes"
@@ -26,7 +26,6 @@ func waitFor(t *testing.T, d time.Duration, fn func() bool) {
 	}
 	t.Fatal("timed out")
 }
-
 
 func TestMCPEndpointAuthAndCall(t *testing.T) {
 	a := &app{

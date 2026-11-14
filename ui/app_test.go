@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"testing"
@@ -63,7 +63,7 @@ func TestPaneTreeCollapse(t *testing.T) {
 	a := newTestApp()
 	defer a.mgr.CloseAll()
 
-	a.viewSession("s1") // s1 comes back into the pane
+	a.viewSession("s1")   // s1 comes back into the pane
 	a.splitFocused(true)  // root: s1 | pending
 	a.viewSession("s2")   // pending fills with s2
 	a.splitFocused(false) // s2's pane: s2 / pending

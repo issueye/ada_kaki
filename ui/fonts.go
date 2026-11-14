@@ -1,4 +1,4 @@
-package main
+package ui
 
 // The app ships a terminal typeface: a CJK-capable programming font, so
 // the grid looks the same on a machine with nothing installed. It is
@@ -10,7 +10,7 @@ import (
 	"io/fs"
 	"log"
 
-	"github.com/egoist/mygo/ui"
+	myui "github.com/egoist/mygo/ui"
 )
 
 // bundledFontFamily is the name the bundled typeface is registered under
@@ -33,7 +33,7 @@ func registerBundledFonts() {
 			log.Printf("fonts: %s: %v", p, err)
 			continue
 		}
-		if err := ui.RegisterFont(data, bundledFontFamily); err != nil {
+		if err := myui.RegisterFont(data, bundledFontFamily); err != nil {
 			log.Printf("fonts: %s: %v", p, err)
 		}
 	}

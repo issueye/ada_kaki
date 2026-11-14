@@ -9,6 +9,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"adakaki/ui"
 )
 
 func main() {
@@ -25,5 +27,5 @@ func main() {
 			os.Exit(2)
 		}
 	}
-	runGUI()
+	ui.RunGUI()
 }

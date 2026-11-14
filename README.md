@@ -10,7 +10,7 @@
 
 ## 字体
 
-仓库自带 `assets/fonts/MapleMonoNormal-NF-CN-Regular.ttf`（Maple Mono NF CN：含中文的编程等宽字体），编译时嵌入二进制并在启动时注册，无需系统安装。设置 → 终端 → 字体 里可直接选「Maple Mono NF CN（内置）」；留空则用系统等宽字体。
+仓库自带 `ui/assets/fonts/MapleMonoNormal-NF-CN-Regular.ttf`（Maple Mono NF CN：含中文的编程等宽字体），编译时嵌入二进制并在启动时注册，无需系统安装。设置 → 终端 → 字体 里可直接选「Maple Mono NF CN（内置）」；留空则用系统等宽字体。
 
 ## 构建与运行
 
@@ -27,7 +27,7 @@ go build -ldflags="-H windowsgui" -o adakaki.exe .
 
 Linux/macOS 用普通 `go build -o adakaki .`；`-H windowsgui` 只适用于 Windows，用于避免多出一个黑色控制台窗口。调试时若想看日志可临时用普通 `go build`。
 
-Windows 的 exe 图标由仓库里的 `rsrc_windows_amd64.syso` / `rsrc_windows_arm64.syso` 在构建时自动链接，无需额外工具；改图标后按 `assets/gen_icons.py` 顶部注释重新生成 ICO 与 syso。
+Windows 的 exe 图标由仓库里的 `rsrc_windows_amd64.syso` / `rsrc_windows_arm64.syso` 在构建时自动链接，无需额外工具；改图标后按 `ui/assets/gen_icons.py` 顶部注释重新生成 ICO 与 syso。
 
 首次运行会从 mygo 的 GitHub Releases 自动下载 `ghostty-vt.dll`（SHA-256 校验）到用户缓存 `~\AppData\Local\mygo\natives\`；之后离线可用。发布时把 dll 放到 exe 旁即可完全免下载。
 
@@ -42,7 +42,7 @@ Windows 的 exe 图标由仓库里的 `rsrc_windows_amd64.syso` / `rsrc_windows_
 - **快捷键**：`Ctrl+Shift+T` 新建默认 shell · `Ctrl+Tab`/`Ctrl+Shift+Tab` 切换标签页 · `Ctrl+Shift+W` 关闭标签页 · `Ctrl+Shift+F12` 强制关闭当前分格（连同子进程） · `Ctrl+Shift+P` 弹出同屏窗口 · `Ctrl+B` 收起/展开侧栏 · `Ctrl+F` 终端搜索（浮层搜索条，回车下一个，Esc 关闭）
 - **系统托盘**：通知区有一颗柿色终端图标；左键唤起并聚焦主窗口，右键菜单为「打开主窗口 / 新建会话 / 退出 AdaKaki」。菜单是应用内自绘的浮层（与主界面同款 Surface / 图标 / 悬停 / 字号），不是系统菜单；Linux 的 AppIndicator 只支持原生菜单，故那里仍用系统菜单兜底。退出会先走关闭确认（有会话运行时不会直接杀掉）。Windows 默认收进托盘溢出区，可从 `^` 中拖出固定
 - **退出即清理**：Windows 下应用加入带 `KILL_ON_JOB_CLOSE` 的 Job Object；主窗口关闭、托盘退出、甚至被任务管理器强制结束后，本程序启动的所有 shell 与命令子进程都会随之结束，不会留下孤儿进程
-- **应用图标**：任务栏、窗口与 exe 文件统一使用柿色终端标记；`assets/icon.svg` 是矢量源文件，`python assets/gen_icons.py`（需 Pillow）重新生成 PNG/ICO/托盘图，`rsrc_windows_*.syso` 把 ICO 嵌进 exe
+- **应用图标**：任务栏、窗口与 exe 文件统一使用柿色终端标记；`ui/assets/icon.svg` 是矢量源文件，`python ui/assets/gen_icons.py`（需 Pillow）重新生成 PNG/ICO/托盘图，`rsrc_windows_*.syso` 把 ICO 嵌进 exe
 - **会话恢复**：正常重启后自动还原上次打开的会话（SSH 档案会话自动重拨）
 - **设置**（标题条滑杆图标）：左分类右内容，改动即存——外观（终端配色方案，Ghostty 600+ 主题搜索选择）、终端（字体选择器：内置 **Maple Mono NF CN** + 系统等宽字体，亦可自定义回退列表；字号实时生效并带预览）、会话（默认 shell、启动恢复开关）、MCP（端点/端口/地址复制）、安全（护栏/SSH 校验/已信任主机）
 - **审计**（标题条盾牌图标）：MCP 调用列表 + 右侧详情，按结果（成功/失败/被拦截）筛选、按命令或客户端搜索，可复制单条 JSONL 或全部筛选结果

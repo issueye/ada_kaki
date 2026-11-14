@@ -99,7 +99,7 @@
 
 ## 第三轮：视觉重做（v0.2 · 柿色身份）
 
-> 依据设计稿（AdaKaki 控制台 UI 重设计 v2）落地到 `ui_style.go` / `ui_chrome.go` / `settings_ui.go`。
+> 依据设计稿（AdaKaki 控制台 UI 重设计 v2）落地到 `ui/ui_theme.go` / `ui/ui_*.go` / `ui/settings_*.go`。
 > 目标：给产品一个可辨识的视觉身份，把「人机协同」从功能变成界面的主语。
 
 | # | 原问题 | 重做 |

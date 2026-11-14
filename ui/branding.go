@@ -1,4 +1,4 @@
-package main
+package ui
 
 // The app's identity images: the persimmon terminal mark for windows and
 // the notification area, embedded so a single executable carries them.

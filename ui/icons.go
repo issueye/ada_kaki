@@ -1,15 +1,15 @@
-package main
+package ui
 
 // The UI's icons: Lucide-style single-color SVGs (24x24, stroke 2, round
-// caps), rendered by ui.Icon in the text color of wherever they sit, at
+// caps), rendered by myui.Icon in the text color of wherever they sit, at
 // any DPI. Lucide is ISC licensed; these paths follow its drawing.
 
 import (
-	"github.com/egoist/mygo/ui"
+	myui "github.com/egoist/mygo/ui"
 )
 
-func iconSVG(inner string) *ui.SVG {
-	return ui.MustParseSVG([]byte(
+func iconSVG(inner string) *myui.SVG {
+	return myui.MustParseSVG([]byte(
 		`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">` +
 			inner + `</svg>`))
 }
@@ -103,7 +103,7 @@ var (
 		`<circle cx="16.2" cy="17.8" r="1.9" fill="currentColor" stroke="none"/>`)
 
 	// icoDot is the state dot: filled, in the text color of its context.
-	icoDot = ui.MustParseSVG([]byte(
+	icoDot = myui.MustParseSVG([]byte(
 		`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">` +
 			`<circle cx="12" cy="12" r="6"/></svg>`))
 )

@@ -211,7 +211,7 @@ WWW-Authenticate: Bearer
 
 ### 【中】6. GUI 的 confirm 对话框只有一个槽位，并发 confirm 会永久挂起（代码观察，未实测 UI）
 
-- **代码**：`app.go` 的 `confirmGuard` 使用单个 `a.guardCh`；如果第一个 confirm 调用还在等用户点击，第二个 confirm 到达时会把 `guardCh` 覆盖成新 channel，第一个 goroutine 的 `<-ch` 可能永远等不到答案；也没有超时。
+- **代码**：`ui/app_dialogs.go` 的 `confirmGuard` 使用单个 `a.guardCh`；如果第一个 confirm 调用还在等用户点击，第二个 confirm 到达时会把 `guardCh` 覆盖成新 channel，第一个 goroutine 的 `<-ch` 可能永远等不到答案；也没有超时。
 - **影响**：多个 confirm 级调用并发时会有一个 HTTP 请求永久挂起；用户关闭窗口也可能无法唤醒。
 - **建议**：confirm 请求排队或直接拒绝并发；加超时；窗口关闭时统一释放等待者。
 - **备注**：本次未触发 GUI 弹窗（避免留下待确认对话框），此条仅来自代码检查。

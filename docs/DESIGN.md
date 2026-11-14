@@ -109,21 +109,60 @@
 
 ```
 ada_kaki/
-├── main.go                 # 入口：默认 GUI；子命令 mcp / version
-├── app.go                  # mygo 生命周期、主窗口/弹出窗口管理、ui 视图根
-├── ui_chrome.go            # 主窗口视图：侧栏、标签栏、终端区、对话框（可拆多文件）
-├── controlplane.go         # 本地 HTTP 控制面 + MCP HTTP 端点（GUI 内嵌）
+├── main.go                  # 入口：默认 GUI（ui.RunGUI）；子命令 mcp / version
+├── mcp_stdio.go             # 无 GUI 的 stdio MCP 子进程（headless 引擎）
+├── ui/                      # 控制台界面（package ui）
+│   ├── app.go               # app 状态、启动/退出、引擎事件、退出确认
+│   ├── app_sessions.go      # 会话恢复/创建/SSH/关闭/重连/同屏
+│   ├── app_tabs.go          # 标签与分格树模型
+│   ├── app_dialogs.go       # 护栏/主机指纹问答通道
+│   ├── app_windows.go       # 审计/设置窗口、外观与字体应用
+│   ├── app_find.go          # 终端搜索状态
+│   ├── ui_main.go           # 主窗口骨架、快捷键、内容区
+│   ├── ui_header.go         # 顶栏、底部状态栏
+│   ├── ui_sidebar.go        # 侧栏、折叠图标栏、会话行、Agent 卡片
+│   ├── ui_tabs.go           # 标签条与标签菜单
+│   ├── ui_panes.go          # 分格树、分隔线、空态、分格菜单
+│   ├── ui_pane_card.go      # 分格卡片头、终端体、Agent 蒙版
+│   ├── ui_dialogs.go        # 退出/护栏/主机指纹/SSH/自定义命令对话框
+│   ├── ui_menus.go          # 新建/会话菜单、状态标记
+│   ├── ui_find.go           # 终端搜索浮层
+│   ├── ui_audit.go          # 审计窗口与筛选
+│   ├── ui_popout.go         # 同屏弹出窗口
+│   ├── ui_theme.go          # 柿色主题、尺寸常量
+│   ├── ui_widgets.go        # 共享控件（按钮/芯片/标题条等）
+│   ├── settings_view.go     # 设置窗口框架、导航、通用行
+│   ├── settings_appearance.go # 外观主题、终端配色方案
+│   ├── settings_terminal.go # 字体家族、字号与预览
+│   ├── settings_session.go  # 默认 shell、启动恢复
+│   ├── settings_mcp.go      # MCP HTTP 端点
+│   ├── settings_security.go # 护栏、主机密钥、已信任主机
+│   ├── tray.go              # 系统托盘与自绘菜单
+│   ├── controlplane.go      # GUI 内嵌 MCP HTTP 控制面
+│   ├── icons.go             # Lucide 风格单色 SVG 图标集
+│   ├── branding.go          # 窗口与托盘图标
+│   ├── fonts.go             # 内置字体注册
+│   ├── locales.go           # 框架文案目录加载
+│   ├── assets/              # icon.svg / PNG / ICO、内置字体
+│   └── locales/             # zh.json
 ├── internal/
-│   ├── engine/             # 会话引擎：Session/Manager，包装 terminal.Terminal
-│   ├── shells/             # shell 探测（cmd/powershell/pwsh/gitbash/custom）与启动命令
-│   ├── sshc/               # SSH 客户端：Dial/认证/交互 shell(实现 Conn 接口)/exec
-│   ├── store/              # config.json 持久化；DPAPI 加密（secret_windows.go）
-│   └── mcp/                # MCP 协议层：JSON-RPC 2.0、Server、Tool 集
-│       ├── stdio.go        #   stdio 传输（子命令 mcp）
-│       └── http.go         #   Streamable HTTP 传输（GUI 内嵌）
-├── docs/                   # DESIGN.md、DEVPLAN.md
-└── go.mod                  # module adakaki；replace mygo → E:/codes/go_projects/mygo
+│   ├── engine/              # 会话引擎：Session/Manager，包装 terminal.Terminal
+│   ├── shells/              # shell 探测（cmd/powershell/pwsh/gitbash/custom）与启动命令
+│   ├── sshc/                # SSH 客户端：Dial/认证/交互 shell(实现 Conn 接口)/exec
+│   ├── store/               # config.json 持久化；DPAPI 加密（secret_windows.go）
+│   ├── guard/               # 危险命令护栏
+│   ├── audit/               # MCP 审计日志（JSONL 轮转）
+│   ├── procjob/             # Windows Job Object 进程树清理
+│   └── mcp/                 # MCP 协议层：JSON-RPC 2.0、Server、Tool 集
+│       ├── adapter.go       #   引擎后端（会话/工具适配）
+│       ├── rpc.go           #   JSON-RPC 编解码
+│       ├── server.go        #   握手、传输（stdio / HTTP）
+│       └── tools.go         #   11 个工具的 schema 与描述
+├── docs/                    # DESIGN.md、DEVPLAN.md、ROADMAP.md
+└── go.mod                   # module adakaki；mygo 依赖
 ```
+
+main 包只保留入口与 headless stdio；全部 GUI 状态、视图和界面资源都在 `ui` 包。界面按“窗口骨架 / 侧栏 / 标签 / 分格 / 对话框 / 菜单 / 审计 / 设置分类 / 主题与控件”分文件，单个文件控制在约 400 行内，新增界面时按同一职责落位，避免再长成单文件。
 
 （对比 v1 移除：`internal/pty`（插件自带）、`frontend/`（原生 UI 无前端）、`internal/ansi`（`Text()` 已覆盖）。）
 
@@ -189,20 +228,22 @@ type Session struct {
 
 镜像管道细节：Mirror 帧 `Frame() (frame []byte, due bool)` 由第二终端的 Conn 读 goroutine 拉取（帧未就绪时阻塞/轮询 30ms），避免忙等；`Reset()` 用于弹窗重开时从头同步。
 
-### 4.6 原生 UI 设计（ui_chrome.go）
+### 4.6 原生 UI 设计（ui/）
 
-- 布局：`ui.Split` [ Sidebar(260) | `ui.Column` [ 标题条(= `c.TitleBar().Height`，Windows 32) | TabBar(40) | 终端区 Fill | 状态栏(28) ] ]，内容区标题条与侧栏品牌行共同承载自绘标题栏拖拽区，并与系统窗口按钮同高对齐。
-- 视觉：`ui_style.go` 的 `webTheme` 在系统主题之上叠加「柿（persimmon）」强调色与中性面，`Settings.Appearance`（""/"light"/"dark"）经 `mygo.Theme.SetSource` 强制明暗（窗口按钮、菜单、终端跟随）：深色 `#0E0F12/#15171B/#24272E`、浅色 `#FBFAF7/#F2F0EA/#E1DDD4`，强调色 `#E4633C / #C24E2B`，半径 8、滚动条 8。
-- Sidebar 宽度由 `ui.Split` 拖拽（夹在 200–560 DIP），品牌行右侧按钮或 `Ctrl+B` 折叠；折叠态 `sidebarRail` 是 56 DIP 的单列网格（控件 36×36、圆角 10、间距由容器的 `Padding`/`Gap` 给出），品牌标记兼任展开按钮。顶带与底带分别取 `chromeBarHeight` / `statusBarHeight`，与内容区标题条、状态栏的 1px 线保持同一行。
+`ui` 包内引用 mygo 的 UI 包统一写作 `myui`（`import myui "github.com/egoist/mygo/ui"`），与本项目自己的 `ui` 包区分。
+
+- 布局：`myui.Split` [ Sidebar(260) | `myui.Column` [ 标题条(= `c.TitleBar().Height`，Windows 32) | TabBar(40) | 终端区 Fill | 状态栏(28) ] ]，内容区标题条与侧栏品牌行共同承载自绘标题栏拖拽区，并与系统窗口按钮同高对齐。
+- 视觉：`ui/ui_theme.go` 的 `webTheme` 在系统主题之上叠加「柿（persimmon）」强调色与中性面，`Settings.Appearance`（""/"light"/"dark"）经 `mygo.Theme.SetSource` 强制明暗（窗口按钮、菜单、终端跟随）：深色 `#0E0F12/#15171B/#24272E`、浅色 `#FBFAF7/#F2F0EA/#E1DDD4`，强调色 `#E4633C / #C24E2B`，半径 8、滚动条 8。
+- Sidebar 宽度由 `myui.Split` 拖拽（夹在 200–560 DIP），品牌行右侧按钮或 `Ctrl+B` 折叠；折叠态 `sidebarRail` 是 56 DIP 的单列网格（控件 36×36、圆角 10、间距由容器的 `Padding`/`Gap` 给出），品牌标记兼任展开按钮。顶带与底带分别取 `chromeBarHeight` / `statusBarHeight`，与内容区标题条、状态栏的 1px 线保持同一行。
 - Sidebar：品牌行 + plain 风格「新建会话」（无底色、悬停着色，带菜单与快捷键）+ 会话筛选 + 两节会话行（图标/标题/状态点/Agent 标记，选中行带 2px 强调边）+ 底部 Agent 活动卡与 MCP 端点行。
 - TabBar：会话标签（激活项底色 + 边框、常显关闭；非激活悬停才显示）+ ＋ 快捷新建 + 分屏/搜索按钮。
-- 终端区：`ui.Box` 内绘分格树；`Ctrl+F` 搜索为右上浮层（420×40），不再占整条横带。
+- 终端区：`myui.Box` 内绘分格树；`Ctrl+F` 搜索为右上浮层（420×40），不再占整条横带。
 - Agent 蒙版：半透明纱 + 卡片（bot 图标、工具名 chip、目标会话、锁定说明、审计入口），抢占焦点并拦截输入。
-- 字体：`assets/fonts/*.ttf` 经 `go:embed` 嵌入，启动时 `ui.RegisterFont(data, "Maple Mono NF CN")`；设置里的字体选择器用 `ui.FontFamilies()` 过滤 `Monospaced`，内置项带「（内置）」标记。
+- 字体：`ui/assets/fonts/*.ttf` 经 `go:embed` 嵌入，启动时 `myui.RegisterFont(data, "Maple Mono NF CN")`；设置里的字体选择器用 `myui.FontFamilies()` 过滤 `Monospaced`，内置项带「（内置）」标记。
 - 设置（P14）：左分类右内容的独立窗口，分类带图标分组；外观页含界面明暗（跟随系统/浅色/深色）与终端配色，标题条右侧另有太阳/月亮一键切换；改动即存，字体/字号/配色即时下发引擎。
-- 菜单：每个窗口 `Context.SetMenuPresentation(ui.PopoverMenus)`，所有弹出菜单（含终端插件自带的复制/粘贴/全选/清空屏幕）都在窗口内按主题绘制；标签/侧栏的分屏等菜单仍用 `PopoverMenu`。`locales/zh.json` 以 `mygo.*` 键把框架文案补成中文。
+- 菜单：每个窗口 `Context.SetMenuPresentation(myui.PopoverMenus)`，所有弹出菜单（含终端插件自带的复制/粘贴/全选/清空屏幕）都在窗口内按主题绘制；标签/侧栏的分屏等菜单仍用 `PopoverMenu`。`ui/locales/zh.json` 以 `mygo.*` 键把框架文案补成中文。
 - 审计窗口：筛选（全部/成功/失败/被拦截）+ 搜索 + 列表（时间/结果/工具/命令/客户端/耗时）+ 右侧详情（元信息、命令块、护栏判定、复制命令/JSONL）。
-- Toast：`ui.Toast` 提示连接失败/会话退出/复制结果。
+- Toast：`myui.Toast` 提示连接失败/会话退出/复制结果。
 
 ## 5. MCP 协议设计（internal/mcp）
 
@@ -315,7 +356,7 @@ tools/call(run_command, id=X) ──▶ Adapter.begin(X, "run_command")
 | R2 | ConPTY 中文乱码 | cmd 强制 chcp 65001；PowerShell 注入 UTF8；git-bash 原生；测试覆盖中文回显 |
 | R3 | Mirror 弹窗与主视图输入/尺寸竞争 | 输入统一走 `Send`（线程安全）；尺寸以视图实际尺寸为准（Mirror 终端 `ResizeByConn` 模式适配） |
 | R4 | MCP 任意命令执行能力被滥用 | 回环 + token；文档警示；GUI 可关 HTTP MCP；stdio 由宿主客户端环境负责 |
-| R5 | mygo 为本地开发版（replace 锁路径） | API 假设集中在 app.go/ui_chrome.go/engine，便于随框架演进适配 |
+| R5 | mygo 为本地开发版（replace 锁路径） | API 假设集中在 `ui/` 包与 `internal/engine`，便于随框架演进适配 |
 | R6 | SSH stderr/stdout 交错 | 单读循环聚合；窗口变化经 `WindowChange` 同步 |
 | R7 | `Text()` 全量读取对大回滚的性能 | MCP 读取用游标增量；`screen_session` 只取屏；必要时 P2 改用 `Snapshot()`/Mirror 精确化 |
 

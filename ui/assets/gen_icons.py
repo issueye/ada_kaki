@@ -5,8 +5,8 @@ its cursor dot, which doubles as the persimmon. Sizes below 32 drop the
 dot and use a solid chevron, so the prompt still reads at 16 px.
 
 After changing icon.ico, refresh the Windows executable resource with:
-    rsrc -ico assets/icon.ico -arch amd64 -o rsrc_windows_amd64.syso
-    rsrc -ico assets/icon.ico -arch arm64 -o rsrc_windows_arm64.syso
+    rsrc -ico ui/assets/icon.ico -arch amd64 -o rsrc_windows_amd64.syso
+    rsrc -ico ui/assets/icon.ico -arch arm64 -o rsrc_windows_arm64.syso
 """
 
 import io

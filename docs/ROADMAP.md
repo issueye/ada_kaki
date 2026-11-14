@@ -151,7 +151,7 @@
 
 | # | 风险 | 影响 | 缓解 | 关联 |
 |---|---|---|---|---|
-| R1 | 框架快速演进（468 提交/次的节奏），replace 依赖可能遇破坏性变更 | 构建/行为 | 每阶段质量门全绿；API 假设集中在 app.go/ui_chrome.go/engine | P15+ 全部 |
+| R1 | 框架快速演进（468 提交/次的节奏），replace 依赖可能遇破坏性变更 | 构建/行为 | 每阶段质量门全绿；API 假设集中在 `ui/` 包与 `internal/engine` | P15+ 全部 |
 | R2 | 跨平台凭据 API（Keychain/libsecret）行为差异 | SSH 密码存取 | store.Secret 接口先抽象后实现；无后端时明示降级 | P18 |
 | R3 | 自动更新签名与托管配置复杂 | P20 卡壳 | 先 ad-hoc + GitHub Releases 最小链路，签名证书后补 | P19/P20 |
 | R4 | GUI 自动化覆盖不足导致回归 | v1.0 质量 | automation 插件早接入（P24 前置于 RC） | P24 |

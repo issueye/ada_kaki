@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"strings"
 	"testing"
 
 	"adakaki/internal/engine"
@@ -136,5 +137,67 @@ func TestAIDockHiddenWhenDisabled(t *testing.T) {
 	tt.Frame()
 	if tt.HasText("AI 操作") {
 		t.Fatalf("a disabled operator must not render the dock; texts = %v", tt.Texts())
+	}
+}
+
+// The dock's target line and composer keep long values short, so a command
+// line title or a big token count cannot wrap the 24 DIP strip.
+func TestCompactTitle(t *testing.T) {
+	cases := map[string]string{
+		"":           "",
+		"PowerShell": "PowerShell",
+		`C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`: "powershell.exe",
+		"/usr/local/bin/bash": "bash",
+		"  管理员: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe": "powershell.exe",
+	}
+	for in, want := range cases {
+		if got := compactTitle(in); got != want {
+			t.Fatalf("compactTitle(%q) = %q, want %q", in, got, want)
+		}
+	}
+	long := strings.Repeat("长", 40)
+	got := compactTitle(long)
+	if r := []rune(got); len(r) != 29 {
+		t.Fatalf("a long title should be cut to 28 runes plus an ellipsis, got %d runes", len(r))
+	}
+}
+
+func TestHumanCount(t *testing.T) {
+	cases := map[int]string{
+		0:       "0",
+		999:     "999",
+		1240:    "1.2k",
+		277164:  "277.2k",
+		1000000: "1.0M",
+	}
+	for n, want := range cases {
+		if got := humanCount(n); got != want {
+			t.Fatalf("humanCount(%d) = %q, want %q", n, got, want)
+		}
+	}
+}
+
+// A long session title used to push the header into two lines; the dock now
+// keeps "AI 操作" on one line and carries the title on the target line.
+func TestAIDockHeadStaysOnOneLine(t *testing.T) {
+	a := newAITestApp(t)
+	a.store.Settings.AI.Enabled = true
+	a.aiDockOpen = true
+	a.aiMu.Lock()
+	a.aiOps = []aiOp{{kind: "op", tool: "read_session", ok: true}, {kind: "op", tool: "run_command", ok: true}}
+	a.aiMu.Unlock()
+
+	tt := myui.NewTester(func(c *myui.Context) { a.aiDockHead(c, c.Theme()) }, 340, 60)
+	tt.Frame()
+	if !tt.HasText("AI 操作") {
+		t.Fatalf("the header title is missing; texts = %v", tt.Texts())
+	}
+	if !tt.HasText("2 步") {
+		t.Fatalf("the step count is missing; texts = %v", tt.Texts())
+	}
+	for _, s := range tt.Texts() {
+		if strings.Contains(s, "AI 操\n") {
+			t.Fatalf("the title wrapped: %q", s)
+		}
 	}
 }

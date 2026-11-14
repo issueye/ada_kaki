@@ -9,6 +9,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 
 	"adakaki/internal/store"
 
@@ -118,14 +119,12 @@ func (a *app) aiDock(c *myui.Context) {
 func (a *app) aiDockHead(c *myui.Context, t *myui.Theme) {
 	myui.Row(c).FillWidth().Height(36).Padding(0, 6, 0, 12).Gap(7).
 		AlignItems(myui.Center).Children(func() {
-		myui.Icon(c, icoMessage).FontSize(14).TextColor(t.Accent)
-		myui.Text(c, "AI 操作").FontSize(12).FontWeight(600).TextColor(t.Text)
-		if s := a.active(); s != nil {
-			chip(c, s.Title(), t.TextMuted, t.Background)
-		}
+		myui.Icon(c, icoMessage).FontSize(14).TextColor(t.Accent).Shrink(0)
+		myui.Text(c, "AI 操作").FontSize(12).FontWeight(600).TextColor(t.Text).
+			SingleLine().Shrink(0)
 		myui.Spacer(c)
 		if n := a.aiStepCount(); n > 0 {
-			chip(c, fmt.Sprintf("%d 步", n), t.TextMuted, t.Background)
+			chip(c, fmt.Sprintf("%d 步", n), t.TextMuted, t.Background).Shrink(0)
 		}
 		ghostButton(c, icoChevronRight, "收起 AI 操作栏", "收起（Ctrl+Alt+A）",
 			a.toggleAIDock)
@@ -138,7 +137,7 @@ func (a *app) aiDockTarget(c *myui.Context, t *myui.Theme) {
 	color := t.TextMuted
 	label := "选择一个会话后开始"
 	if s := a.active(); s != nil {
-		label = "目标会话 " + s.ID()
+		label = "目标会话 " + s.ID() + " · " + compactTitle(s.Title())
 		if on, tool := s.AgentLock(); on {
 			color = t.Success
 			label = "正在执行 " + tool + " · " + s.ID()
@@ -158,11 +157,11 @@ func (a *app) aiDockTarget(c *myui.Context, t *myui.Theme) {
 			myui.Text(c, label).FontSize(10.5).TextColor(t.TextMuted).
 				SingleLine().Ellipsis("…").Grow(1)
 			if myui.Button(c, "").Label("审计").Height(20).Padding(0, 6).Radius(5).
-				FontSize(10).Background(myui.Transparent).BorderWidth(0).
+				FontSize(10).Background(myui.Transparent).BorderWidth(0).Shrink(0).
 				Children(func() {
 					myui.Text(c, "审计").FontSize(10).FontWeight(500).
-						TextColor(t.Accent)
-					myui.Icon(c, icoChevronRight).FontSize(10).TextColor(t.Accent)
+						TextColor(t.Accent).SingleLine()
+					myui.Icon(c, icoChevronRight).FontSize(10).TextColor(t.Accent).Shrink(0)
 				}).Clicked() {
 				a.openAudit()
 			}
@@ -232,10 +231,10 @@ func (a *app) aiOpEntry(c *myui.Context, t *myui.Theme, op aiOp) {
 				if !op.ok {
 					icon, color, label = icoAlert, t.Warning, "未完成"
 				}
-				myui.Icon(c, icon).FontSize(12).TextColor(color)
-				mono(c, op.tool).FontSize(10).TextColor(t.Accent)
+				myui.Icon(c, icon).FontSize(12).TextColor(color).Shrink(0)
+				mono(c, op.tool).FontSize(10).TextColor(t.Accent).SingleLine().Shrink(0)
 				myui.Spacer(c)
-				chip(c, label, color, t.Surface)
+				chip(c, label, color, t.Surface).Shrink(0)
 			})
 			if op.cmd != "" {
 				mono(c, op.cmd).FontSize(10).TextColor(t.Text).SingleLine().Ellipsis("…")
@@ -254,10 +253,10 @@ func (a *app) aiOpEntry(c *myui.Context, t *myui.Theme, op aiOp) {
 				}
 				myui.Spacer(c)
 				if myui.Button(c, "").Label("查看审计").Height(18).Padding(0, 4).
-					Radius(4).Background(myui.Transparent).BorderWidth(0).
+					Radius(4).Background(myui.Transparent).BorderWidth(0).Shrink(0).
 					Children(func() {
 						myui.Text(c, "查看审计").FontSize(9.5).FontWeight(500).
-							TextColor(t.Accent)
+							TextColor(t.Accent).SingleLine()
 					}).Clicked() {
 					a.openAudit()
 				}
@@ -278,7 +277,7 @@ func (a *app) aiComposer(c *myui.Context, t *myui.Theme) {
 				Placeholder("让它做点什么，或继续上一轮…").
 				PlaceholderColor(t.TextMuted)
 			send := myui.Button(c, "").Label("发送").Width(26).Height(26).
-				Padding(0).Radius(7).Background(t.Accent).Children(func() {
+				Padding(0).Radius(7).Background(t.Accent).Shrink(0).Children(func() {
 				myui.Icon(c, icoSend).FontSize(13).TextColor(t.AccentText)
 			})
 			if running {
@@ -297,10 +296,39 @@ func (a *app) aiComposer(c *myui.Context, t *myui.Theme) {
 			Children(func() {
 				cfg := a.store.Settings.AI
 				mono(c, cfg.Model).FontSize(9.5).TextColor(t.TextMuted).
-					SingleLine().Ellipsis("…")
-				myui.Text(c, fmt.Sprintf("· tokens %d", tokens)).FontSize(9.5).
-					TextColor(t.TextMuted)
+					SingleLine().Ellipsis("…").Shrink(0)
+				myui.Text(c, "· tokens "+humanCount(tokens)).FontSize(9.5).
+					TextColor(t.TextMuted).SingleLine().Shrink(0)
 				myui.Spacer(c)
 			})
 	})
+}
+
+// compactTitle shortens a session title for the dock's 24 DIP target line:
+// the last path segment of a command line, at most 28 runes.
+func compactTitle(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return ""
+	}
+	if i := strings.LastIndexAny(s, `\/`); i >= 0 && i+1 < len(s) {
+		s = s[i+1:]
+	}
+	r := []rune(s)
+	if len(r) > 28 {
+		s = string(r[:28]) + "…"
+	}
+	return s
+}
+
+// humanCount renders a token total as 277 / 1.2k / 1.1M.
+func humanCount(n int) string {
+	switch {
+	case n < 1000:
+		return fmt.Sprint(n)
+	case n < 1_000_000:
+		return fmt.Sprintf("%.1fk", float64(n)/1000)
+	default:
+		return fmt.Sprintf("%.1fM", float64(n)/1_000_000)
+	}
 }

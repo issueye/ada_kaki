@@ -49,6 +49,9 @@ func (a *app) mainView(c *myui.Context) {
 	if c.Shortcut(myui.Cmd, myui.KeyB) {
 		a.sidebarCollapsed = !a.sidebarCollapsed
 	}
+	if c.Shortcut(myui.Cmd|myui.Alt, myui.KeyA) {
+		a.toggleAIDock()
+	}
 
 	myui.Column(c).Fill().Children(func() {
 		a.appHeader(c)
@@ -76,10 +79,31 @@ func (a *app) mainView(c *myui.Context) {
 }
 
 // contentPane is the right column below the shared header: the tab bar
-// and the terminal panes.
+// and the terminal panes, with the AI dock beside them when it is open.
+// The split is laid out right to left so that the dock, its first pane,
+// sits on the right and the divider drags its width.
 func (a *app) contentPane(c *myui.Context) {
-	myui.Column(c).Fill().Background(c.Theme().Background).Children(func() {
-		a.tabBar(c)
-		a.terminalArea(c)
-	})
+	content := func() {
+		myui.Column(c).Fill().Direction(myui.LeftToRight).
+			Background(c.Theme().Background).Children(func() {
+			a.tabBar(c)
+			a.terminalArea(c)
+		})
+	}
+	if !a.aiDockVisible() {
+		content()
+		return
+	}
+	a.aiDockW = clampAIDockWidth(a.aiDockW)
+	sp := myui.Split(c, &a.aiDockW, func() { a.aiDock(c) }, content).Fill()
+	sp.Direction(myui.RightToLeft)
+	// The divider writes the width every frame it moves; persist once the
+	// drag has settled instead of on each frame.
+	if sp.Changed() {
+		a.aiDockW = clampAIDockWidth(a.aiDockW)
+	} else if int(a.aiDockW) != a.aiDockSaved {
+		a.aiDockSaved = int(a.aiDockW)
+		a.store.Settings.AI.DockWidth = a.aiDockSaved
+		a.saveSettingsNow()
+	}
 }

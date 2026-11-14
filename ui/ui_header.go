@@ -47,6 +47,7 @@ func (a *app) appHeader(c *myui.Context) {
 			myui.Text(c, "没有活动会话").FontSize(12).TextColor(t.TextMuted)
 		}
 		myui.Spacer(c)
+		a.aiButton(c)
 		if n, _, _ := a.agentSummary(); n > 0 {
 			myui.Row(c).Padding(3, 8).Gap(5).Radius(6).
 				Background(t.Warning.Alpha(0.14)).AlignItems(myui.Center).Children(func() {

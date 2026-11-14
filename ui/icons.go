@@ -38,6 +38,10 @@ var (
 
 	icoChevronDown = iconSVG(`<path d="m6 9 6 6 6-6"/>`)
 
+	icoChevronRight = iconSVG(`<path d="M9 5l7 7-7 7"/>`)
+
+	icoChevronLeft = iconSVG(`<path d="M15 5l-7 7 7 7"/>`)
+
 	icoCheck = iconSVG(`<path d="M20 6 9 17l-5-5"/>`)
 
 	icoCircleX = iconSVG(`<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>`)
@@ -105,6 +109,9 @@ var (
 	// icoMessage is the AI operator's speech bubble: the settings category
 	// and the title-bar AI button, matching the design boards 08–10.
 	icoMessage = iconSVG(`<path d="M20 11.8c0 3.3-3.6 6-8 6-1 0-1.9-.14-2.8-.4L4 19l1.2-3.3A5.9 5.9 0 0 1 4 11.8C4 8.5 7.6 5.8 12 5.8s8 2.7 8 6z"/>`)
+
+	// icoSend is the margin arrow of the AI dock's composer.
+	icoSend = iconSVG(`<path d="M7 17L17 7"/><path d="M9 7h8v8"/>`)
 
 	// icoDot is the state dot: filled, in the text color of its context.
 	icoDot = myui.MustParseSVG([]byte(

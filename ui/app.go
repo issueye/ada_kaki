@@ -130,6 +130,14 @@ type app struct {
 	aiProbe       string // the connection probe's last outcome
 	aiProbeOK     bool
 
+	// the AI dock: its open state and dragged width, and the timeline the
+	// agent will fill (empty until the loop lands in A5)
+	aiDockOpen  bool
+	aiDockW     float32
+	aiDockSaved int // the width last written to config, to debounce drags
+	aiInput     string
+	aiOps       []aiOp
+
 	// the split panes of the active tab: a binary tree of leaves, one
 	// session each, and the focused leaf, which activeID names too; zoom
 	// is the leaf shown over the whole area, nil for none
@@ -223,6 +231,9 @@ func newApp() *app {
 		aiKeyEnvText:  aiCfg.APIKeyEnv,
 		aiMaxCalls:    float64(aiCfg.MaxToolCalls),
 		aiTokens:      float64(aiCfg.SessionTokenLimit),
+		aiDockOpen:    aiCfg.DockOpenOn(),
+		aiDockW:       float32(aiCfg.DockWidth),
+		aiDockSaved:   aiCfg.DockWidth,
 		guard: guard.FromSettings(cfg.Settings.GuardDisabled, cfg.Settings.GuardHeadless,
 			cfg.Settings.GuardDeny, cfg.Settings.GuardConfirm),
 	}

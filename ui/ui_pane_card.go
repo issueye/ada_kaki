@@ -52,7 +52,14 @@ func (a *app) paneCard(c *myui.Context, n *paneNode) myui.Element {
 					v = v.AutoFocus()
 				}
 				if on, tool := session.AgentLock(); on {
-					a.agentMask(c, tool, session.Title())
+					// With the dock open the AI panel already carries the
+					// live step and the audit link, so the pane keeps a
+					// compact chip instead of a second veil (board 09).
+					if a.aiDockVisible() {
+						a.agentChip(c, tool)
+					} else {
+						a.agentMask(c, tool, session.Title())
+					}
 				}
 			}
 		})
@@ -194,6 +201,19 @@ func paneBtn(c *myui.Context, svg *myui.SVG, label, tip string) myui.Element {
 		myui.Icon(c, svg).FontSize(13).TextColor(color)
 	})
 	return b
+}
+
+// agentChip marks a pane the AI is operating while the dock is open: the
+// dock carries the detail, so the pane only flags the lock.
+func (a *app) agentChip(c *myui.Context, tool string) {
+	t := c.Theme()
+	myui.Box(c).Absolute().Top(6).Right(8).Padding(3, 8).Radius(6).
+		Background(t.Warning.Alpha(0.14)).Children(func() {
+		myui.Row(c).Gap(5).AlignItems(myui.Center).Children(func() {
+			myui.Icon(c, icoBot).FontSize(12).TextColor(t.Warning)
+			myui.Text(c, "AI 操作中 · "+tool).FontSize(10.5).TextColor(t.Warning)
+		})
+	})
 }
 
 // agentMask covers a pane an AI agent is operating: a translucent veil

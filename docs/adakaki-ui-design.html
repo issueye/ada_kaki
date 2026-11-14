@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AdaKaki 控制台 · UI 设计图（对齐 v0.2 现状）</title>
+<title>AdaKaki 控制台 UI v0.2 · AI 操作栏与 AI 设置（同步版 · 10 画板）</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0f1014;color:#e8e9ee;font-family:"Segoe UI",system-ui,"PingFang SC","Microsoft YaHei",sans-serif;padding:20px}
@@ -11,7 +11,7 @@ header{display:flex;align-items:baseline;gap:12px;margin-bottom:16px}
 h1{font-size:18px;font-weight:700}
 meta-info{color:#8a8fa0}
 .meta{color:#8a8fa0;font-size:12px}
-.board{position:relative;background-image:radial-gradient(#2a2b36 1px,transparent 1px);background-size:28px 28px;border:1px solid #2a2b36;border-radius:12px;min-width:2970px;min-height:3666px}
+.board{position:relative;background-image:radial-gradient(#2a2b36 1px,transparent 1px);background-size:28px 28px;border:1px solid #2a2b36;border-radius:12px;min-width:4280px;min-height:3776px}
 .frame{position:absolute;background:#16171d;border:1px solid #2a2b36;border-radius:10px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,.45)}
 .cap{display:flex;align-items:center;gap:8px;height:26px;padding:0 10px;border-bottom:1px solid #2a2b36;font-size:11px;flex:none}
 .cap-title{font-weight:600}
@@ -21,9 +21,9 @@ meta-info{color:#8a8fa0}
 </style>
 </head>
 <body>
-<header><h1>AdaKaki 控制台 · UI 设计图（对齐 v0.2 现状）</h1><span class="meta">adago-design · 2026-11-13 23:48</span></header>
+<header><h1>AdaKaki 控制台 UI v0.2 · AI 操作栏与 AI 设置（同步版 · 10 画板）</h1><span class="meta">adago-design · 2026-11-14 12:58</span></header>
 <div class="board">
-<div class="frame" style="left:40px;top:40px;width:1440px;height:900px"><div class="cap"><span class="cap-title">01 主窗口 · 深色（侧栏展开 / 标签 + 分格卡片 / Agent 蒙版 / 状态条）</span><span class="cap-meta"> · screen · desktop-app</span></div><iframe sandbox="allow-same-origin" srcdoc="&lt;!doctype html&gt;
+<div class="frame" style="left:120px;top:120px;width:1440px;height:900px"><div class="cap"><span class="cap-title">01 主窗口 · 深色（侧栏展开 / 标签 + 分格卡片 / Agent 蒙版 / 状态条）</span><span class="cap-meta">adakaki · screen · desktop-app</span></div><iframe sandbox="allow-same-origin" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#39;zh-CN&#39;&gt;
 &lt;head&gt;
 &lt;meta http-equiv=&#34;Content-Security-Policy&#34; content=&#34;default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src data:; font-src data:&#34;&gt;
@@ -40,7 +40,7 @@ meta-info{color:#8a8fa0}
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{width:1440px;height:900px;overflow:hidden;background:var(--bg);color:var(--text);
-       font-family:var(--ui);-webkit-font-smoothing:antialiased;user-select:none}
+       font-family:&#39;Inter&#39;,&#39;Noto Sans SC&#39;,system-ui,-apple-system,&#39;Segoe UI&#39;,sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
   svg.ic{width:14px;height:14px;flex:0 0 auto;stroke:currentColor;fill:none;
          stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .win{display:flex;flex-direction:column;width:1440px;height:900px}
@@ -75,14 +75,14 @@ meta-info{color:#8a8fa0}
   .action:hover{background:var(--hover)}
   .action-label{font-size:12px;font-weight:500}
   .kbd{margin-left:auto;padding:2px 6px;border:1px solid var(--border);border-radius:4px;
-       font-family:var(--mono);font-size:10px;color:var(--muted)}
+       font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:10px;color:var(--muted)}
   .field{display:flex;align-items:center;gap:6px;height:28px;padding:0 8px;border-radius:6px;
          background:var(--bg);border:1px solid var(--border);color:var(--muted)}
   .field span{font-size:11.5px}
   .sessions{flex:1 1 auto;overflow:hidden;padding-top:2px}
   .group-head{display:flex;align-items:center;gap:6px;height:26px;padding:0 12px 0 14px;color:var(--muted)}
   .group-head b{font-size:10.5px;font-weight:500}
-  .group-head em{margin-left:auto;font-family:var(--mono);font-size:9.5px;font-style:normal;
+  .group-head em{margin-left:auto;font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9.5px;font-style:normal;
                  color:rgba(145,151,161,.75)}
   .rows{padding:0 8px 6px;display:flex;flex-direction:column;gap:1px}
   .row{display:flex;align-items:center;gap:8px;height:30px;padding:0 8px;border-radius:6px}
@@ -101,7 +101,7 @@ meta-info{color:#8a8fa0}
                   font-size:11px;font-weight:500}
   .agent-card .hd .n{margin-left:auto;padding:2px 6px;border-radius:4px;font-size:9.5px;
                     background:rgba(224,164,74,.14)}
-  .agent-card .cmd{font-family:var(--mono);font-size:9.5px;color:var(--muted);
+  .agent-card .cmd{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9.5px;color:var(--muted);
                    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .agent-card .ft{display:flex;align-items:center;gap:8px;font-size:9.5px;color:var(--muted)}
   /* ---- 内容区 ---- */
@@ -128,7 +128,7 @@ meta-info{color:#8a8fa0}
   .phead .cwd{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px}
   .pbtn{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
   .pbtn:hover{background:var(--hover);color:var(--text)}
-  .term{flex:1 1 auto;min-height:0;padding:0 8px 8px;font-family:var(--mono);font-size:12.5px;
+  .term{flex:1 1 auto;min-height:0;padding:0 8px 8px;font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:12.5px;
         line-height:1.45;color:var(--text);overflow:hidden}
   .ln{white-space:pre}
   .acc{color:var(--accent)} .g{color:var(--success)} .y{color:var(--warning)}
@@ -152,7 +152,7 @@ meta-info{color:#8a8fa0}
   /* ---- 状态条：28 ---- */
   .footer{display:flex;align-items:center;gap:9px;height:28px;flex:0 0 28px;padding:0 12px;
           background:var(--surface);border-top:1px solid var(--border);font-size:10.5px;color:var(--muted)}
-  .mono{font-family:var(--mono);font-size:9.5px}
+  .mono{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9.5px}
   .footer .sep{width:1px;height:14px;background:var(--border);margin:0 2px}
   .footer .on{display:flex;align-items:center;gap:5px}
 &lt;/style&gt;
@@ -349,7 +349,7 @@ meta-info{color:#8a8fa0}
 &lt;/div&gt;
 &lt;/body&gt;
 &lt;/html&gt;" scrolling="auto"></iframe></div>
-<div class="frame" style="left:40px;top:980px;width:1440px;height:900px"><div class="cap"><span class="cap-title">02 主窗口 · 浅色（分屏缝合 8px / 浮层搜索卡）</span><span class="cap-meta"> · screen · desktop-app</span></div><iframe sandbox="allow-same-origin" srcdoc="&lt;!doctype html&gt;
+<div class="frame" style="left:40px;top:1020px;width:1440px;height:900px"><div class="cap"><span class="cap-title">02 主窗口 · 浅色（分屏缝合 8px / 浮层搜索卡）</span><span class="cap-meta">adakaki · screen · desktop-app</span></div><iframe sandbox="allow-same-origin" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#39;zh-CN&#39;&gt;
 &lt;head&gt;
 &lt;meta http-equiv=&#34;Content-Security-Policy&#34; content=&#34;default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src data:; font-src data:&#34;&gt;
@@ -366,7 +366,7 @@ meta-info{color:#8a8fa0}
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{width:1440px;height:900px;overflow:hidden;background:var(--bg);color:var(--text);
-       font-family:var(--ui);-webkit-font-smoothing:antialiased;user-select:none}
+       font-family:&#39;Inter&#39;,&#39;Noto Sans SC&#39;,system-ui,-apple-system,&#39;Segoe UI&#39;,sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
   svg.ic{width:14px;height:14px;flex:0 0 auto;stroke:currentColor;fill:none;
          stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .win{display:flex;flex-direction:column;height:900px}
@@ -388,14 +388,14 @@ meta-info{color:#8a8fa0}
   .action{display:flex;align-items:center;gap:7px;height:30px;padding:0 8px;border-radius:6px}
   .action-label{font-size:12px;font-weight:500}
   .kbd{margin-left:auto;padding:2px 6px;border:1px solid var(--border);border-radius:4px;
-       font-family:var(--mono);font-size:10px;color:var(--muted);background:var(--bg)}
+       font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:10px;color:var(--muted);background:var(--bg)}
   .field{display:flex;align-items:center;gap:6px;height:28px;padding:0 8px;border-radius:6px;
          background:var(--bg);border:1px solid var(--border);color:var(--muted)}
   .field span{font-size:11.5px}
   .sessions{flex:1 1 auto;overflow:hidden;padding-top:2px}
   .group-head{display:flex;align-items:center;gap:6px;height:26px;padding:0 12px 0 14px;color:var(--muted)}
   .group-head b{font-size:10.5px;font-weight:500}
-  .group-head em{margin-left:auto;font-family:var(--mono);font-size:9.5px;font-style:normal;
+  .group-head em{margin-left:auto;font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9.5px;font-style:normal;
                  color:rgba(110,106,98,.75)}
   .rows{padding:0 8px 6px;display:flex;flex-direction:column;gap:1px}
   .row{display:flex;align-items:center;gap:8px;height:30px;padding:0 8px;border-radius:6px}
@@ -428,7 +428,7 @@ meta-info{color:#8a8fa0}
   .phead .dim{font-size:11px;color:var(--muted);font-weight:500}
   .phead .cwd{font-size:11px;color:var(--muted)}
   .pbtn{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
-  .term{flex:1 1 auto;min-height:0;padding:0 8px 8px;font-family:var(--mono);font-size:12.5px;
+  .term{flex:1 1 auto;min-height:0;padding:0 8px 8px;font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:12.5px;
         line-height:1.55;overflow:hidden}
   .ln{white-space:pre}
   .acc{color:var(--accent)} .g{color:var(--success)} .b{color:#2F5FAF} .m{color:var(--muted)}
@@ -438,7 +438,7 @@ meta-info{color:#8a8fa0}
   .gutter i{width:3px;height:36px;border-radius:1.5px;background:rgba(110,106,98,.45)}
   .footer{display:flex;align-items:center;gap:9px;height:28px;flex:0 0 28px;padding:0 12px;
           background:var(--surface);border-top:1px solid var(--border);font-size:10.5px;color:var(--muted)}
-  .mono{font-family:var(--mono);font-size:9.5px}
+  .mono{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9.5px}
   .footer .sep{width:1px;height:14px;background:var(--border);margin:0 2px}
   .on{display:flex;align-items:center;gap:5px}
   /* 浮层搜索卡：钉在聚焦分格右上、位于终端文本之外的第一行 */
@@ -446,7 +446,7 @@ meta-info{color:#8a8fa0}
         display:flex;align-items:center;border-radius:8px;background:var(--surface);
         border:1px solid var(--border);box-shadow:0 12px 28px -6px rgba(30,28,24,.28);z-index:6}
   .find .txt{flex:1 1 auto;font-size:11.5px}
-  .find .cnt{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+  .find .cnt{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:10.5px;color:var(--muted)}
   .find .fb{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;
             justify-content:center;color:var(--muted)}
   .find .fb:hover{background:var(--hover)}
@@ -612,245 +612,7 @@ meta-info{color:#8a8fa0}
 &lt;/div&gt;
 &lt;/body&gt;
 &lt;/html&gt;" scrolling="auto"></iframe></div>
-<div class="frame" style="left:40px;top:1920px;width:1440px;height:900px"><div class="cap"><span class="cap-title">03 侧栏收缩态 · 56px 网格 + 规格图例</span><span class="cap-meta"> · screen · desktop-app</span></div><iframe sandbox="allow-same-origin" srcdoc="&lt;!doctype html&gt;
-&lt;html lang=&#39;zh-CN&#39;&gt;
-&lt;head&gt;
-&lt;meta http-equiv=&#34;Content-Security-Policy&#34; content=&#34;default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src data:; font-src data:&#34;&gt;
-&lt;meta charset=&#39;utf-8&#39;&gt;
-&lt;style&gt;
-  :root{
-    --bg:#0E0F12; --surface:#15171B; --hover:#22262D; --pressed:#2A2E36;
-    --border:#252932; --text:#EDEAE5; --muted:#9197A1;
-    --accent:#E4633C; --accent-hover:#F0744C; --accent-text:#1A0F0B;
-    --success:#4FBF6A; --warning:#E0A44A;
-    --pane:#15171B; --pane-focus:#1E2127;
-    --ui:&#39;Inter&#39;,&#39;Noto Sans SC&#39;,system-ui,&#39;Segoe UI&#39;,sans-serif;
-    --mono:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{width:1440px;height:900px;overflow:hidden;background:var(--bg);color:var(--text);
-       font-family:var(--ui);-webkit-font-smoothing:antialiased;user-select:none}
-  svg.ic{width:14px;height:14px;flex:0 0 auto;stroke:currentColor;fill:none;
-         stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-  .win{display:flex;flex-direction:column;height:900px}
-  .titlebar{display:flex;align-items:center;gap:9px;height:40px;flex:0 0 40px;
-    padding:0 138px 0 14px;background:var(--surface);border-bottom:1px solid var(--border)}
-  .logo-btn{width:24px;height:24px;border-radius:6px;background:var(--accent);
-    display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-  .brand{font-size:13.5px;font-weight:600}
-  .chip{padding:2px 6px;border-radius:4px;font-size:9.5px;font-weight:500;color:var(--muted);background:var(--bg)}
-  .rule{width:1px;height:16px;background:var(--border);margin:0 2px}
-  .ghost{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
-  .dot{width:6px;height:6px;border-radius:50%;flex:0 0 auto}
-  .spacer{flex:1 1 auto}
-  .body{display:flex;flex:1 1 auto;min-height:0}
-  .rail{width:56px;flex:0 0 56px;background:var(--surface);border-right:1px solid var(--border);
-        display:flex;flex-direction:column;align-items:center;min-height:0}
-  .rail .top{width:100%;padding:10px 0 0;display:flex;flex-direction:column;align-items:center;gap:8px}
-  .ra{border-radius:10px;display:flex;align-items:center;justify-content:center}
-  .ra.accent{width:36px;height:36px;background:var(--accent);color:var(--accent-text)}
-  .ra.hollow{width:36px;height:36px;color:var(--muted)}
-  .rail .split{width:28px;height:1px;background:var(--border);margin:14px 0}
-  .rail .sessions{width:100%;flex:1 1 auto;overflow:hidden;display:flex;flex-direction:column;
-                  align-items:center;gap:6px}
-  .rs{position:relative;width:36px;height:36px;border-radius:10px;display:flex;
-      align-items:center;justify-content:center;color:var(--muted)}
-  .rs.on{background:var(--hover);color:var(--accent)}
-  .rs.on::before{content:&#39;&#39;;position:absolute;left:0;top:9px;width:2px;height:18px;
-                 border-radius:1px;background:var(--accent)}
-  .rs .st{position:absolute;right:5px;bottom:5px;width:6px;height:6px;border-radius:50%;
-          border:1.5px solid var(--surface);box-sizing:content-box}
-  .rail .foot{padding:0 0 10px}
-  .content{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;background:var(--bg);position:relative}
-  .tabbar{display:flex;align-items:flex-end;gap:2px;height:40px;flex:0 0 40px;padding:0 8px;
-          background:var(--surface);border-bottom:1px solid var(--border)}
-  .tab{display:flex;align-items:center;gap:5px;height:30px;padding:0 4px 0 8px;border-radius:7px 7px 0 0;
-       color:var(--muted);font-size:11.5px}
-  .tab.on{background:var(--bg);border:1px solid var(--border);border-bottom-color:var(--bg);color:var(--text)}
-  .tab.on .t{font-weight:500}
-  .tab .t{max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .tab .x{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center}
-  .tab-end{margin-left:auto;display:flex;align-items:center;gap:2px;padding-bottom:5px}
-  .panes{flex:1 1 auto;min-height:0;display:flex;gap:8px;padding:8px}
-  .pane{flex:1 1 0;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;
-        background:var(--pane);border:1px solid var(--border);min-width:0;position:relative}
-  .pane.focus{background:var(--pane-focus);border-color:rgba(228,99,60,.55)}
-  .phead{display:flex;align-items:center;gap:7px;height:34px;flex:0 0 34px;padding:0 8px 0 10px}
-  .phead .title{font-size:12px;font-weight:600}
-  .pbtn{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
-  .term{flex:1 1 auto;min-height:0;padding:0 8px 8px;font-family:var(--mono);font-size:12.5px;line-height:1.45}
-  .ln{white-space:pre}
-  .b{color:#6EA8FE} .m{color:var(--muted)} .g{color:var(--success)} .acc{color:var(--accent)}
-  .cursor{display:inline-block;width:7px;height:13px;background:var(--accent);vertical-align:-2px;margin-left:2px}
-  .footer{display:flex;align-items:center;gap:9px;height:28px;flex:0 0 28px;padding:0 12px;
-          background:var(--surface);border-top:1px solid var(--border);font-size:10.5px;color:var(--muted)}
-  .mono{font-family:var(--mono);font-size:9.5px}
-  .footer .sep{width:1px;height:14px;background:var(--border);margin:0 2px}
-  .on{display:flex;align-items:center;gap:5px}
-  .legend{position:absolute;left:24px;bottom:24px;width:440px;padding:14px 16px;border-radius:10px;
-          background:rgba(228,99,60,.07);border:1px solid rgba(228,99,60,.32);
-          display:flex;flex-direction:column;gap:7px;z-index:8}
-  .legend .lt{display:flex;align-items:center;gap:7px;font-size:10px;font-weight:500;
-              letter-spacing:.5px;color:var(--accent)}
-  .legend .row{display:flex;align-items:baseline;gap:10px;font-size:10.5px;color:var(--muted)}
-  .legend .row .k{font-family:var(--mono);font-size:10px;color:var(--accent);width:96px;flex:0 0 auto}
-  .legend .row .v{color:var(--text)}
-&lt;/style&gt;
-&lt;/head&gt;
-&lt;body&gt;
-&lt;svg width=&#39;0&#39; height=&#39;0&#39; style=&#39;position:absolute&#39;&gt;&lt;defs&gt;
-  &lt;symbol id=&#39;i-mark&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M5.8 6.2 10.9 12l-5.1 5.8&#39; stroke-width=&#39;2.1&#39;/&gt;&lt;circle cx=&#39;16.2&#39; cy=&#39;17.8&#39; r=&#39;1.9&#39; fill=&#39;currentColor&#39; stroke=&#39;none&#39;/&gt;&lt;/symbol&gt;
-  &lt;symbol id=&#39;i-plus&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M12 5v14M5 12h14&#39;/&gt;&lt;/symbol&gt;
-  &lt;symbol id=&#39;i-search&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;circle cx=&#39;11&#39; cy=&#39;11&#39; r=&#39;6&#39;/&gt;&lt;path d=&#39;M20 20l-3.6-3.6&#39;/&gt;&lt;/symbol&gt;
-  &lt;symbol id=&#39;i-close&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M6 6l12 12M18 6L6 18&#39;/&gt;&lt;/symbol&gt;
-  &lt;symbol id=&#39;i-terminal&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;m4 17 6-6-6-6&#39;/&gt;&lt;path d=&#39;M12 19h8&#39;/&gt;&lt;/symbol&gt;
-  &lt;symbol id=&#39;i-globe&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;circle cx=&#39;12&#39; cy=&#39;12&#39; r=&#39;9&#39;/&gt;&lt;path d=&#39;M12 3a14.5 14.5 0 0 0 0 18 14.5 14.5 0 0 0 0-18&#39;/&gt;&lt;path d=&#39;M3 12h18&#39;/&gt;&lt;/symbol&gt;
-  &lt;symbol id=&#39;i-sun&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;circle cx=&#39;12&#39; cy=&#39;12&#39; r=&#39;4&#39;/&gt;&lt;path d=&#39;M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4&#39;/&gt;&lt;/symbol&gt;
-  &lt;symbol id=&#39;i-settings&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M4 8h9M17 8h3M4 16h3M11 16h9&#39;/&gt;&lt;circle cx=&#39;15&#39; cy=&#39;8&#39; r=&#39;2&#39;/&gt;&lt;circle cx=&#39;9&#39; cy=&#39;16&#39; r=&#39;2&#39;/&gt;&lt;/symbol&gt;
-  &lt;symbol id=&#39;i-list&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M4 7h16M4 12h16M4 17h16&#39;/&gt;&lt;/symbol&gt;
-  &lt;symbol id=&#39;i-panel&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;rect x=&#39;3&#39; y=&#39;4&#39; width=&#39;18&#39; height=&#39;16&#39; rx=&#39;2.5&#39;/&gt;&lt;path d=&#39;M9 4v16&#39;/&gt;&lt;/symbol&gt;
-  &lt;symbol id=&#39;i-ratio&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;rect x=&#39;3&#39; y=&#39;5&#39; width=&#39;18&#39; height=&#39;14&#39; rx=&#39;2&#39;/&gt;&lt;rect x=&#39;6.5&#39; y=&#39;8.5&#39; width=&#39;11&#39; height=&#39;7&#39; rx=&#39;1&#39;/&gt;&lt;/symbol&gt;
-  &lt;symbol id=&#39;i-grid&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;rect x=&#39;4&#39; y=&#39;4&#39; width=&#39;7&#39; height=&#39;7&#39; rx=&#39;1.5&#39;/&gt;&lt;rect x=&#39;13&#39; y=&#39;4&#39; width=&#39;7&#39; height=&#39;7&#39; rx=&#39;1.5&#39;/&gt;&lt;rect x=&#39;4&#39; y=&#39;13&#39; width=&#39;7&#39; height=&#39;7&#39; rx=&#39;1.5&#39;/&gt;&lt;rect x=&#39;13&#39; y=&#39;13&#39; width=&#39;7&#39; height=&#39;7&#39; rx=&#39;1.5&#39;/&gt;&lt;/symbol&gt;
-  &lt;symbol id=&#39;i-fit&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5&#39;/&gt;&lt;/symbol&gt;
-&lt;/defs&gt;&lt;/svg&gt;
-
-&lt;div class=&#39;win&#39;&gt;
-  &lt;header class=&#39;titlebar&#39;&gt;
-    &lt;div class=&#39;logo-btn&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:17px;height:17px;color:var(--accent-text)&#39;&gt;&lt;use href=&#39;#i-mark&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-    &lt;span class=&#39;brand&#39;&gt;AdaKaki&lt;/span&gt;
-    &lt;span class=&#39;chip&#39;&gt;v0.2&lt;/span&gt;
-    &lt;div class=&#39;ghost&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-panel&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-    &lt;div class=&#39;rule&#39;&gt;&lt;/div&gt;
-    &lt;div style=&#39;display:flex;align-items:center;gap:7px&#39;&gt;
-      &lt;div class=&#39;dot&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/div&gt;
-      &lt;span style=&#39;font-size:12.5px;font-weight:500&#39;&gt;Git Bash&lt;/span&gt;
-      &lt;span class=&#39;chip&#39;&gt;本地&lt;/span&gt;
-    &lt;/div&gt;
-    &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
-    &lt;div class=&#39;ghost&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-list&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-    &lt;div class=&#39;ghost&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-settings&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-    &lt;div class=&#39;ghost&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-sun&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-  &lt;/header&gt;
-
-  &lt;div class=&#39;body&#39;&gt;
-    &lt;aside class=&#39;rail&#39;&gt;
-      &lt;div class=&#39;top&#39;&gt;
-        &lt;div class=&#39;ra accent&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:17px;height:17px&#39;&gt;&lt;use href=&#39;#i-plus&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-        &lt;div class=&#39;ra hollow&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:16px;height:16px&#39;&gt;&lt;use href=&#39;#i-search&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-      &lt;/div&gt;
-      &lt;div class=&#39;split&#39;&gt;&lt;/div&gt;
-      &lt;div class=&#39;sessions&#39;&gt;
-        &lt;div class=&#39;rs on&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:16px;height:16px&#39;&gt;&lt;use href=&#39;#i-terminal&#39;/&gt;&lt;/svg&gt;
-          &lt;span class=&#39;st&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/span&gt;&lt;/div&gt;
-        &lt;div class=&#39;rs&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:16px;height:16px&#39;&gt;&lt;use href=&#39;#i-terminal&#39;/&gt;&lt;/svg&gt;
-          &lt;span class=&#39;st&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/span&gt;&lt;/div&gt;
-        &lt;div class=&#39;rs&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:16px;height:16px&#39;&gt;&lt;use href=&#39;#i-globe&#39;/&gt;&lt;/svg&gt;
-          &lt;span class=&#39;st&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/span&gt;&lt;/div&gt;
-        &lt;div class=&#39;rs&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:16px;height:16px&#39;&gt;&lt;use href=&#39;#i-terminal&#39;/&gt;&lt;/svg&gt;
-          &lt;span class=&#39;st&#39; style=&#39;background:var(--muted)&#39;&gt;&lt;/span&gt;&lt;/div&gt;
-      &lt;/div&gt;
-      &lt;div class=&#39;foot&#39;&gt;&lt;div class=&#39;dot&#39; style=&#39;width:5px;height:5px;background:var(--success)&#39;&gt;&lt;/div&gt;&lt;/div&gt;
-    &lt;/aside&gt;
-
-    &lt;main class=&#39;content&#39;&gt;
-      &lt;div class=&#39;tabbar&#39;&gt;
-        &lt;div class=&#39;tab on&#39;&gt;
-          &lt;div class=&#39;dot&#39; style=&#39;width:5px;height:5px;background:var(--success)&#39;&gt;&lt;/div&gt;
-          &lt;span class=&#39;t&#39;&gt;Git Bash&lt;/span&gt;
-          &lt;span style=&#39;font-size:9.5px;color:rgba(145,151,161,.8)&#39;&gt;×3&lt;/span&gt;
-          &lt;div class=&#39;x&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:11px;height:11px&#39;&gt;&lt;use href=&#39;#i-close&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-        &lt;/div&gt;
-        &lt;div class=&#39;tab&#39;&gt;
-          &lt;div class=&#39;dot&#39; style=&#39;width:5px;height:5px;background:var(--success)&#39;&gt;&lt;/div&gt;
-          &lt;span class=&#39;t&#39;&gt;cmd&lt;/span&gt;
-        &lt;/div&gt;
-        &lt;div class=&#39;tab&#39;&gt;
-          &lt;div class=&#39;dot&#39; style=&#39;width:5px;height:5px;background:var(--muted)&#39;&gt;&lt;/div&gt;
-          &lt;span class=&#39;t&#39;&gt;Windows PowerShell&lt;/span&gt;
-        &lt;/div&gt;
-        &lt;div class=&#39;tab-end&#39;&gt;
-          &lt;div class=&#39;ghost&#39; style=&#39;width:24px;height:24px&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px&#39;&gt;&lt;use href=&#39;#i-plus&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-          &lt;div class=&#39;ghost&#39; style=&#39;width:24px;height:24px&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px&#39;&gt;&lt;use href=&#39;#i-grid&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-          &lt;div class=&#39;ghost&#39; style=&#39;width:24px;height:24px&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px&#39;&gt;&lt;use href=&#39;#i-search&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-
-      &lt;div class=&#39;panes&#39;&gt;
-        &lt;div class=&#39;pane focus&#39; style=&#39;flex:1.3 1 0&#39;&gt;
-          &lt;div class=&#39;phead&#39;&gt;
-            &lt;div class=&#39;dot&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/div&gt;
-            &lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px;color:var(--muted)&#39;&gt;&lt;use href=&#39;#i-terminal&#39;/&gt;&lt;/svg&gt;
-            &lt;span class=&#39;title&#39;&gt;Git Bash&lt;/span&gt;
-            &lt;span style=&#39;font-size:11px;color:var(--muted)&#39;&gt;·&lt;/span&gt;
-            &lt;span style=&#39;font-size:11px;color:var(--muted)&#39;&gt;ada_kaki&lt;/span&gt;
-            &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
-            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-ratio&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-grid&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-fit&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-close&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-          &lt;/div&gt;
-          &lt;div class=&#39;term&#39;&gt;
-&lt;div class=&#39;ln&#39;&gt;&lt;span class=&#39;acc&#39;&gt;user@build&lt;/span&gt;&lt;span class=&#39;m&#39;&gt;:&lt;/span&gt;&lt;span class=&#39;b&#39;&gt;~/src/adakaki&lt;/span&gt;&lt;span class=&#39;m&#39;&gt;$ &lt;/span&gt;&lt;span&gt;go test ./... -count=1&lt;/span&gt;&lt;/div&gt;
-&lt;div class=&#39;ln g&#39;&gt;ok  	adakaki	0.812s&lt;/div&gt;
-&lt;div class=&#39;ln&#39;&gt;&lt;span class=&#39;acc&#39;&gt;user@build&lt;/span&gt;&lt;span class=&#39;m&#39;&gt;:&lt;/span&gt;&lt;span class=&#39;b&#39;&gt;~/src/adakaki&lt;/span&gt;&lt;span class=&#39;m&#39;&gt;$ &lt;/span&gt;&lt;span class=&#39;cursor&#39;&gt;&lt;/span&gt;&lt;/div&gt;
-          &lt;/div&gt;
-          &lt;div class=&#39;legend&#39;&gt;
-            &lt;div class=&#39;lt&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:11px;height:11px&#39;&gt;&lt;use href=&#39;#i-ratio&#39;/&gt;&lt;/svg&gt;收缩栏规格 · 56px 单列网格&lt;/div&gt;
-            &lt;div class=&#39;row&#39;&gt;&lt;span class=&#39;k&#39;&gt;栏宽&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;56 DIP（展开态 260，拖拽 200–560）&lt;/span&gt;&lt;/div&gt;
-            &lt;div class=&#39;row&#39;&gt;&lt;span class=&#39;k&#39;&gt;控件&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;36×36 · 圆角 10 · 单列居中&lt;/span&gt;&lt;/div&gt;
-            &lt;div class=&#39;row&#39;&gt;&lt;span class=&#39;k&#39;&gt;间距&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;顶部 padding 10 · 项间 gap 8&lt;/span&gt;&lt;/div&gt;
-            &lt;div class=&#39;row&#39;&gt;&lt;span class=&#39;k&#39;&gt;分隔线&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;28×1 · 上下各 14&lt;/span&gt;&lt;/div&gt;
-            &lt;div class=&#39;row&#39;&gt;&lt;span class=&#39;k&#39;&gt;会话方块&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;类型图标居中 + 状态点右下 6px&lt;/span&gt;&lt;/div&gt;
-            &lt;div class=&#39;row&#39;&gt;&lt;span class=&#39;k&#39;&gt;激活态&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;SurfaceHover 底 + 2px 柿色左条&lt;/span&gt;&lt;/div&gt;
-            &lt;div class=&#39;row&#39;&gt;&lt;span class=&#39;k&#39;&gt;品牌块&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;24×24，兼任「展开侧栏」按钮&lt;/span&gt;&lt;/div&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-
-        &lt;div class=&#39;pane&#39;&gt;
-          &lt;div class=&#39;phead&#39;&gt;
-            &lt;div class=&#39;dot&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/div&gt;
-            &lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px;color:var(--muted)&#39;&gt;&lt;use href=&#39;#i-terminal&#39;/&gt;&lt;/svg&gt;
-            &lt;span class=&#39;title&#39; style=&#39;font-weight:500;color:var(--muted)&#39;&gt;cmd&lt;/span&gt;
-            &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
-            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-ratio&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-grid&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-fit&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-close&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
-          &lt;/div&gt;
-          &lt;div class=&#39;term&#39;&gt;
-&lt;div class=&#39;ln m&#39;&gt;Microsoft Windows [Version 10.0.22631]&lt;/div&gt;
-&lt;div class=&#39;ln&#39;&gt;&amp;nbsp;&lt;/div&gt;
-&lt;div class=&#39;ln&#39;&gt;&lt;span class=&#39;b&#39;&gt;C:\codes\go_projects\ada_kaki&lt;/span&gt;&lt;span class=&#39;m&#39;&gt;&amp;gt;&lt;/span&gt;&lt;/div&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-
-        &lt;div class=&#39;pane&#39;&gt;
-          &lt;div class=&#39;phead&#39;&gt;
-            &lt;div class=&#39;dot&#39; style=&#39;background:var(--muted)&#39;&gt;&lt;/div&gt;
-            &lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px;color:var(--muted)&#39;&gt;&lt;use href=&#39;#i-close&#39;/&gt;&lt;/svg&gt;
-            &lt;span class=&#39;title&#39; style=&#39;font-weight:500;color:var(--muted)&#39;&gt;会话已关闭&lt;/span&gt;
-            &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
-          &lt;/div&gt;
-          &lt;div class=&#39;term&#39; style=&#39;display:flex;align-items:center;justify-content:center&#39;&gt;
-&lt;div style=&#39;font-family:var(--ui);font-size:12px;color:var(--muted)&#39;&gt;会话已关闭&lt;/div&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/main&gt;
-  &lt;/div&gt;
-
-  &lt;footer class=&#39;footer&#39;&gt;
-    &lt;div class=&#39;on&#39;&gt;&lt;div class=&#39;dot&#39; style=&#39;width:5px;height:5px;background:var(--success)&#39;&gt;&lt;/div&gt;MCP 已就绪&lt;/div&gt;
-    &lt;span class=&#39;mono&#39;&gt;:8731&lt;/span&gt;
-    &lt;div class=&#39;sep&#39;&gt;&lt;/div&gt;
-    &lt;div class=&#39;on&#39;&gt;&lt;div class=&#39;dot&#39; style=&#39;width:5px;height:5px;background:var(--success)&#39;&gt;&lt;/div&gt;4 个会话&lt;/div&gt;
-    &lt;span style=&#39;opacity:.5&#39;&gt;·&lt;/span&gt;&lt;span&gt;Git Bash&lt;/span&gt;
-    &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;&lt;span&gt;stdio 可用&lt;/span&gt;
-  &lt;/footer&gt;
-&lt;/div&gt;
-&lt;/body&gt;
-&lt;/html&gt;" scrolling="auto"></iframe></div>
-<div class="frame" style="left:1530px;top:780px;width:1400px;height:700px"><div class="cap"><span class="cap-title">05 审计窗口 · 筛选 + 列表 + 右侧详情（护栏判定转人话）</span><span class="cap-meta"> · screen</span></div><iframe sandbox="allow-same-origin" srcdoc="&lt;!doctype html&gt;
+<div class="frame" style="left:1540px;top:820px;width:1400px;height:700px"><div class="cap"><span class="cap-title">05 审计窗口 · 筛选 + 列表 + 右侧详情（护栏判定转人话）</span><span class="cap-meta">adakaki · screen</span></div><iframe sandbox="allow-same-origin" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#39;zh-CN&#39;&gt;
 &lt;head&gt;
 &lt;meta http-equiv=&#34;Content-Security-Policy&#34; content=&#34;default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src data:; font-src data:&#34;&gt;
@@ -866,7 +628,7 @@ meta-info{color:#8a8fa0}
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{width:1400px;height:700px;overflow:hidden;background:var(--bg);color:var(--text);
-       font-family:var(--ui);-webkit-font-smoothing:antialiased;user-select:none}
+       font-family:&#39;Inter&#39;,&#39;Noto Sans SC&#39;,system-ui,-apple-system,&#39;Segoe UI&#39;,sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
   svg.ic{width:14px;height:14px;flex:0 0 auto;stroke:currentColor;fill:none;
          stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .win{width:1400px;height:700px;display:flex;flex-direction:column;border-radius:10px;overflow:hidden;
@@ -888,7 +650,7 @@ meta-info{color:#8a8fa0}
   .search{display:flex;align-items:center;gap:6px;width:220px;height:26px;padding:0 8px;border-radius:6px;
           background:var(--bg);border:1px solid var(--border);color:var(--muted)}
   .search span{font-size:10.5px}
-  .cnt{font-family:var(--mono);font-size:10px;color:var(--muted)}
+  .cnt{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:10px;color:var(--muted)}
   .btn{height:26px;padding:0 9px;border-radius:6px;display:flex;align-items:center;font-size:10.5px;
        background:var(--surface);border:1px solid var(--border)}
   /* 列表 */
@@ -904,7 +666,7 @@ meta-info{color:#8a8fa0}
   .row .grow{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .row .w86{width:86px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .row .w46{width:46px}
-  .mono{font-family:var(--mono)}
+  .mono{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace}
   .muted{color:var(--muted)}
   /* 详情 330 */
   .dividerV{width:1px;background:var(--border)}
@@ -919,7 +681,7 @@ meta-info{color:#8a8fa0}
   hr{border:0;height:1px;background:var(--border)}
   .lbl{font-size:10.5px;font-weight:500;letter-spacing:.6px;color:var(--muted)}
   .code{padding:10px;border-radius:6px;background:var(--bg);border:1px solid var(--border);
-        font-family:var(--mono);font-size:10.5px;line-height:1.6;word-break:break-all}
+        font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:10.5px;line-height:1.6;word-break:break-all}
   .code .bytes{font-size:9.5px;color:var(--muted)}
   .warnline{font-size:10.5px;color:var(--warning);line-height:1.6}
   .errline{font-size:10.5px;color:var(--danger);line-height:1.6}
@@ -1072,7 +834,7 @@ meta-info{color:#8a8fa0}
 &lt;/div&gt;
 &lt;/body&gt;
 &lt;/html&gt;" scrolling="auto"></iframe></div>
-<div class="frame" style="left:1530px;top:1520px;width:1200px;height:760px"><div class="cap"><span class="cap-title">06 对话框与蒙版 · 护栏确认 / Agent 蒙版卡 / 空状态键位引导</span><span class="cap-meta"> · screen</span></div><iframe sandbox="allow-same-origin" srcdoc="&lt;!doctype html&gt;
+<div class="frame" style="left:1540px;top:1600px;width:1200px;height:760px"><div class="cap"><span class="cap-title">06 对话框与蒙版 · 护栏确认 / Agent 蒙版卡 / 空状态键位引导</span><span class="cap-meta">adakaki · screen</span></div><iframe sandbox="allow-same-origin" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#39;zh-CN&#39;&gt;
 &lt;head&gt;
 &lt;meta http-equiv=&#34;Content-Security-Policy&#34; content=&#34;default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src data:; font-src data:&#34;&gt;
@@ -1088,7 +850,7 @@ meta-info{color:#8a8fa0}
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{width:1200px;height:760px;overflow:hidden;background:var(--bg);color:var(--text);
-       font-family:var(--ui);-webkit-font-smoothing:antialiased;user-select:none;
+       font-family:&#39;Inter&#39;,&#39;Noto Sans SC&#39;,system-ui,-apple-system,&#39;Segoe UI&#39;,sans-serif;-webkit-font-smoothing:antialiased;user-select:none;
        display:flex;align-items:center;justify-content:center}
   svg.ic{width:14px;height:14px;flex:0 0 auto;stroke:currentColor;fill:none;
          stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -1096,7 +858,7 @@ meta-info{color:#8a8fa0}
   .board{width:1180px;display:flex;gap:24px;align-items:flex-start;justify-content:center}
   .col{width:572px;display:flex;flex-direction:column;gap:10px}
   .eyebrow{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
-  .eyebrow .n{font-family:var(--mono);font-size:9px;color:var(--accent);
+  .eyebrow .n{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9px;color:var(--accent);
                border:1px solid rgba(228,99,60,.4);padding:1px 5px;border-radius:4px}
   .stage{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);
          background:var(--bg);display:flex;align-items:center;justify-content:center}
@@ -1111,7 +873,7 @@ meta-info{color:#8a8fa0}
   .dlg .bd{padding:0 16px;display:flex;flex-direction:column;gap:10px}
   .dlg .bd .p{font-size:12.5px;color:var(--muted);line-height:1.6}
   .code{padding:10px;border-radius:6px;background:var(--bg);border:1px solid var(--border);
-        font-family:var(--mono);font-size:11px;line-height:1.6;color:var(--text)}
+        font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:11px;line-height:1.6;color:var(--text)}
   .code .rule-m{color:var(--warning)}
   .tag{display:inline-flex;align-items:center;gap:5px;padding:2px 6px;border-radius:4px;
        font-size:9.5px;font-weight:500;background:rgba(224,164,74,.14);color:var(--warning)}
@@ -1124,7 +886,7 @@ meta-info{color:#8a8fa0}
   /* 蒙版卡 340 */
   .maskstage{position:relative;width:420px;height:250px;border-radius:12px;overflow:hidden;
              background:#15171B;border:1px solid var(--border)}
-  .termtext{position:absolute;inset:0;padding:14px;font-family:var(--mono);font-size:11.5px;
+  .termtext{position:absolute;inset:0;padding:14px;font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:11.5px;
             line-height:1.6;color:#3A4049}
   .veil{position:absolute;inset:0;background:rgba(8,10,18,.72);display:flex;align-items:center;justify-content:center}
   .maskcard{width:340px;padding:18px;display:flex;flex-direction:column;gap:10px;border-radius:12px;
@@ -1142,11 +904,11 @@ meta-info{color:#8a8fa0}
   .emptycard{width:400px;height:240px;border-radius:12px;background:var(--bg);border:1px solid var(--border);
              display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
   .kbd{padding:2px 6px;border:1px solid var(--border);border-radius:4px;background:var(--surface);
-       font-family:var(--mono);font-size:10px;color:var(--muted)}
+       font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:10px;color:var(--muted)}
   /* 注释 */
   .spec{display:flex;flex-direction:column;gap:5px;font-size:10.5px;color:var(--muted);line-height:1.6}
   .spec b{color:var(--text);font-weight:500}
-  .spec .k{font-family:var(--mono);color:var(--accent);font-size:10px}
+  .spec .k{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;color:var(--accent);font-size:10px}
 &lt;/style&gt;
 &lt;/head&gt;
 &lt;body&gt;
@@ -1170,7 +932,7 @@ meta-info{color:#8a8fa0}
         &lt;/div&gt;
         &lt;div class=&#39;bd&#39;&gt;
           &lt;div class=&#39;p&#39;&gt;客户端 dsh-desktop 想在你的终端里运行下面这条命令。它命中了内置的危险命令规则，需要你确认一次。&lt;/div&gt;
-          &lt;div class=&#39;code&#39;&gt;rm -rf node_modules&lt;br&gt;&lt;span class=&#39;rule-m&#39;&gt;▲ 内置规则：递归 / 强制删除&lt;/span&gt;&lt;/div&gt;
+          &lt;div class=&#39;code&#39;&gt;rm -rf node_modules&lt;br&gt;&lt;span class=&#39;rule-m&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:10px;height:10px;vertical-align:-1px&#39;&gt;&lt;path d=&#39;M12 4l8.5 15h-17z&#39;/&gt;&lt;path d=&#39;M12 10v4&#39;/&gt;&lt;path d=&#39;M12 16.6v.9&#39;/&gt;&lt;/svg&gt; 内置规则：递归 / 强制删除&lt;/span&gt;&lt;/div&gt;
           &lt;div style=&#39;display:flex;align-items:center;gap:8px&#39;&gt;
             &lt;span class=&#39;tag&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:11px;height:11px&#39;&gt;&lt;use href=&#39;#i-alert&#39;/&gt;&lt;/svg&gt;需人工放行&lt;/span&gt;
             &lt;span style=&#39;font-size:11px;color:var(--muted)&#39;&gt;目标会话 local_0002 · PowerShell&lt;/span&gt;
@@ -1241,7 +1003,245 @@ user@build:~/src/adakaki$ &lt;span style=&#39;color:#E4633C&#39;&gt;▊&lt;/span
 &lt;/div&gt;
 &lt;/body&gt;
 &lt;/html&gt;" scrolling="auto"></iframe></div>
-<div class="frame" style="left:40px;top:2870px;width:1200px;height:700px"><div class="cap"><span class="cap-title">07 视觉规范 · 柿色双主题 Token / 字号阶梯 / 尺寸与圆角</span><span class="cap-meta"> · palette</span></div><iframe sandbox="allow-same-origin" srcdoc="&lt;!doctype html&gt;
+<div class="frame" style="left:40px;top:2000px;width:1440px;height:900px"><div class="cap"><span class="cap-title">03 侧栏收缩态 · 56px 网格 + 规格图例</span><span class="cap-meta">adakaki · screen · desktop-app</span></div><iframe sandbox="allow-same-origin" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&#39;zh-CN&#39;&gt;
+&lt;head&gt;
+&lt;meta http-equiv=&#34;Content-Security-Policy&#34; content=&#34;default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src data:; font-src data:&#34;&gt;
+&lt;meta charset=&#39;utf-8&#39;&gt;
+&lt;style&gt;
+  :root{
+    --bg:#0E0F12; --surface:#15171B; --hover:#22262D; --pressed:#2A2E36;
+    --border:#252932; --text:#EDEAE5; --muted:#9197A1;
+    --accent:#E4633C; --accent-hover:#F0744C; --accent-text:#1A0F0B;
+    --success:#4FBF6A; --warning:#E0A44A;
+    --pane:#15171B; --pane-focus:#1E2127;
+    --ui:&#39;Inter&#39;,&#39;Noto Sans SC&#39;,system-ui,&#39;Segoe UI&#39;,sans-serif;
+    --mono:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{width:1440px;height:900px;overflow:hidden;background:var(--bg);color:var(--text);
+       font-family:&#39;Inter&#39;,&#39;Noto Sans SC&#39;,system-ui,-apple-system,&#39;Segoe UI&#39;,sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
+  svg.ic{width:14px;height:14px;flex:0 0 auto;stroke:currentColor;fill:none;
+         stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .win{display:flex;flex-direction:column;height:900px}
+  .titlebar{display:flex;align-items:center;gap:9px;height:40px;flex:0 0 40px;
+    padding:0 138px 0 14px;background:var(--surface);border-bottom:1px solid var(--border)}
+  .logo-btn{width:24px;height:24px;border-radius:6px;background:var(--accent);
+    display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .brand{font-size:13.5px;font-weight:600}
+  .chip{padding:2px 6px;border-radius:4px;font-size:9.5px;font-weight:500;color:var(--muted);background:var(--bg)}
+  .rule{width:1px;height:16px;background:var(--border);margin:0 2px}
+  .ghost{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+  .dot{width:6px;height:6px;border-radius:50%;flex:0 0 auto}
+  .spacer{flex:1 1 auto}
+  .body{display:flex;flex:1 1 auto;min-height:0}
+  .rail{width:56px;flex:0 0 56px;background:var(--surface);border-right:1px solid var(--border);
+        display:flex;flex-direction:column;align-items:center;min-height:0}
+  .rail .top{width:100%;padding:10px 0 0;display:flex;flex-direction:column;align-items:center;gap:8px}
+  .ra{border-radius:10px;display:flex;align-items:center;justify-content:center}
+  .ra.accent{width:36px;height:36px;background:var(--accent);color:var(--accent-text)}
+  .ra.hollow{width:36px;height:36px;color:var(--muted)}
+  .rail .split{width:28px;height:1px;background:var(--border);margin:14px 0}
+  .rail .sessions{width:100%;flex:1 1 auto;overflow:hidden;display:flex;flex-direction:column;
+                  align-items:center;gap:6px}
+  .rs{position:relative;width:36px;height:36px;border-radius:10px;display:flex;
+      align-items:center;justify-content:center;color:var(--muted)}
+  .rs.on{background:var(--hover);color:var(--accent)}
+  .rs.on::before{content:&#39;&#39;;position:absolute;left:0;top:9px;width:2px;height:18px;
+                 border-radius:1px;background:var(--accent)}
+  .rs .st{position:absolute;right:5px;bottom:5px;width:6px;height:6px;border-radius:50%;
+          border:1.5px solid var(--surface);box-sizing:content-box}
+  .rail .foot{padding:0 0 10px}
+  .content{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;background:var(--bg);position:relative}
+  .tabbar{display:flex;align-items:flex-end;gap:2px;height:40px;flex:0 0 40px;padding:0 8px;
+          background:var(--surface);border-bottom:1px solid var(--border)}
+  .tab{display:flex;align-items:center;gap:5px;height:30px;padding:0 4px 0 8px;border-radius:7px 7px 0 0;
+       color:var(--muted);font-size:11.5px}
+  .tab.on{background:var(--bg);border:1px solid var(--border);border-bottom-color:var(--bg);color:var(--text)}
+  .tab.on .t{font-weight:500}
+  .tab .t{max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tab .x{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center}
+  .tab-end{margin-left:auto;display:flex;align-items:center;gap:2px;padding-bottom:5px}
+  .panes{flex:1 1 auto;min-height:0;display:flex;gap:8px;padding:8px}
+  .pane{flex:1 1 0;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;
+        background:var(--pane);border:1px solid var(--border);min-width:0;position:relative}
+  .pane.focus{background:var(--pane-focus);border-color:rgba(228,99,60,.55)}
+  .phead{display:flex;align-items:center;gap:7px;height:34px;flex:0 0 34px;padding:0 8px 0 10px}
+  .phead .title{font-size:12px;font-weight:600}
+  .pbtn{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+  .term{flex:1 1 auto;min-height:0;padding:0 8px 8px;font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:12.5px;line-height:1.45}
+  .ln{white-space:pre}
+  .b{color:#6EA8FE} .m{color:var(--muted)} .g{color:var(--success)} .acc{color:var(--accent)}
+  .cursor{display:inline-block;width:7px;height:13px;background:var(--accent);vertical-align:-2px;margin-left:2px}
+  .footer{display:flex;align-items:center;gap:9px;height:28px;flex:0 0 28px;padding:0 12px;
+          background:var(--surface);border-top:1px solid var(--border);font-size:10.5px;color:var(--muted)}
+  .mono{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9.5px}
+  .footer .sep{width:1px;height:14px;background:var(--border);margin:0 2px}
+  .on{display:flex;align-items:center;gap:5px}
+  .legend{position:absolute;left:24px;bottom:24px;width:440px;padding:14px 16px;border-radius:10px;
+          background:rgba(228,99,60,.07);border:1px solid rgba(228,99,60,.32);
+          display:flex;flex-direction:column;gap:7px;z-index:8}
+  .legend .lt{display:flex;align-items:center;gap:7px;font-size:10px;font-weight:500;
+              letter-spacing:.5px;color:var(--accent)}
+  .legend .row{display:flex;align-items:baseline;gap:10px;font-size:10.5px;color:var(--muted)}
+  .legend .row .k{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:10px;color:var(--accent);width:96px;flex:0 0 auto}
+  .legend .row .v{color:var(--text)}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;svg width=&#39;0&#39; height=&#39;0&#39; style=&#39;position:absolute&#39;&gt;&lt;defs&gt;
+  &lt;symbol id=&#39;i-mark&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M5.8 6.2 10.9 12l-5.1 5.8&#39; stroke-width=&#39;2.1&#39;/&gt;&lt;circle cx=&#39;16.2&#39; cy=&#39;17.8&#39; r=&#39;1.9&#39; fill=&#39;currentColor&#39; stroke=&#39;none&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-plus&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M12 5v14M5 12h14&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-search&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;circle cx=&#39;11&#39; cy=&#39;11&#39; r=&#39;6&#39;/&gt;&lt;path d=&#39;M20 20l-3.6-3.6&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-close&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M6 6l12 12M18 6L6 18&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-terminal&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;m4 17 6-6-6-6&#39;/&gt;&lt;path d=&#39;M12 19h8&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-globe&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;circle cx=&#39;12&#39; cy=&#39;12&#39; r=&#39;9&#39;/&gt;&lt;ellipse cx=&#39;12&#39; cy=&#39;12&#39; rx=&#39;4.6&#39; ry=&#39;9&#39;/&gt;&lt;path d=&#39;M3 12h18&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-sun&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;circle cx=&#39;12&#39; cy=&#39;12&#39; r=&#39;4&#39;/&gt;&lt;path d=&#39;M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-settings&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M4 8h9M17 8h3M4 16h3M11 16h9&#39;/&gt;&lt;circle cx=&#39;15&#39; cy=&#39;8&#39; r=&#39;2&#39;/&gt;&lt;circle cx=&#39;9&#39; cy=&#39;16&#39; r=&#39;2&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-list&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M4 7h16M4 12h16M4 17h16&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-panel&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;rect x=&#39;3&#39; y=&#39;4&#39; width=&#39;18&#39; height=&#39;16&#39; rx=&#39;2.5&#39;/&gt;&lt;path d=&#39;M9 4v16&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-ratio&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;rect x=&#39;3&#39; y=&#39;5&#39; width=&#39;18&#39; height=&#39;14&#39; rx=&#39;2&#39;/&gt;&lt;rect x=&#39;6.5&#39; y=&#39;8.5&#39; width=&#39;11&#39; height=&#39;7&#39; rx=&#39;1&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-grid&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;rect x=&#39;4&#39; y=&#39;4&#39; width=&#39;7&#39; height=&#39;7&#39; rx=&#39;1.5&#39;/&gt;&lt;rect x=&#39;13&#39; y=&#39;4&#39; width=&#39;7&#39; height=&#39;7&#39; rx=&#39;1.5&#39;/&gt;&lt;rect x=&#39;4&#39; y=&#39;13&#39; width=&#39;7&#39; height=&#39;7&#39; rx=&#39;1.5&#39;/&gt;&lt;rect x=&#39;13&#39; y=&#39;13&#39; width=&#39;7&#39; height=&#39;7&#39; rx=&#39;1.5&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-fit&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5&#39;/&gt;&lt;/symbol&gt;
+&lt;/defs&gt;&lt;/svg&gt;
+
+&lt;div class=&#39;win&#39;&gt;
+  &lt;header class=&#39;titlebar&#39;&gt;
+    &lt;div class=&#39;logo-btn&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:17px;height:17px;color:var(--accent-text)&#39;&gt;&lt;use href=&#39;#i-mark&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+    &lt;span class=&#39;brand&#39;&gt;AdaKaki&lt;/span&gt;
+    &lt;span class=&#39;chip&#39;&gt;v0.2&lt;/span&gt;
+    &lt;div class=&#39;ghost&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-panel&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+    &lt;div class=&#39;rule&#39;&gt;&lt;/div&gt;
+    &lt;div style=&#39;display:flex;align-items:center;gap:7px&#39;&gt;
+      &lt;div class=&#39;dot&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/div&gt;
+      &lt;span style=&#39;font-size:12.5px;font-weight:500&#39;&gt;Git Bash&lt;/span&gt;
+      &lt;span class=&#39;chip&#39;&gt;本地&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
+    &lt;div class=&#39;ghost&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-list&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+    &lt;div class=&#39;ghost&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-settings&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+    &lt;div class=&#39;ghost&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-sun&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+  &lt;/header&gt;
+
+  &lt;div class=&#39;body&#39;&gt;
+    &lt;aside class=&#39;rail&#39;&gt;
+      &lt;div class=&#39;top&#39;&gt;
+        &lt;div class=&#39;ra accent&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:17px;height:17px&#39;&gt;&lt;use href=&#39;#i-plus&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+        &lt;div class=&#39;ra hollow&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:16px;height:16px&#39;&gt;&lt;use href=&#39;#i-search&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&#39;split&#39;&gt;&lt;/div&gt;
+      &lt;div class=&#39;sessions&#39;&gt;
+        &lt;div class=&#39;rs on&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:16px;height:16px&#39;&gt;&lt;use href=&#39;#i-terminal&#39;/&gt;&lt;/svg&gt;
+          &lt;span class=&#39;st&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&#39;rs&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:16px;height:16px&#39;&gt;&lt;use href=&#39;#i-terminal&#39;/&gt;&lt;/svg&gt;
+          &lt;span class=&#39;st&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&#39;rs&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:16px;height:16px&#39;&gt;&lt;use href=&#39;#i-globe&#39;/&gt;&lt;/svg&gt;
+          &lt;span class=&#39;st&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&#39;rs&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:16px;height:16px&#39;&gt;&lt;use href=&#39;#i-terminal&#39;/&gt;&lt;/svg&gt;
+          &lt;span class=&#39;st&#39; style=&#39;background:var(--muted)&#39;&gt;&lt;/span&gt;&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&#39;foot&#39;&gt;&lt;div class=&#39;dot&#39; style=&#39;width:5px;height:5px;background:var(--success)&#39;&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;/aside&gt;
+
+    &lt;main class=&#39;content&#39;&gt;
+      &lt;div class=&#39;tabbar&#39;&gt;
+        &lt;div class=&#39;tab on&#39;&gt;
+          &lt;div class=&#39;dot&#39; style=&#39;width:5px;height:5px;background:var(--success)&#39;&gt;&lt;/div&gt;
+          &lt;span class=&#39;t&#39;&gt;Git Bash&lt;/span&gt;
+          &lt;span style=&#39;font-size:9.5px;color:rgba(145,151,161,.8)&#39;&gt;×3&lt;/span&gt;
+          &lt;div class=&#39;x&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:11px;height:11px&#39;&gt;&lt;use href=&#39;#i-close&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&#39;tab&#39;&gt;
+          &lt;div class=&#39;dot&#39; style=&#39;width:5px;height:5px;background:var(--success)&#39;&gt;&lt;/div&gt;
+          &lt;span class=&#39;t&#39;&gt;cmd&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div class=&#39;tab&#39;&gt;
+          &lt;div class=&#39;dot&#39; style=&#39;width:5px;height:5px;background:var(--muted)&#39;&gt;&lt;/div&gt;
+          &lt;span class=&#39;t&#39;&gt;Windows PowerShell&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div class=&#39;tab-end&#39;&gt;
+          &lt;div class=&#39;ghost&#39; style=&#39;width:24px;height:24px&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px&#39;&gt;&lt;use href=&#39;#i-plus&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+          &lt;div class=&#39;ghost&#39; style=&#39;width:24px;height:24px&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px&#39;&gt;&lt;use href=&#39;#i-grid&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+          &lt;div class=&#39;ghost&#39; style=&#39;width:24px;height:24px&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px&#39;&gt;&lt;use href=&#39;#i-search&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&#39;panes&#39;&gt;
+        &lt;div class=&#39;pane focus&#39; style=&#39;flex:1.3 1 0&#39;&gt;
+          &lt;div class=&#39;phead&#39;&gt;
+            &lt;div class=&#39;dot&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/div&gt;
+            &lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px;color:var(--muted)&#39;&gt;&lt;use href=&#39;#i-terminal&#39;/&gt;&lt;/svg&gt;
+            &lt;span class=&#39;title&#39;&gt;Git Bash&lt;/span&gt;
+            &lt;span style=&#39;font-size:11px;color:var(--muted)&#39;&gt;·&lt;/span&gt;
+            &lt;span style=&#39;font-size:11px;color:var(--muted)&#39;&gt;ada_kaki&lt;/span&gt;
+            &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
+            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-ratio&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-grid&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-fit&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-close&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class=&#39;term&#39;&gt;
+&lt;div class=&#39;ln&#39;&gt;&lt;span class=&#39;acc&#39;&gt;user@build&lt;/span&gt;&lt;span class=&#39;m&#39;&gt;:&lt;/span&gt;&lt;span class=&#39;b&#39;&gt;~/src/adakaki&lt;/span&gt;&lt;span class=&#39;m&#39;&gt;$ &lt;/span&gt;&lt;span&gt;go test ./... -count=1&lt;/span&gt;&lt;/div&gt;
+&lt;div class=&#39;ln g&#39;&gt;ok  	adakaki	0.812s&lt;/div&gt;
+&lt;div class=&#39;ln&#39;&gt;&lt;span class=&#39;acc&#39;&gt;user@build&lt;/span&gt;&lt;span class=&#39;m&#39;&gt;:&lt;/span&gt;&lt;span class=&#39;b&#39;&gt;~/src/adakaki&lt;/span&gt;&lt;span class=&#39;m&#39;&gt;$ &lt;/span&gt;&lt;span class=&#39;cursor&#39;&gt;&lt;/span&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class=&#39;legend&#39;&gt;
+            &lt;div class=&#39;lt&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:11px;height:11px&#39;&gt;&lt;use href=&#39;#i-ratio&#39;/&gt;&lt;/svg&gt;收缩栏规格 · 56px 单列网格&lt;/div&gt;
+            &lt;div class=&#39;row&#39;&gt;&lt;span class=&#39;k&#39;&gt;栏宽&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;56 DIP（展开态 260，拖拽 200–560）&lt;/span&gt;&lt;/div&gt;
+            &lt;div class=&#39;row&#39;&gt;&lt;span class=&#39;k&#39;&gt;控件&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;36×36 · 圆角 10 · 单列居中&lt;/span&gt;&lt;/div&gt;
+            &lt;div class=&#39;row&#39;&gt;&lt;span class=&#39;k&#39;&gt;间距&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;顶部 padding 10 · 项间 gap 8&lt;/span&gt;&lt;/div&gt;
+            &lt;div class=&#39;row&#39;&gt;&lt;span class=&#39;k&#39;&gt;分隔线&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;28×1 · 上下各 14&lt;/span&gt;&lt;/div&gt;
+            &lt;div class=&#39;row&#39;&gt;&lt;span class=&#39;k&#39;&gt;会话方块&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;类型图标居中 + 状态点右下 6px&lt;/span&gt;&lt;/div&gt;
+            &lt;div class=&#39;row&#39;&gt;&lt;span class=&#39;k&#39;&gt;激活态&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;SurfaceHover 底 + 2px 柿色左条&lt;/span&gt;&lt;/div&gt;
+            &lt;div class=&#39;row&#39;&gt;&lt;span class=&#39;k&#39;&gt;品牌块&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;24×24，兼任「展开侧栏」按钮&lt;/span&gt;&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class=&#39;pane&#39;&gt;
+          &lt;div class=&#39;phead&#39;&gt;
+            &lt;div class=&#39;dot&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/div&gt;
+            &lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px;color:var(--muted)&#39;&gt;&lt;use href=&#39;#i-terminal&#39;/&gt;&lt;/svg&gt;
+            &lt;span class=&#39;title&#39; style=&#39;font-weight:500;color:var(--muted)&#39;&gt;cmd&lt;/span&gt;
+            &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
+            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-ratio&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-grid&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-fit&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-close&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class=&#39;term&#39;&gt;
+&lt;div class=&#39;ln m&#39;&gt;Microsoft Windows [Version 10.0.22631]&lt;/div&gt;
+&lt;div class=&#39;ln&#39;&gt;&amp;nbsp;&lt;/div&gt;
+&lt;div class=&#39;ln&#39;&gt;&lt;span class=&#39;b&#39;&gt;C:\codes\go_projects\ada_kaki&lt;/span&gt;&lt;span class=&#39;m&#39;&gt;&amp;gt;&lt;/span&gt;&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class=&#39;pane&#39;&gt;
+          &lt;div class=&#39;phead&#39;&gt;
+            &lt;div class=&#39;dot&#39; style=&#39;background:var(--muted)&#39;&gt;&lt;/div&gt;
+            &lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px;color:var(--muted)&#39;&gt;&lt;use href=&#39;#i-close&#39;/&gt;&lt;/svg&gt;
+            &lt;span class=&#39;title&#39; style=&#39;font-weight:500;color:var(--muted)&#39;&gt;会话已关闭&lt;/span&gt;
+            &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class=&#39;term&#39; style=&#39;display:flex;align-items:center;justify-content:center&#39;&gt;
+&lt;div style=&#34;font-family:&#39;Inter&#39;,&#39;Noto Sans SC&#39;,system-ui,-apple-system,&#39;Segoe UI&#39;,sans-serif;font-size:12px;color:var(--muted)&#34;&gt;会话已关闭&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/main&gt;
+  &lt;/div&gt;
+
+  &lt;footer class=&#39;footer&#39;&gt;
+    &lt;div class=&#39;on&#39;&gt;&lt;div class=&#39;dot&#39; style=&#39;width:5px;height:5px;background:var(--success)&#39;&gt;&lt;/div&gt;MCP 已就绪&lt;/div&gt;
+    &lt;span class=&#39;mono&#39;&gt;:8731&lt;/span&gt;
+    &lt;div class=&#39;sep&#39;&gt;&lt;/div&gt;
+    &lt;div class=&#39;on&#39;&gt;&lt;div class=&#39;dot&#39; style=&#39;width:5px;height:5px;background:var(--success)&#39;&gt;&lt;/div&gt;4 个会话&lt;/div&gt;
+    &lt;span style=&#39;opacity:.5&#39;&gt;·&lt;/span&gt;&lt;span&gt;Git Bash&lt;/span&gt;
+    &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;&lt;span&gt;stdio 可用&lt;/span&gt;
+  &lt;/footer&gt;
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;" scrolling="auto"></iframe></div>
+<div class="frame" style="left:40px;top:2980px;width:1200px;height:700px"><div class="cap"><span class="cap-title">07 视觉规范 · 柿色双主题 Token / 字号阶梯 / 尺寸与圆角</span><span class="cap-meta">adakaki · palette</span></div><iframe sandbox="allow-same-origin" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#39;zh-CN&#39;&gt;
 &lt;head&gt;
 &lt;meta http-equiv=&#34;Content-Security-Policy&#34; content=&#34;default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src data:; font-src data:&#34;&gt;
@@ -1257,12 +1257,12 @@ user@build:~/src/adakaki$ &lt;span style=&#39;color:#E4633C&#39;&gt;▊&lt;/span
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{width:1200px;height:700px;overflow:hidden;background:#0B0C0F;color:var(--text);
-       font-family:var(--ui);-webkit-font-smoothing:antialiased}
+       font-family:&#39;Inter&#39;,&#39;Noto Sans SC&#39;,system-ui,-apple-system,&#39;Segoe UI&#39;,sans-serif;-webkit-font-smoothing:antialiased}
   .sheet{width:1200px;height:700px;padding:28px 32px;display:flex;flex-direction:column;gap:20px}
   .top{display:flex;align-items:baseline;gap:14px}
   .top h1{font-size:20px;font-weight:600;letter-spacing:-.2px}
   .top .sub{font-size:11.5px;color:var(--muted)}
-  .top .ver{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--accent);
+  .top .ver{margin-left:auto;font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:10px;color:var(--accent);
             border:1px solid rgba(228,99,60,.4);padding:2px 7px;border-radius:4px}
   .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;flex:1 1 auto;min-height:0}
   .card{border-radius:10px;background:var(--ink2);border:1px solid var(--border);padding:14px;
@@ -1271,18 +1271,18 @@ user@build:~/src/adakaki$ &lt;span style=&#39;color:#E4633C&#39;&gt;▊&lt;/span
   .sw{display:flex;flex-direction:column;gap:6px}
   .swrow{display:flex;align-items:center;gap:8px}
   .swrow i{width:26px;height:22px;border-radius:5px;border:1px solid rgba(255,255,255,.08);flex:0 0 auto}
-  .swrow .nm{font-family:var(--mono);font-size:9.5px;color:var(--text);flex:1 1 auto}
-  .swrow .hx{font-family:var(--mono);font-size:9px;color:var(--muted)}
+  .swrow .nm{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9.5px;color:var(--text);flex:1 1 auto}
+  .swrow .hx{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9px;color:var(--muted)}
   .scale{display:flex;flex-direction:column;gap:7px}
   .srow{display:flex;align-items:baseline;gap:8px}
   .srow .nm{font-size:9px;color:var(--muted);width:64px;flex:0 0 auto}
-  .srow .v{font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:auto}
+  .srow .v{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9px;color:var(--muted);margin-left:auto}
   table{border-collapse:collapse;width:100%}
   td{font-size:10px;color:var(--muted);padding:4px 0;border-bottom:1px solid rgba(37,41,50,.7);vertical-align:top}
-  td.k{font-family:var(--mono);color:var(--accent);width:74px;white-space:nowrap}
+  td.k{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;color:var(--accent);width:74px;white-space:nowrap}
   td.v{color:var(--text)}
   .badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;padding:1px 5px;border-radius:3px;
-         background:rgba(228,99,60,.14);color:var(--accent);font-family:var(--mono)}
+         background:rgba(228,99,60,.14);color:var(--accent);font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace}
 &lt;/style&gt;
 &lt;/head&gt;
 &lt;body&gt;
@@ -1343,12 +1343,12 @@ user@build:~/src/adakaki$ &lt;span style=&#39;color:#E4633C&#39;&gt;▊&lt;/span
         &lt;div class=&#39;srow&#39;&gt;&lt;span class=&#39;nm&#39;&gt;辅助&lt;/span&gt;&lt;span style=&#39;font-size:11.5px&#39;&gt;11.5 / 400&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;muted&lt;/span&gt;&lt;/div&gt;
         &lt;div class=&#39;srow&#39;&gt;&lt;span class=&#39;nm&#39;&gt;状态条&lt;/span&gt;&lt;span style=&#39;font-size:10.5px&#39;&gt;10.5 / 400&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;status&lt;/span&gt;&lt;/div&gt;
         &lt;div class=&#39;srow&#39;&gt;&lt;span class=&#39;nm&#39;&gt;小节标题&lt;/span&gt;&lt;span style=&#39;font-size:10.5px;letter-spacing:.6px&#39;&gt;10.5 / 500&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;label&lt;/span&gt;&lt;/div&gt;
-        &lt;div class=&#39;srow&#39;&gt;&lt;span class=&#39;nm&#39;&gt;chip / kbd&lt;/span&gt;&lt;span style=&#39;font-family:var(--mono);font-size:9.5px&#39;&gt;9.5 mono&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;chip&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&#39;srow&#39;&gt;&lt;span class=&#39;nm&#39;&gt;chip / kbd&lt;/span&gt;&lt;span style=&#34;font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9.5px&#34;&gt;9.5 mono&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;chip&lt;/span&gt;&lt;/div&gt;
       &lt;/div&gt;
       &lt;h2 style=&#39;margin-top:6px&#39;&gt;字体&lt;/h2&gt;
       &lt;table&gt;
-        &lt;tr&gt;&lt;td class=&#39;k&#39;&gt;界面&lt;/td&gt;&lt;td class=&#39;v&#39;&gt;Inter → Noto Sans SC → system-ui&lt;/td&gt;&lt;/tr&gt;
-        &lt;tr&gt;&lt;td class=&#39;k&#39;&gt;代码&lt;/td&gt;&lt;td class=&#39;v&#39;&gt;JetBrains Mono → Consolas&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td class=&#39;k&#39;&gt;界面&lt;/td&gt;&lt;td class=&#39;v&#39; style=&#39;font-size:10.5px;white-space:nowrap&#39;&gt;Inter &lt;svg viewBox=&#39;0 0 24 24&#39; width=&#39;9&#39; height=&#39;9&#39; fill=&#39;none&#39; stroke=&#39;currentColor&#39; stroke-width=&#39;2&#39; stroke-linecap=&#39;round&#39; stroke-linejoin=&#39;round&#39; style=&#39;vertical-align:-1px;margin:0 2px&#39;&gt;&lt;path d=&#39;M9 5l7 7-7 7&#39;/&gt;&lt;/svg&gt; Noto Sans SC &lt;svg viewBox=&#39;0 0 24 24&#39; width=&#39;9&#39; height=&#39;9&#39; fill=&#39;none&#39; stroke=&#39;currentColor&#39; stroke-width=&#39;2&#39; stroke-linecap=&#39;round&#39; stroke-linejoin=&#39;round&#39; style=&#39;vertical-align:-1px;margin:0 2px&#39;&gt;&lt;path d=&#39;M9 5l7 7-7 7&#39;/&gt;&lt;/svg&gt; system-ui&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td class=&#39;k&#39;&gt;代码&lt;/td&gt;&lt;td class=&#39;v&#39; style=&#39;font-size:10.5px;white-space:nowrap&#39;&gt;JetBrains Mono &lt;svg viewBox=&#39;0 0 24 24&#39; width=&#39;9&#39; height=&#39;9&#39; fill=&#39;none&#39; stroke=&#39;currentColor&#39; stroke-width=&#39;2&#39; stroke-linecap=&#39;round&#39; stroke-linejoin=&#39;round&#39; style=&#39;vertical-align:-1px;margin:0 2px&#39;&gt;&lt;path d=&#39;M9 5l7 7-7 7&#39;/&gt;&lt;/svg&gt; Consolas&lt;/td&gt;&lt;/tr&gt;
         &lt;tr&gt;&lt;td class=&#39;k&#39;&gt;终端&lt;/td&gt;&lt;td class=&#39;v&#39;&gt;Maple Mono NF CN（内置，含中文）&lt;/td&gt;&lt;/tr&gt;
       &lt;/table&gt;
     &lt;/div&gt;
@@ -1378,7 +1378,7 @@ user@build:~/src/adakaki$ &lt;span style=&#39;color:#E4633C&#39;&gt;▊&lt;/span
 &lt;/div&gt;
 &lt;/body&gt;
 &lt;/html&gt;" scrolling="auto"></iframe></div>
-<div class="frame" style="left:1530px;top:40px;width:1000px;height:700px"><div class="cap"><span class="cap-title">04 设置窗口 · 外观页（208 分类栏 + 312 配色方案搜索）</span><span class="cap-meta"> · screen · desktop-app</span></div><iframe sandbox="allow-same-origin" srcdoc="&lt;!doctype html&gt;
+<div class="frame" style="left:1540px;top:40px;width:1000px;height:700px"><div class="cap"><span class="cap-title">04 设置窗口 · 外观页（208 分类栏 + 312 配色方案搜索）</span><span class="cap-meta">adakaki · screen</span></div><iframe sandbox="allow-same-origin" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&#39;zh-CN&#39;&gt;
 &lt;head&gt;
 &lt;meta http-equiv=&#34;Content-Security-Policy&#34; content=&#34;default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src data:; font-src data:&#34;&gt;
@@ -1394,7 +1394,7 @@ user@build:~/src/adakaki$ &lt;span style=&#39;color:#E4633C&#39;&gt;▊&lt;/span
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{width:1000px;height:700px;overflow:hidden;background:var(--bg);color:var(--text);
-       font-family:var(--ui);-webkit-font-smoothing:antialiased;user-select:none}
+       font-family:&#39;Inter&#39;,&#39;Noto Sans SC&#39;,system-ui,-apple-system,&#39;Segoe UI&#39;,sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
   svg.ic{width:14px;height:14px;flex:0 0 auto;stroke:currentColor;fill:none;
          stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .win{width:1000px;height:700px;display:flex;flex-direction:column;border-radius:10px;overflow:hidden;
@@ -1415,7 +1415,7 @@ user@build:~/src/adakaki$ &lt;span style=&#39;color:#E4633C&#39;&gt;▊&lt;/span
   .navitem.on{background:var(--bg);border:1px solid var(--border);color:var(--text);font-weight:500}
   .navitem.on svg{color:var(--accent)}
   .foot{margin-top:auto;height:34px;display:flex;align-items:center;padding:0 4px;
-        font-family:var(--mono);font-size:9px;color:var(--muted)}
+        font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9px;color:var(--muted)}
   .main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
   .mhead{padding:28px 28px 18px;display:flex;flex-direction:column;gap:6px}
   .mhead .h{font-size:18px;font-weight:600}
@@ -1448,7 +1448,7 @@ user@build:~/src/adakaki$ &lt;span style=&#39;color:#E4633C&#39;&gt;▊&lt;/span
         padding:4px;overflow:hidden;display:flex;flex-direction:column;gap:1px}
   .item{display:flex;align-items:center;gap:8px;height:30px;padding:0 8px;border-radius:5px}
   .item .chk{width:11px;display:flex;align-items:center;justify-content:center}
-  .item .nm{font-family:var(--mono);font-size:11px;color:var(--text);flex:1 1 auto}
+  .item .nm{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:11px;color:var(--text);flex:1 1 auto}
   .item.sel{background:rgba(228,99,60,.12)}
   .item.sel .nm{color:var(--accent)}
   .item .dotty{width:6px;height:6px;border-radius:50%;flex:0 0 auto;border:1px solid rgba(255,255,255,.12)}
@@ -1461,6 +1461,7 @@ user@build:~/src/adakaki$ &lt;span style=&#39;color:#E4633C&#39;&gt;▊&lt;/span
   &lt;symbol id=&#39;i-terminal&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;m4 17 6-6-6-6&#39;/&gt;&lt;path d=&#39;M12 19h8&#39;/&gt;&lt;/symbol&gt;
   &lt;symbol id=&#39;i-layout&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;rect x=&#39;3&#39; y=&#39;4&#39; width=&#39;18&#39; height=&#39;16&#39; rx=&#39;2.5&#39;/&gt;&lt;path d=&#39;M3 9h18&#39;/&gt;&lt;/symbol&gt;
   &lt;symbol id=&#39;i-server&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;rect x=&#39;3&#39; y=&#39;4&#39; width=&#39;18&#39; height=&#39;7&#39; rx=&#39;2&#39;/&gt;&lt;rect x=&#39;3&#39; y=&#39;13&#39; width=&#39;18&#39; height=&#39;7&#39; rx=&#39;2&#39;/&gt;&lt;path d=&#39;M7 7.5h.01&#39;/&gt;&lt;path d=&#39;M7 16.5h.01&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-message&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M20 11.8c0 3.3-3.6 6-8 6-1 0-1.9-.14-2.8-.4L4 19l1.2-3.3A5.9 5.9 0 014 11.8C4 8.5 7.6 5.8 12 5.8s8 2.7 8 6z&#39;/&gt;&lt;/symbol&gt;
   &lt;symbol id=&#39;i-shield&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z&#39;/&gt;&lt;path d=&#39;m9 12 2 2 4-4&#39;/&gt;&lt;/symbol&gt;
   &lt;symbol id=&#39;i-check&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M20 6 9 17l-5-5&#39;/&gt;&lt;/symbol&gt;
   &lt;symbol id=&#39;i-search&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;circle cx=&#39;11&#39; cy=&#39;11&#39; r=&#39;6&#39;/&gt;&lt;path d=&#39;M20 20l-3.6-3.6&#39;/&gt;&lt;/symbol&gt;
@@ -1482,6 +1483,7 @@ user@build:~/src/adakaki$ &lt;span style=&#39;color:#E4633C&#39;&gt;▊&lt;/span
       &lt;div class=&#39;navitem&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-terminal&#39;/&gt;&lt;/svg&gt;终端&lt;/div&gt;
       &lt;div class=&#39;navitem&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-layout&#39;/&gt;&lt;/svg&gt;会话&lt;/div&gt;
       &lt;div class=&#39;grp&#39;&gt;连接与自动化&lt;/div&gt;
+      &lt;div class=&#39;navitem&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-message&#39;/&gt;&lt;/svg&gt;AI&lt;/div&gt;
       &lt;div class=&#39;navitem&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-server&#39;/&gt;&lt;/svg&gt;MCP 端点&lt;/div&gt;
       &lt;div class=&#39;navitem&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-shield&#39;/&gt;&lt;/svg&gt;安全与护栏&lt;/div&gt;
       &lt;div class=&#39;foot&#39;&gt;config.json · v0.2.0&lt;/div&gt;
@@ -1556,6 +1558,961 @@ user@build:~/src/adakaki$ &lt;span style=&#39;color:#E4633C&#39;&gt;▊&lt;/span
       &lt;/div&gt;
     &lt;/main&gt;
   &lt;/div&gt;
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;" scrolling="auto"></iframe></div>
+<div class="frame" style="left:3040px;top:40px;width:1200px;height:700px"><div class="cap"><span class="cap-title">09 AI 操作栏 · 交互与状态规范（按钮 / 展开收起 / 栏内结构）</span><span class="cap-meta">adakaki · palette</span></div><iframe sandbox="allow-same-origin" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&#39;zh-CN&#39;&gt;
+&lt;head&gt;
+&lt;meta http-equiv=&#34;Content-Security-Policy&#34; content=&#34;default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src data:; font-src data:&#34;&gt;
+&lt;meta charset=&#39;utf-8&#39;&gt;
+&lt;style&gt;
+  :root{
+    --bg:#0E0F12; --surface:#15171B; --hover:#22262D; --pressed:#2A2E36;
+    --border:#252932; --text:#EDEAE5; --muted:#9197A1;
+    --accent:#E4633C; --accent-hover:#F0744C; --accent-text:#1A0F0B;
+    --danger:#F2635C; --warning:#E0A44A; --success:#4FBF6A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{width:1200px;height:700px;overflow:hidden;background:var(--bg);color:var(--text);
+       font-family:&#39;Inter&#39;,&#39;Noto Sans SC&#39;,system-ui,-apple-system,&#39;Segoe UI&#39;,sans-serif;
+       display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+  svg.ic{width:13px;height:13px;flex:0 0 auto;stroke:currentColor;fill:none;
+         stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .mono{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace}
+  .top{display:flex;align-items:flex-end;gap:12px;padding:18px 24px 10px;flex:0 0 auto}
+  .top h1{font-size:18px;font-weight:600;letter-spacing:-.2px}
+  .top .sub{font-size:11.5px;color:var(--muted)}
+  .top .ver{margin-left:auto;font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;
+            font-size:10px;color:var(--accent);border:1px solid rgba(228,99,60,.36);
+            border-radius:5px;padding:2px 6px}
+  .grid{display:grid;grid-template-columns:374px 374px 374px;gap:12px;padding:0 24px;flex:0 0 auto}
+  .grid.row2{grid-template-columns:569px 569px;margin-top:12px}
+  .card{border-radius:10px;background:var(--surface);border:1px solid var(--border);
+        padding:12px;display:flex;flex-direction:column;gap:7px}
+  .card h2{font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--muted)}
+  .card .lead{font-size:10.5px;line-height:1.45;color:var(--muted)}
+  .card .lead b{color:var(--text);font-weight:500}
+  table{border-collapse:collapse;width:100%}
+  td{padding:2px 0;vertical-align:top}
+  td.k{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9.5px;
+       color:var(--accent);width:64px;white-space:nowrap}
+  td.v{font-size:10.5px;color:var(--text);line-height:1.4}
+  /* ---- AI 按钮四态 ---- */
+  .ai-btn{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 8px;border-radius:7px;
+          font-size:11px;font-weight:500;color:var(--muted);border:1px solid transparent}
+  .ai-btn.hover{background:var(--hover);color:var(--text)}
+  .ai-btn.on{color:var(--accent);background:rgba(228,99,60,.14);border-color:rgba(228,99,60,.32)}
+  .ai-btn.off{color:var(--muted);opacity:.55}
+  .ai-badge{min-width:14px;height:14px;padding:0 3px;border-radius:4px;background:var(--accent);
+            color:var(--accent-text);font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;
+            font-size:9px;display:inline-flex;align-items:center;justify-content:center}
+  .state{display:flex;align-items:center;gap:8px}
+  .state .lbl{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9.5px;
+              color:var(--muted);width:48px;flex:0 0 auto}
+  .state .note{font-size:9.5px;color:var(--muted);margin-left:auto;text-align:right}
+  /* ---- 展开 / 收起示意图 ---- */
+  .diagrams{display:flex;gap:10px}
+  .mini{width:160px;height:86px;border-radius:8px;border:1px solid var(--border);background:var(--bg);
+        display:flex;flex-direction:column;overflow:hidden}
+  .mini .bar{display:flex;align-items:center;gap:3px;height:15px;flex:0 0 15px;padding:0 5px;
+             background:var(--surface);border-bottom:1px solid var(--border)}
+  .mini .bar .dot{width:3px;height:3px;border-radius:50%;background:var(--muted)}
+  .mini .bar .pill{width:16px;height:7px;border-radius:3px;background:rgba(228,99,60,.5);margin-left:auto}
+  .mini .bar .pill.off{background:var(--hover)}
+  .mini .bd{flex:1 1 auto;display:flex;min-height:0}
+  .mini .cnt{flex:1 1 auto;display:flex;gap:3px;padding:4px}
+  .mini .pane{flex:1 1 0;border-radius:3px;background:var(--surface);border:1px solid var(--border)}
+  .mini .dock{flex:0 0 38px;background:var(--surface);border-left:1px solid var(--border);
+              display:flex;flex-direction:column;gap:3px;padding:4px}
+  .mini .dock i{display:block;height:8px;border-radius:3px;background:var(--bg);border:1px solid var(--border)}
+  .mini .dock i.hot{background:rgba(228,99,60,.18);border-color:rgba(228,99,60,.35)}
+  .mini .seam{flex:0 0 4px;background:var(--hover)}
+  .mini .handle{flex:0 0 16px;display:flex;align-items:center;justify-content:center;
+                border-left:1px solid var(--border);background:var(--surface);color:var(--muted)}
+  .dg-cap{display:flex;align-items:baseline;gap:5px;margin-top:3px;font-size:9.5px;color:var(--muted)}
+  .dg-cap b{font-size:10.5px;color:var(--text);font-weight:500}
+  .dg-col{display:flex;flex-direction:column}
+  /* ---- 栏内结构 ---- */
+  .rows{display:flex;flex-direction:column}
+  .srow{display:flex;gap:8px;padding:4px 0;border-bottom:1px dashed rgba(37,41,50,.9)}
+  .srow .nm{font-size:10.5px;color:var(--text);width:52px;flex:0 0 auto}
+  .srow .v{font-size:10px;color:var(--muted);line-height:1.4;flex:1 1 auto}
+  /* ---- 操作卡 ---- */
+  .ops{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .op{border-radius:8px;border:1px solid var(--border);background:var(--bg);padding:6px 7px;
+      display:flex;flex-direction:column;gap:4px;min-width:0}
+  .op.system{border-color:rgba(224,164,74,.32);background:rgba(224,164,74,.06)}
+  .op-hd{display:flex;align-items:center;gap:5px}
+  .op-tool{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9.5px;color:var(--accent)}
+  .badge{margin-left:auto;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:500;white-space:nowrap}
+  .badge.ok{color:var(--success);background:rgba(79,191,106,.14)}
+  .badge.warn{color:var(--warning);background:rgba(224,164,74,.14)}
+  .badge.wait{color:var(--muted);background:rgba(145,151,161,.12)}
+  .cmd{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9.5px;color:var(--text);
+       background:var(--surface);border-radius:4px;padding:3px 5px;white-space:nowrap;
+       overflow:hidden;text-overflow:ellipsis}
+  .ft{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--muted)}
+  .ft .link{color:var(--accent);font-weight:500;display:flex;align-items:center;gap:2px}
+  /* ---- 取舍 ---- */
+  .bullets{display:flex;flex-direction:column;gap:6px}
+  .b{display:flex;gap:7px;font-size:10.5px;line-height:1.45;color:var(--muted)}
+  .b .n{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9px;
+        color:var(--accent);flex:0 0 auto;padding-top:1px}
+  .b b{color:var(--text);font-weight:500}
+  .foot{margin-top:auto;padding:10px 24px 12px;font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;
+        font-size:9px;color:var(--muted);display:flex;gap:8px}
+  .foot .sep{opacity:.4}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;svg width=&#39;0&#39; height=&#39;0&#39; style=&#39;position:absolute&#39;&gt;&lt;defs&gt;
+  &lt;symbol id=&#39;i-message&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M20 11.8c0 3.3-3.6 6-8 6-1 0-1.9-.14-2.8-.4L4 19l1.2-3.3A5.9 5.9 0 014 11.8C4 8.5 7.6 5.8 12 5.8s8 2.7 8 6z&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-chev-left&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M15 5l-7 7 7 7&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-chev-right&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M9 5l7 7-7 7&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-spinner&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M12 4a8 8 0 018 8&#39; opacity=&#39;.9&#39;/&gt;&lt;path d=&#39;M20 12a8 8 0 01-8 8&#39;/&gt;&lt;path d=&#39;M12 20a8 8 0 01-8-8&#39;/&gt;&lt;path d=&#39;M4 12a8 8 0 018-8&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-warning&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M12 4l8.5 15h-17z&#39;/&gt;&lt;path d=&#39;M12 10v4&#39;/&gt;&lt;path d=&#39;M12 16.6v.9&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-note&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M5 5h14v9l-5 5H5z&#39;/&gt;&lt;path d=&#39;M19 14h-5v5&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-inspect&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M4 9V5.5A1.5 1.5 0 015.5 4H9&#39;/&gt;&lt;path d=&#39;M15 4h3.5A1.5 1.5 0 0120 5.5V9&#39;/&gt;&lt;path d=&#39;M20 15v3.5a1.5 1.5 0 01-1.5 1.5H15&#39;/&gt;&lt;path d=&#39;M9 20H5.5A1.5 1.5 0 014 18.5V15&#39;/&gt;&lt;path d=&#39;M9.5 9.5h5v5h-5z&#39;/&gt;&lt;/symbol&gt;
+&lt;/defs&gt;&lt;/svg&gt;
+
+&lt;div class=&#39;top&#39;&gt;
+  &lt;h1&gt;AI 操作栏 · 交互与状态规范&lt;/h1&gt;
+  &lt;span class=&#39;sub&#39;&gt;顶部 AI 按钮控制右侧 340 栏的展开与收起 · 墨 / 纸双主题同一套规则&lt;/span&gt;
+  &lt;span class=&#39;ver&#39;&gt;v0.2&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;div class=&#39;grid&#39;&gt;
+  &lt;div class=&#39;card&#39;&gt;
+    &lt;h2&gt;标题条 AI 按钮&lt;/h2&gt;
+    &lt;div class=&#39;state&#39;&gt;&lt;span class=&#39;lbl&#39;&gt;默认&lt;/span&gt;
+      &lt;div class=&#39;ai-btn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-message&#39;/&gt;&lt;/svg&gt;AI 操作&lt;/div&gt;
+      &lt;span class=&#39;note&#39;&gt;收起态 · ghost&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&#39;state&#39;&gt;&lt;span class=&#39;lbl&#39;&gt;悬停&lt;/span&gt;
+      &lt;div class=&#39;ai-btn hover&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-message&#39;/&gt;&lt;/svg&gt;AI 操作&lt;/div&gt;
+      &lt;span class=&#39;note&#39;&gt;SurfaceHover 底&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&#39;state&#39;&gt;&lt;span class=&#39;lbl&#39;&gt;展开中&lt;/span&gt;
+      &lt;div class=&#39;ai-btn on&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-message&#39;/&gt;&lt;/svg&gt;AI 操作&lt;span class=&#39;ai-badge&#39;&gt;4&lt;/span&gt;&lt;/div&gt;
+      &lt;span class=&#39;note&#39;&gt;accent 淡底 + 边框&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&#39;state&#39;&gt;&lt;span class=&#39;lbl&#39;&gt;无 Agent&lt;/span&gt;
+      &lt;div class=&#39;ai-btn off&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-message&#39;/&gt;&lt;/svg&gt;AI 操作&lt;/div&gt;
+      &lt;span class=&#39;note&#39;&gt;只开历史 · 无徽标&lt;/span&gt;&lt;/div&gt;
+    &lt;table&gt;
+      &lt;tr&gt;&lt;td class=&#39;k&#39;&gt;位置&lt;/td&gt;&lt;td class=&#39;v&#39;&gt;标题条右侧第二组，会话名之后、窗口按钮之前&lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td class=&#39;k&#39;&gt;尺寸&lt;/td&gt;&lt;td class=&#39;v&#39;&gt;26 高 · 圆角 7 · 内边距 8 · 图标 14 · 字号 11 / 500&lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td class=&#39;k&#39;&gt;徽标&lt;/td&gt;&lt;td class=&#39;v&#39;&gt;14 × 14 · 半径 4 · 9 mono · 超过 99 显示 99+&lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td class=&#39;k&#39;&gt;快捷键&lt;/td&gt;&lt;td class=&#39;v&#39;&gt;Ctrl + Alt + A 切换；Esc 只收焦点，不关栏&lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&#39;card&#39;&gt;
+    &lt;h2&gt;展开 / 收起&lt;/h2&gt;
+    &lt;div class=&#39;diagrams&#39;&gt;
+      &lt;div class=&#39;dg-col&#39;&gt;
+        &lt;div class=&#39;mini&#39;&gt;
+          &lt;div class=&#39;bar&#39;&gt;&lt;span class=&#39;dot&#39;&gt;&lt;/span&gt;&lt;span class=&#39;dot&#39;&gt;&lt;/span&gt;&lt;span class=&#39;dot&#39;&gt;&lt;/span&gt;&lt;span class=&#39;pill off&#39;&gt;&lt;/span&gt;&lt;/div&gt;
+          &lt;div class=&#39;bd&#39;&gt;
+            &lt;div class=&#39;cnt&#39;&gt;&lt;div class=&#39;pane&#39;&gt;&lt;/div&gt;&lt;div class=&#39;pane&#39;&gt;&lt;/div&gt;&lt;/div&gt;
+            &lt;div class=&#39;handle&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:9px;height:9px&#39;&gt;&lt;use href=&#39;#i-chev-left&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&#39;dg-cap&#39;&gt;&lt;b&gt;收起&lt;/b&gt;&lt;span&gt;右缘 36 把手，悬停显影&lt;/span&gt;&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&#39;dg-col&#39;&gt;
+        &lt;div class=&#39;mini&#39;&gt;
+          &lt;div class=&#39;bar&#39;&gt;&lt;span class=&#39;dot&#39;&gt;&lt;/span&gt;&lt;span class=&#39;dot&#39;&gt;&lt;/span&gt;&lt;span class=&#39;dot&#39;&gt;&lt;/span&gt;&lt;span class=&#39;pill&#39;&gt;&lt;/span&gt;&lt;/div&gt;
+          &lt;div class=&#39;bd&#39;&gt;
+            &lt;div class=&#39;cnt&#39;&gt;&lt;div class=&#39;pane&#39;&gt;&lt;/div&gt;&lt;div class=&#39;pane&#39;&gt;&lt;/div&gt;&lt;/div&gt;
+            &lt;div class=&#39;seam&#39;&gt;&lt;/div&gt;
+            &lt;div class=&#39;dock&#39;&gt;&lt;i class=&#39;hot&#39;&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&#39;dg-cap&#39;&gt;&lt;b&gt;展开&lt;/b&gt;&lt;span&gt;340 · 缝上 4 可拖拽&lt;/span&gt;&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;table&gt;
+      &lt;tr&gt;&lt;td class=&#39;k&#39;&gt;宽度&lt;/td&gt;&lt;td class=&#39;v&#39;&gt;340；拖拽 280 – 420，双击复位 340&lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td class=&#39;k&#39;&gt;动效&lt;/td&gt;&lt;td class=&#39;v&#39;&gt;160ms cubic-bezier(.2,.8,.2,1) 宽度插值；内容延迟 80ms 淡入&lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td class=&#39;k&#39;&gt;断点&lt;/td&gt;&lt;td class=&#39;v&#39;&gt;窗口 &amp;lt; 1280 改覆盖式（overlay 340 + 左阴影），不挤压分格&lt;/td&gt;&lt;/tr&gt;
+      &lt;tr&gt;&lt;td class=&#39;k&#39;&gt;记忆&lt;/td&gt;&lt;td class=&#39;v&#39;&gt;开合状态与宽度写入 config.json，重启还原&lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&#39;card&#39;&gt;
+    &lt;h2&gt;栏内结构（自上而下）&lt;/h2&gt;
+    &lt;div class=&#39;rows&#39;&gt;
+      &lt;div class=&#39;srow&#39;&gt;&lt;span class=&#39;nm&#39;&gt;头部&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;36 · 图标 14 · 标题 12/600（单行不压缩） · 步数 chip · 收起&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&#39;srow&#39;&gt;&lt;span class=&#39;nm&#39;&gt;目标行&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;24 · 运行点 + local_id · 短标题（路径末段，≤28 字） + 审计深链&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&#39;srow&#39;&gt;&lt;span class=&#39;nm&#39;&gt;时间线&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;自适应 · 内距 10 / 12 · 卡间距 8&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&#39;srow&#39;&gt;&lt;span class=&#39;nm&#39;&gt;输入区&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;56 · 输入框 34 · 发送 26 · Enter 发送&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&#39;srow&#39;&gt;&lt;span class=&#39;nm&#39;&gt;元信息&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;24 · 模型 · token（1.2k / 277.2k 缩写） · 耗时，9.5 muted&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&#39;srow&#39;&gt;&lt;span class=&#39;nm&#39;&gt;底色&lt;/span&gt;&lt;span class=&#39;v&#39;&gt;Surface + 左侧 1px 边框，卡片用 Bg 反衬&lt;/span&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&#39;lead&#39;&gt;面板只承载&lt;b&gt;当前这一轮 Agent 操作&lt;/b&gt;：切会话时时间线跟着切，历史留在审计窗口。&lt;/div&gt;
+    &lt;div class=&#39;lead&#39;&gt;输入框始终可写；运行中发送的消息进下一轮，不打断当前工具调用。&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;div class=&#39;grid row2&#39;&gt;
+  &lt;div class=&#39;card&#39;&gt;
+    &lt;h2&gt;操作卡四种形态&lt;/h2&gt;
+    &lt;div class=&#39;ops&#39;&gt;
+      &lt;div class=&#39;op&#39;&gt;
+        &lt;div class=&#39;op-hd&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:11px;height:11px;color:var(--accent)&#39;&gt;&lt;use href=&#39;#i-spinner&#39;/&gt;&lt;/svg&gt;
+          &lt;span class=&#39;op-tool&#39;&gt;run_command&lt;/span&gt;&lt;span class=&#39;badge wait&#39;&gt;执行中&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&#39;cmd&#39;&gt;go build ./... &amp;amp;&amp;amp; go vet ./...&lt;/div&gt;
+        &lt;div class=&#39;ft&#39;&gt;单实例 spinner，不叠双圈&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&#39;op&#39;&gt;
+        &lt;div class=&#39;op-hd&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:11px;height:11px&#39;&gt;&lt;use href=&#39;#i-inspect&#39;/&gt;&lt;/svg&gt;
+          &lt;span class=&#39;op-tool&#39;&gt;run_command&lt;/span&gt;&lt;span class=&#39;badge ok&#39;&gt;完成&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&#39;cmd&#39;&gt;go test ./... -count=1&lt;/div&gt;
+        &lt;div class=&#39;ft&#39;&gt;ok adakaki 0.812s
+          &lt;span style=&#39;flex:1 1 auto&#39;&gt;&lt;/span&gt;
+          &lt;span class=&#39;link&#39;&gt;审计&lt;svg class=&#39;ic&#39; style=&#39;width:9px;height:9px&#39;&gt;&lt;use href=&#39;#i-chev-right&#39;/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&#39;op&#39;&gt;
+        &lt;div class=&#39;op-hd&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:11px;height:11px&#39;&gt;&lt;use href=&#39;#i-note&#39;/&gt;&lt;/svg&gt;
+          &lt;span class=&#39;op-tool&#39;&gt;write_file&lt;/span&gt;&lt;span class=&#39;badge ok&#39;&gt;完成&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&#39;cmd&#39;&gt;ui/settings_mcp.go +12 -3&lt;/div&gt;
+        &lt;div class=&#39;ft&#39;&gt;18ms
+          &lt;span style=&#39;flex:1 1 auto&#39;&gt;&lt;/span&gt;
+          &lt;span class=&#39;link&#39;&gt;审计&lt;svg class=&#39;ic&#39; style=&#39;width:9px;height:9px&#39;&gt;&lt;use href=&#39;#i-chev-right&#39;/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&#39;op system&#39;&gt;
+        &lt;div class=&#39;op-hd&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:11px;height:11px;color:var(--warning)&#39;&gt;&lt;use href=&#39;#i-warning&#39;/&gt;&lt;/svg&gt;
+          &lt;span class=&#39;op-tool&#39;&gt;run_command&lt;/span&gt;&lt;span class=&#39;badge warn&#39;&gt;已放行&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&#39;cmd&#39;&gt;rm -rf node_modules&lt;/div&gt;
+        &lt;div class=&#39;ft&#39;&gt;护栏规则命中，需人工放行&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&#39;lead&#39;&gt;工具名用 mono 9.5，徽标 9；每张卡都带审计深链，与盾牌窗口同源。&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&#39;card&#39;&gt;
+    &lt;h2&gt;与既有设计的取舍&lt;/h2&gt;
+    &lt;div class=&#39;bullets&#39;&gt;
+      &lt;div class=&#39;b&#39;&gt;&lt;span class=&#39;n&#39;&gt;01&lt;/span&gt;&lt;div&gt;&lt;b&gt;展开时撤掉分格蒙版。&lt;/b&gt;输入锁定改由 AI 按钮激活态 + 分格头「AI 操作中」chip 表达，避免遮罩与右栏重复挡住输出。&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&#39;b&#39;&gt;&lt;span class=&#39;n&#39;&gt;02&lt;/span&gt;&lt;div&gt;&lt;b&gt;收起且 Agent 仍在操作时恢复蒙版。&lt;/b&gt;即画板 01 的做法：340 栏不在场，用蒙版卡承载状态与审计入口。&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&#39;b&#39;&gt;&lt;span class=&#39;n&#39;&gt;03&lt;/span&gt;&lt;div&gt;&lt;b&gt;与审计窗口同源。&lt;/b&gt;每张操作卡都带「查看审计」，与盾牌窗口读同一份 JSONL，栏内不做二次记录。&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&#39;b&#39;&gt;&lt;span class=&#39;n&#39;&gt;04&lt;/span&gt;&lt;div&gt;&lt;b&gt;侧栏 Agent 卡片降级为指示器。&lt;/b&gt;保留运行指示与入口，文案从「详情见分格」改为「详情见右侧 AI 栏」。&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&#39;b&#39;&gt;&lt;span class=&#39;n&#39;&gt;05&lt;/span&gt;&lt;div&gt;&lt;b&gt;窄窗优先保住分格。&lt;/b&gt;1280 以下覆盖式展开，右栏浮在内容上，收起即恢复，不做上下堆叠。&lt;/div&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;div class=&#39;foot&#39;&gt;
+  &lt;span&gt;AI 操作栏 · 340 展开 / 36 把手 / 160ms&lt;/span&gt;
+  &lt;span class=&#39;sep&#39;&gt;|&lt;/span&gt;
+  &lt;span&gt;Ctrl + Alt + A&lt;/span&gt;
+  &lt;span class=&#39;sep&#39;&gt;|&lt;/span&gt;
+  &lt;span&gt;与画板 08（展开态）配对使用&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+" scrolling="auto"></iframe></div>
+<div class="frame" style="left:2923px;top:803px;width:1000px;height:700px"><div class="cap"><span class="cap-title">10 设置窗口 · AI 页（模型 / 凭据 / 行为 / 护栏 / 审计）</span><span class="cap-meta">adakaki · screen</span></div><iframe sandbox="allow-same-origin" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&#39;zh-CN&#39;&gt;
+&lt;head&gt;
+&lt;meta http-equiv=&#34;Content-Security-Policy&#34; content=&#34;default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src data:; font-src data:&#34;&gt;
+&lt;meta charset=&#39;utf-8&#39;&gt;
+&lt;style&gt;
+  :root{
+    --bg:#0E0F12; --surface:#15171B; --hover:#22262D; --pressed:#2A2E36;
+    --border:#252932; --text:#EDEAE5; --muted:#9197A1;
+    --accent:#E4633C; --accent-text:#1A0F0B;
+    --success:#4FBF6A; --warning:#E0A44A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{width:1000px;height:700px;overflow:hidden;background:var(--bg);color:var(--text);
+       font-family:&#39;Inter&#39;,&#39;Noto Sans SC&#39;,system-ui,-apple-system,&#39;Segoe UI&#39;,sans-serif;
+       -webkit-font-smoothing:antialiased;user-select:none}
+  .mono{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace}
+  svg.ic{width:14px;height:14px;flex:0 0 auto;stroke:currentColor;fill:none;
+         stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .win{width:1000px;height:700px;display:flex;flex-direction:column;border-radius:10px;
+       overflow:hidden;border:1px solid var(--border)}
+  .titlebar{display:flex;align-items:center;gap:9px;height:40px;flex:0 0 40px;padding:0 128px 0 16px;
+            background:var(--surface);border-bottom:1px solid var(--border)}
+  .logo{width:22px;height:22px;border-radius:6px;background:var(--accent);display:flex;
+        align-items:center;justify-content:center;flex:0 0 auto}
+  .t{font-size:13px;font-weight:600}
+  .spacer{flex:1 1 auto}
+  .saved{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted)}
+  .body{display:flex;flex:1 1 auto;min-height:0}
+  .nav{width:208px;flex:0 0 208px;background:var(--surface);border-right:1px solid var(--border);
+       display:flex;flex-direction:column;padding:10px;gap:2px}
+  .grp{font-size:9.5px;font-weight:500;letter-spacing:.5px;color:var(--muted);padding:8px 8px 4px}
+  .navitem{display:flex;align-items:center;gap:9px;height:32px;padding:0 8px;border-radius:6px;
+           color:var(--muted);font-size:12px}
+  .navitem.on{background:var(--bg);border:1px solid var(--border);color:var(--text);font-weight:500}
+  .navitem.on svg{color:var(--accent)}
+  .foot{margin-top:auto;height:34px;display:flex;align-items:center;padding:0 4px;
+        font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9px;color:var(--muted)}
+  .main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+  .mhead{padding:24px 28px 14px;display:flex;flex-direction:column;gap:5px}
+  .mhead .h{font-size:18px;font-weight:600}
+  .mhead .d{font-size:11.5px;color:var(--muted)}
+  .divider{height:1px;background:var(--border)}
+  .cols{flex:1 1 auto;display:grid;grid-template-columns:1fr 1fr;gap:22px;padding:18px 28px 20px;min-height:0}
+  .col{display:flex;flex-direction:column;gap:16px;min-width:0}
+  .sect{display:flex;flex-direction:column;gap:8px}
+  .lbl{font-size:10.5px;font-weight:500;letter-spacing:.6px;color:var(--muted)}
+  .seg{display:flex;width:100%;height:32px;padding:3px;gap:2px;border-radius:8px;
+       background:var(--surface);border:1px solid var(--border)}
+  .seg .b{flex:1 1 0;height:24px;border-radius:6px;display:flex;align-items:center;
+          justify-content:center;font-size:10.5px;color:var(--muted);white-space:nowrap}
+  .seg .b.on{background:var(--pressed);color:var(--text);font-weight:500}
+  .select{display:flex;align-items:center;gap:8px;height:32px;padding:0 9px;border-radius:7px;
+          background:var(--bg);border:1px solid var(--border);font-size:11px}
+  .select .nm{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:10.5px}
+  .select .tag{margin-left:auto;font-size:9px;color:var(--muted);border:1px solid var(--border);
+               border-radius:4px;padding:1px 5px}
+  .select svg{color:var(--muted)}
+  .hint{font-size:10px;color:var(--muted);line-height:1.5}
+  .cred{display:flex;flex-direction:column;gap:7px;padding:10px;border-radius:8px;
+        background:var(--surface);border:1px solid var(--border)}
+  .cred .top{display:flex;align-items:center;gap:7px}
+  .cred .top .n{font-size:11.5px;font-weight:500}
+  .cred .top .key{margin-left:auto;font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;
+                  font-size:9px;color:var(--muted)}
+  .cred .mask{display:flex;align-items:center;gap:8px;height:30px;padding:0 9px;border-radius:6px;
+              background:var(--bg);border:1px solid var(--border);
+              font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:10px;color:var(--muted)}
+  .cred .mask .sp{flex:1 1 auto}
+  .cred .acts{display:flex;gap:6px;justify-content:flex-end}
+  .cred .mask .ph{color:var(--muted)}
+  .cred .saved{margin-left:auto;font-size:9px;color:var(--success);
+               background:rgba(79,191,106,.14);padding:1px 5px;border-radius:4px}
+  .btn{height:26px;padding:0 9px;border-radius:6px;display:flex;align-items:center;gap:5px;
+       font-size:10.5px;background:var(--surface);border:1px solid var(--border);color:var(--text);
+       flex:0 0 auto;white-space:nowrap}
+  .btn.ghost{background:transparent}
+  .btn.on{background:rgba(228,99,60,.14);border-color:rgba(228,99,60,.32);color:var(--accent)}
+  .row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;
+       background:var(--surface);border:1px solid var(--border)}
+  .row .meta{display:flex;flex-direction:column;gap:2px;flex:1 1 auto;min-width:0}
+  .row .n{font-size:11.5px;font-weight:500}
+  .row .s{font-size:10px;color:var(--muted);line-height:1.45}
+  .sw{width:32px;height:19px;flex:0 0 auto;border-radius:10px;background:var(--pressed);position:relative}
+  .sw.on{background:var(--accent)}
+  .sw i{position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff}
+  .sw.on i{left:15px}
+  .num{display:flex;align-items:center;height:28px;border:1px solid var(--border);border-radius:7px;
+       background:var(--bg);flex:0 0 auto}
+  .num .b{width:24px;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+  .num .v{min-width:58px;text-align:center;font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;
+          font-size:10.5px}
+  .kv{display:flex;align-items:center;gap:8px;height:28px;padding:0 9px;border-radius:6px;
+      background:var(--surface);border:1px solid var(--border);font-size:10.5px;color:var(--muted)}
+  .kv .v{margin-left:auto;font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;
+         font-size:10.5px;color:var(--text)}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;svg width=&#39;0&#39; height=&#39;0&#39; style=&#39;position:absolute&#39;&gt;&lt;defs&gt;
+  &lt;symbol id=&#39;i-mark&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M5.8 6.2 10.9 12l-5.1 5.8&#39; stroke-width=&#39;2.1&#39;/&gt;&lt;circle cx=&#39;16.2&#39; cy=&#39;17.8&#39; r=&#39;1.9&#39; fill=&#39;currentColor&#39; stroke=&#39;none&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-palette&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M12 21a9 9 0 1 1 9-9c0 2.2-1.8 3.2-3.5 3.2H16a2 2 0 0 0-1.4 3.4c.6.7.2 2.4-2.6 2.4Z&#39;/&gt;&lt;circle cx=&#39;8&#39; cy=&#39;9&#39; r=&#39;1&#39;/&gt;&lt;circle cx=&#39;12&#39; cy=&#39;6.5&#39; r=&#39;1&#39;/&gt;&lt;circle cx=&#39;16&#39; cy=&#39;9&#39; r=&#39;1&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-terminal&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;m4 17 6-6-6-6&#39;/&gt;&lt;path d=&#39;M12 19h8&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-layout&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;rect x=&#39;3&#39; y=&#39;4&#39; width=&#39;18&#39; height=&#39;16&#39; rx=&#39;2.5&#39;/&gt;&lt;path d=&#39;M3 9h18&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-message&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M20 11.8c0 3.3-3.6 6-8 6-1 0-1.9-.14-2.8-.4L4 19l1.2-3.3A5.9 5.9 0 014 11.8C4 8.5 7.6 5.8 12 5.8s8 2.7 8 6z&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-server&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;rect x=&#39;3&#39; y=&#39;4&#39; width=&#39;18&#39; height=&#39;7&#39; rx=&#39;2&#39;/&gt;&lt;rect x=&#39;3&#39; y=&#39;13&#39; width=&#39;18&#39; height=&#39;7&#39; rx=&#39;2&#39;/&gt;&lt;path d=&#39;M7 7.5h.01&#39;/&gt;&lt;path d=&#39;M7 16.5h.01&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-shield&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z&#39;/&gt;&lt;path d=&#39;m9 12 2 2 4-4&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-check&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M20 6 9 17l-5-5&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-chev-down&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M5 9l7 7 7-7&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-refresh&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M20 12a8 8 0 10-2.6 5.9&#39;/&gt;&lt;path d=&#39;M20 6.5V12h-5.5&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-minus&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M5 12h14&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-plus&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M12 5v14M5 12h14&#39;/&gt;&lt;/symbol&gt;
+&lt;/defs&gt;&lt;/svg&gt;
+
+&lt;div class=&#39;win&#39;&gt;
+  &lt;header class=&#39;titlebar&#39;&gt;
+    &lt;div class=&#39;logo&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:15px;height:15px;color:var(--accent-text)&#39;&gt;&lt;use href=&#39;#i-mark&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+    &lt;span class=&#39;t&#39;&gt;设置&lt;/span&gt;
+    &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
+    &lt;div class=&#39;saved&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:11px;height:11px;color:var(--success)&#39;&gt;&lt;use href=&#39;#i-check&#39;/&gt;&lt;/svg&gt;改动即保存&lt;/div&gt;
+  &lt;/header&gt;
+
+  &lt;div class=&#39;body&#39;&gt;
+    &lt;nav class=&#39;nav&#39;&gt;
+      &lt;div class=&#39;grp&#39;&gt;外观与终端&lt;/div&gt;
+      &lt;div class=&#39;navitem&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-palette&#39;/&gt;&lt;/svg&gt;外观&lt;/div&gt;
+      &lt;div class=&#39;navitem&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-terminal&#39;/&gt;&lt;/svg&gt;终端&lt;/div&gt;
+      &lt;div class=&#39;navitem&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-layout&#39;/&gt;&lt;/svg&gt;会话&lt;/div&gt;
+      &lt;div class=&#39;grp&#39;&gt;连接与自动化&lt;/div&gt;
+      &lt;div class=&#39;navitem on&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-message&#39;/&gt;&lt;/svg&gt;AI&lt;/div&gt;
+      &lt;div class=&#39;navitem&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-server&#39;/&gt;&lt;/svg&gt;MCP 端点&lt;/div&gt;
+      &lt;div class=&#39;navitem&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-shield&#39;/&gt;&lt;/svg&gt;安全与护栏&lt;/div&gt;
+      &lt;div class=&#39;foot&#39;&gt;config.json · v0.2.0&lt;/div&gt;
+    &lt;/nav&gt;
+
+    &lt;main class=&#39;main&#39;&gt;
+      &lt;div class=&#39;mhead&#39;&gt;
+        &lt;div class=&#39;h&#39;&gt;AI&lt;/div&gt;
+        &lt;div class=&#39;d&#39;&gt;模型、凭据与 Agent 行为；改动立即保存，下一轮请求生效。&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&#39;divider&#39;&gt;&lt;/div&gt;
+
+      &lt;div class=&#39;cols&#39;&gt;
+        &lt;div class=&#39;col&#39;&gt;
+          &lt;div class=&#39;sect&#39;&gt;
+            &lt;div class=&#39;lbl&#39;&gt;模型与推理&lt;/div&gt;
+            &lt;div class=&#39;seg&#39;&gt;
+              &lt;div class=&#39;b&#39;&gt;本地 commandcode&lt;/div&gt;
+              &lt;div class=&#39;b on&#39;&gt;云端 open-design&lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class=&#39;select&#39;&gt;
+              &lt;span class=&#39;nm&#39;&gt;deepseek-v4.1-flash-eco&lt;/span&gt;
+              &lt;span class=&#39;tag&#39;&gt;1M 上下文&lt;/span&gt;
+              &lt;svg class=&#39;ic&#39; style=&#39;width:12px;height:12px&#39;&gt;&lt;use href=&#39;#i-chev-down&#39;/&gt;&lt;/svg&gt;
+            &lt;/div&gt;
+            &lt;div class=&#39;seg&#39;&gt;
+              &lt;div class=&#39;b&#39;&gt;关闭&lt;/div&gt;
+              &lt;div class=&#39;b&#39;&gt;低&lt;/div&gt;
+              &lt;div class=&#39;b&#39;&gt;中&lt;/div&gt;
+              &lt;div class=&#39;b on&#39;&gt;高&lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class=&#39;hint&#39;&gt;推理强度越高越慢；云端需 Base URL 与下方 API Key，本地 provider 直连本机端口。&lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div class=&#39;sect&#39;&gt;
+            &lt;div class=&#39;lbl&#39;&gt;凭据与连接&lt;/div&gt;
+            &lt;div class=&#39;cred&#39;&gt;
+              &lt;div class=&#39;top&#39;&gt;&lt;span class=&#39;n&#39;&gt;API Key&lt;/span&gt;
+                &lt;span class=&#39;key&#39;&gt;ai.api_key_dpapi&lt;/span&gt;&lt;/div&gt;
+              &lt;div class=&#39;mask&#39;&gt;&lt;span class=&#39;ph&#39;&gt;粘贴 API Key 后点保存&lt;/span&gt;
+                &lt;span class=&#39;sp&#39;&gt;&lt;/span&gt;
+                &lt;span class=&#39;saved&#39;&gt;已保存（DPAPI 加密）&lt;/span&gt;
+              &lt;/div&gt;
+              &lt;div class=&#39;acts&#39;&gt;
+                &lt;div class=&#39;btn ghost&#39;&gt;删除&lt;/div&gt;
+                &lt;div class=&#39;btn&#39;&gt;保存&lt;/div&gt;
+                &lt;div class=&#39;btn&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:11px;height:11px&#39;&gt;&lt;use href=&#39;#i-refresh&#39;/&gt;&lt;/svg&gt;测试连接&lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class=&#39;kv&#39;&gt;或环境变量&lt;span class=&#39;v&#39;&gt;OPENDESIGN_API_KEY&lt;/span&gt;&lt;/div&gt;
+            &lt;div class=&#39;hint&#39;&gt;直接填写的 Key 用 Windows DPAPI 加密后写入 config.json，仅本机本用户可解密，界面不回显明文；环境变量只作兜底。测试连接发一次 1 token 探测，不写审计。&lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div class=&#39;sect&#39;&gt;
+            &lt;div class=&#39;lbl&#39;&gt;上下文&lt;/div&gt;
+            &lt;div class=&#39;kv&#39;&gt;上下文窗口&lt;span class=&#39;v&#39;&gt;1,000,000&lt;/span&gt;&lt;/div&gt;
+            &lt;div class=&#39;hint&#39;&gt;来自模型的上下文窗口，仅供查看；单轮工具数与会话 token 不再设上限（配置手改正数仍可生效）。&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class=&#39;col&#39;&gt;
+          &lt;div class=&#39;sect&#39;&gt;
+            &lt;div class=&#39;lbl&#39;&gt;Agent 行为&lt;/div&gt;
+            &lt;div class=&#39;row&#39;&gt;
+              &lt;div class=&#39;meta&#39;&gt;&lt;span class=&#39;n&#39;&gt;AI 操作栏默认展开&lt;/span&gt;
+                &lt;span class=&#39;s&#39;&gt;打开主窗时右侧 340 栏直接在场&lt;/span&gt;&lt;/div&gt;
+              &lt;div class=&#39;sw on&#39;&gt;&lt;i&gt;&lt;/i&gt;&lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class=&#39;row&#39;&gt;
+              &lt;div class=&#39;meta&#39;&gt;&lt;span class=&#39;n&#39;&gt;运行时锁定终端输入&lt;/span&gt;
+                &lt;span class=&#39;s&#39;&gt;工具调用期间不接受人工键入，避免与 Agent 抢输入&lt;/span&gt;&lt;/div&gt;
+              &lt;div class=&#39;sw on&#39;&gt;&lt;i&gt;&lt;/i&gt;&lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class=&#39;row&#39;&gt;
+              &lt;div class=&#39;meta&#39;&gt;&lt;span class=&#39;n&#39;&gt;操作结束自动恢复&lt;/span&gt;
+                &lt;span class=&#39;s&#39;&gt;关掉后需手动解除锁定，适合长时间跑批&lt;/span&gt;&lt;/div&gt;
+              &lt;div class=&#39;sw on&#39;&gt;&lt;i&gt;&lt;/i&gt;&lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div class=&#39;sect&#39;&gt;
+            &lt;div class=&#39;lbl&#39;&gt;工具与护栏联动&lt;/div&gt;
+            &lt;div class=&#39;seg&#39;&gt;
+              &lt;div class=&#39;b on&#39;&gt;全部&lt;/div&gt;
+              &lt;div class=&#39;b&#39;&gt;写文件&lt;/div&gt;
+              &lt;div class=&#39;b&#39;&gt;只读&lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class=&#39;seg&#39;&gt;
+              &lt;div class=&#39;b on&#39;&gt;都需放行&lt;/div&gt;
+              &lt;div class=&#39;b&#39;&gt;仅高危&lt;/div&gt;
+              &lt;div class=&#39;b&#39;&gt;放行&lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class=&#39;hint&#39;&gt;「都需放行」下每次危险命令弹护栏确认；与「安全与护栏」页共用同一规则表。&lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div class=&#39;sect&#39;&gt;
+            &lt;div class=&#39;lbl&#39;&gt;审计与隐私&lt;/div&gt;
+            &lt;div class=&#39;kv&#39;&gt;记录 MCP 调用&lt;span class=&#39;v&#39;&gt;开&lt;/span&gt;&lt;/div&gt;
+            &lt;div class=&#39;kv&#39;&gt;输出脱敏&lt;span class=&#39;v&#39;&gt;开&lt;/span&gt;&lt;/div&gt;
+            &lt;div class=&#39;kv&#39;&gt;保留&lt;span class=&#39;v&#39;&gt;30 天&lt;/span&gt;&lt;/div&gt;
+            &lt;div class=&#39;hint&#39;&gt;审计为 JSONL 轮转；脱敏覆盖 token、密钥与内网主机名。&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/main&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+" scrolling="auto"></iframe></div>
+<div class="frame" style="left:1540px;top:2440px;width:1440px;height:900px"><div class="cap"><span class="cap-title">08 主窗口 · 深色 + 右侧 AI 操作栏（340 展开）</span><span class="cap-meta">adakaki · screen · desktop-app</span></div><iframe sandbox="allow-same-origin" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&#39;zh-CN&#39;&gt;
+&lt;head&gt;
+&lt;meta http-equiv=&#34;Content-Security-Policy&#34; content=&#34;default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src data:; font-src data:&#34;&gt;
+&lt;meta charset=&#39;utf-8&#39;&gt;
+&lt;style&gt;
+  :root{
+    --bg:#0E0F12; --surface:#15171B; --hover:#22262D; --pressed:#2A2E36;
+    --border:#252932; --text:#EDEAE5; --muted:#9197A1;
+    --accent:#E4633C; --accent-hover:#F0744C; --accent-text:#1A0F0B;
+    --danger:#F2635C; --warning:#E0A44A; --success:#4FBF6A;
+    --pane:#15171B; --pane-focus:#1E2127; --pane-border:#252932;
+    --ui:&#39;Inter&#39;,&#39;Noto Sans SC&#39;,system-ui,-apple-system,&#39;Segoe UI&#39;,sans-serif;
+    --mono:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{width:1440px;height:900px;overflow:hidden;background:var(--bg);color:var(--text);
+       font-family:&#39;Inter&#39;,&#39;Noto Sans SC&#39;,system-ui,-apple-system,&#39;Segoe UI&#39;,sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
+  svg.ic{width:14px;height:14px;flex:0 0 auto;stroke:currentColor;fill:none;
+         stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .win{display:flex;flex-direction:column;width:1440px;height:900px}
+  /* ---- 标题条：开窗后整条贯通，自绘，高 40 ---- */
+  .titlebar{display:flex;align-items:center;gap:9px;height:40px;flex:0 0 40px;
+    padding:0 138px 0 14px;background:var(--surface);border-bottom:1px solid var(--border)}
+  .logo{width:22px;height:22px;border-radius:6px;background:var(--accent);
+        display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .brand{font-size:13.5px;font-weight:600;letter-spacing:-.1px}
+  .chip{padding:2px 6px;border-radius:4px;font-size:9.5px;font-weight:500;color:var(--muted);
+        background:var(--bg);white-space:nowrap}
+  .chip.warn{color:var(--warning);background:rgba(224,164,74,.14)}
+  .ghost{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;
+         justify-content:center;color:var(--muted)}
+  .ghost:hover{background:var(--hover);color:var(--text)}
+  .rule{width:1px;height:16px;background:var(--border);margin:0 2px}
+  .dot{width:6px;height:6px;border-radius:50%;flex:0 0 auto}
+  .sect{display:flex;align-items:center;gap:7px}
+  .sess-title{font-size:12.5px;font-weight:500;max-width:280px;overflow:hidden;
+              text-overflow:ellipsis;white-space:nowrap}
+  .spacer{flex:1 1 auto}
+  .agent-pill{display:flex;align-items:center;gap:5px;padding:3px 8px;border-radius:6px;
+              background:rgba(224,164,74,.14);color:var(--warning);
+              font-size:10.5px;font-weight:500}
+  /* ---- 主体 ---- */
+  .body{display:flex;flex:1 1 auto;min-height:0}
+  /* ---- 侧栏：260，Surface 底，右侧 1px ---- */
+  .sidebar{width:260px;flex:0 0 260px;background:var(--surface);
+           border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+  .side-top{padding:10px 10px 6px;display:flex;flex-direction:column;gap:8px}
+  .action{display:flex;align-items:center;gap:7px;height:30px;padding:0 8px;border-radius:6px}
+  .action:hover{background:var(--hover)}
+  .action-label{font-size:12px;font-weight:500}
+  .kbd{margin-left:auto;padding:2px 6px;border:1px solid var(--border);border-radius:4px;
+       font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:10px;color:var(--muted)}
+  .field{display:flex;align-items:center;gap:6px;height:28px;padding:0 8px;border-radius:6px;
+         background:var(--bg);border:1px solid var(--border);color:var(--muted)}
+  .field span{font-size:11.5px}
+  .sessions{flex:1 1 auto;overflow:hidden;padding-top:2px}
+  .group-head{display:flex;align-items:center;gap:6px;height:26px;padding:0 12px 0 14px;color:var(--muted)}
+  .group-head b{font-size:10.5px;font-weight:500}
+  .group-head em{margin-left:auto;font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9.5px;font-style:normal;
+                 color:rgba(145,151,161,.75)}
+  .rows{padding:0 8px 6px;display:flex;flex-direction:column;gap:1px}
+  .row{display:flex;align-items:center;gap:8px;height:30px;padding:0 8px;border-radius:6px}
+  .row.active{background:var(--hover)}
+  .edge{width:2px;height:14px;border-radius:1px;background:transparent;flex:0 0 auto}
+  .row.active .edge{background:var(--accent)}
+  .row .name{font-size:12px;flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row.active .name{font-weight:500}
+  .row.active .glyph{color:var(--accent)}
+  .glyph{color:var(--muted)}
+  .new-ssh{display:flex;align-items:center;gap:7px;height:28px;padding:0 10px;border-radius:6px;
+           color:var(--accent);font-size:11.5px}
+  .agent-card{margin:0 10px 8px;padding:10px;border-radius:10px;background:var(--surface);
+              border:1px solid rgba(224,164,74,.28);display:flex;flex-direction:column;gap:7px}
+  .agent-card .hd{display:flex;align-items:center;gap:7px;color:var(--warning);
+                  font-size:11px;font-weight:500}
+  .agent-card .hd .n{margin-left:auto;padding:2px 6px;border-radius:4px;font-size:9.5px;
+                    background:rgba(224,164,74,.14)}
+  .agent-card .cmd{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9.5px;color:var(--muted);
+                   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .agent-card .ft{display:flex;align-items:center;gap:8px;font-size:9.5px;color:var(--muted)}
+  /* ---- 内容区 ---- */
+  .content{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;background:var(--bg)}
+  .tabbar{display:flex;align-items:flex-end;gap:2px;height:40px;flex:0 0 40px;
+          padding:0 8px;background:var(--surface);border-bottom:1px solid var(--border)}
+  .tab{display:flex;align-items:center;gap:1px;height:30px;padding:0 4px 0 6px;border-radius:7px 7px 0 0;
+       color:var(--muted);font-size:11.5px}
+  .tab.on{background:var(--bg);border:1px solid var(--border);color:var(--text)}
+  .tab.on .t{font-weight:500}
+  .tab .t{max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tab .x{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center}
+  .tab.on .x{color:var(--muted)}
+  .tab .multi{font-size:9.5px;color:rgba(145,151,161,.8)}
+  .tab-end{margin-left:auto;display:flex;align-items:center;gap:2px;padding-bottom:5px}
+  .panes{flex:1 1 auto;min-height:0;display:flex;gap:8px;padding:8px}
+  .pane{display:flex;flex-direction:column;border-radius:12px;overflow:hidden;
+        background:var(--pane);border:1px solid var(--pane-border);min-width:0}
+  .pane.focus{background:var(--pane-focus);border-color:rgba(228,99,60,.55)}
+  .pane{flex:1 1 0}
+  .phead{display:flex;align-items:center;gap:7px;height:34px;flex:0 0 34px;padding:0 8px 0 10px}
+  .phead .title{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .phead .dim{font-size:11px;color:var(--muted);font-weight:500}
+  .phead .cwd{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px}
+  .pbtn{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+  .pbtn:hover{background:var(--hover);color:var(--text)}
+  .term{flex:1 1 auto;min-height:0;padding:0 8px 8px;font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:12.5px;
+        line-height:1.45;color:var(--text);overflow:hidden}
+  .ln{white-space:pre}
+  .acc{color:var(--accent)} .g{color:var(--success)} .y{color:var(--warning)}
+  .b{color:#6EA8FE} .m{color:var(--muted)} .r{color:var(--danger)}
+  .cursor{display:inline-block;width:7px;height:13px;background:var(--accent);
+          vertical-align:-2px;margin-left:2px}
+  /* 蒙版 */
+  .mask{position:relative}
+  .veil{position:absolute;inset:34px 0 0;background:rgba(8,10,18,.72);
+        display:flex;align-items:center;justify-content:center}
+  .maskcard{width:340px;padding:18px;display:flex;flex-direction:column;gap:10px;
+            border-radius:12px;background:var(--surface);border:1px solid var(--border);
+            box-shadow:0 18px 40px -6px rgba(0,0,0,.45)}
+  .maskcard .h{display:flex;align-items:center;gap:8px}
+  .maskcard .h .t{font-size:13.5px;font-weight:600}
+  .maskcard .h .w{margin-left:auto;width:5px;height:5px;border-radius:50%;background:var(--warning)}
+  .maskcard .r2{display:flex;align-items:center;gap:6px}
+  .chip.tool{color:var(--accent);background:rgba(228,99,60,.14)}
+  .maskcard .note{font-size:11.5px;color:var(--muted)}
+  .link{display:flex;align-items:center;gap:5px;color:var(--accent);font-size:10.5px;font-weight:500}
+  /* ---- 状态条：28 ---- */
+  .footer{display:flex;align-items:center;gap:9px;height:28px;flex:0 0 28px;padding:0 12px;
+          background:var(--surface);border-top:1px solid var(--border);font-size:10.5px;color:var(--muted)}
+  .mono{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9.5px}
+  .footer .sep{width:1px;height:14px;background:var(--border);margin:0 2px}
+  .footer .on{display:flex;align-items:center;gap:5px}
+
+  /* ---- 右侧 AI 操作栏：340，标题条与状态条贯通，栏内自成一个纵向节奏 ---- */
+  .ai-btn{display:flex;align-items:center;gap:5px;height:26px;padding:0 8px;border-radius:7px;
+          font-size:11px;font-weight:500;color:var(--muted);flex:0 0 auto}
+  .ai-btn.on{color:var(--accent);background:rgba(228,99,60,.14);border:1px solid rgba(228,99,60,.32)}
+  .ai-badge{min-width:14px;height:14px;padding:0 3px;border-radius:4px;background:var(--accent);
+            color:var(--accent-text);font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;
+            font-size:9px;display:flex;align-items:center;justify-content:center}
+  .dock{width:340px;flex:0 0 340px;background:var(--surface);border-left:1px solid var(--border);
+        display:flex;flex-direction:column;min-height:0}
+  .dock-hd{display:flex;align-items:center;gap:7px;height:36px;flex:0 0 36px;padding:0 8px 0 12px;
+           border-bottom:1px solid var(--border)}
+  .dock-title{font-size:12px;font-weight:600}
+  .dbtn{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+        color:var(--muted)}
+  .dbtn:hover{background:var(--hover);color:var(--text)}
+  .steps{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9.5px;color:var(--muted);
+         margin-left:auto;padding:1px 5px;border:1px solid var(--border);border-radius:4px}
+  .dock-target{display:flex;align-items:center;gap:7px;padding:6px 12px;font-size:10.5px;
+               color:var(--muted);border-bottom:1px solid var(--border)}
+  .audit-link{display:flex;align-items:center;gap:3px;color:var(--accent);font-weight:500}
+  .timeline{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:8px;padding:10px 12px}
+  .ai-msg{border-radius:9px;background:rgba(228,99,60,.08);border:1px solid rgba(228,99,60,.22);
+          padding:8px 9px;display:flex;flex-direction:column;gap:4px}
+  .ai-msg .n{font-size:10px;font-weight:500;color:var(--accent);display:flex;align-items:center;gap:5px}
+  .ai-msg .p{font-size:11.5px;line-height:1.45;color:var(--text)}
+  .op{border-radius:9px;border:1px solid var(--border);background:var(--bg);padding:8px 9px;
+      display:flex;flex-direction:column;gap:6px}
+  .op.system{border-color:rgba(224,164,74,.32);background:rgba(224,164,74,.06)}
+  .op-hd{display:flex;align-items:center;gap:6px}
+  .op-icon{color:var(--muted);display:flex;align-items:center}
+  .op-tool{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:10px;color:var(--accent)}
+  .op-badge{margin-left:auto;padding:1px 5px;border-radius:4px;font-size:9.5px;font-weight:500}
+  .op-badge.ok{color:var(--success);background:rgba(79,191,106,.14)}
+  .op-badge.warn{color:var(--warning);background:rgba(224,164,74,.14)}
+  .op-badge.wait{color:var(--muted);background:rgba(145,151,161,.12)}
+  .op-cmd{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:10.5px;
+          color:var(--text);background:var(--surface);border-radius:5px;padding:4px 6px;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .op-out{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:10px;color:var(--muted)}
+  .op-ft{display:flex;align-items:center;gap:6px;font-size:9.5px;color:var(--muted)}
+  .op-link{display:flex;align-items:center;gap:3px;color:var(--accent);font-weight:500}
+  .composer{flex:0 0 auto;border-top:1px solid var(--border);padding:8px 12px 0;
+            display:flex;flex-direction:column;gap:2px}
+  .input{display:flex;align-items:center;gap:6px;height:34px;padding:0 6px 0 9px;border-radius:8px;
+         background:var(--bg);border:1px solid var(--border);color:var(--muted);font-size:11.5px}
+  .hint{font-family:&#39;JetBrains Mono&#39;,Consolas,ui-monospace,monospace;font-size:9px;
+        color:var(--muted);opacity:.8}
+  .send{width:26px;height:26px;flex:0 0 auto;border-radius:7px;background:var(--accent);
+        color:var(--accent-text);display:flex;align-items:center;justify-content:center;margin-left:2px}
+  .dock-meta{display:flex;align-items:center;gap:6px;padding:6px 12px 8px;font-size:9.5px;color:var(--muted)}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;svg width=&#39;0&#39; height=&#39;0&#39; style=&#39;position:absolute&#39;&gt;&lt;defs&gt;
+  &lt;symbol id=&#39;i-mark&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M5.8 6.2 10.9 12l-5.1 5.8&#39; stroke-width=&#39;2.1&#39;/&gt;&lt;circle cx=&#39;16.2&#39; cy=&#39;17.8&#39; r=&#39;1.9&#39; fill=&#39;currentColor&#39; stroke=&#39;none&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-plus&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M12 5v14M5 12h14&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-search&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;circle cx=&#39;11&#39; cy=&#39;11&#39; r=&#39;6&#39;/&gt;&lt;path d=&#39;M20 20l-3.6-3.6&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-close&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M6 6l12 12M18 6L6 18&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-chev-down&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M5 9l7 7 7-7&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-chev-left&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M15 5l-7 7 7 7&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-settings&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M4 8h9M17 8h3M4 16h3M11 16h9&#39;/&gt;&lt;circle cx=&#39;15&#39; cy=&#39;8&#39; r=&#39;2&#39;/&gt;&lt;circle cx=&#39;9&#39; cy=&#39;16&#39; r=&#39;2&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-theme&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;circle cx=&#39;12&#39; cy=&#39;12&#39; r=&#39;8&#39;/&gt;&lt;path d=&#39;M12 4a8 8 0 010 16z&#39; fill=&#39;currentColor&#39; stroke=&#39;none&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-list&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M4 7h16M4 12h16M4 17h16&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-ratio&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;rect x=&#39;3&#39; y=&#39;5&#39; width=&#39;18&#39; height=&#39;14&#39; rx=&#39;2&#39;/&gt;&lt;rect x=&#39;6.5&#39; y=&#39;8.5&#39; width=&#39;11&#39; height=&#39;7&#39; rx=&#39;1&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-grid&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;rect x=&#39;4&#39; y=&#39;4&#39; width=&#39;7&#39; height=&#39;7&#39; rx=&#39;1.5&#39;/&gt;&lt;rect x=&#39;13&#39; y=&#39;4&#39; width=&#39;7&#39; height=&#39;7&#39; rx=&#39;1.5&#39;/&gt;&lt;rect x=&#39;4&#39; y=&#39;13&#39; width=&#39;7&#39; height=&#39;7&#39; rx=&#39;1.5&#39;/&gt;&lt;rect x=&#39;13&#39; y=&#39;13&#39; width=&#39;7&#39; height=&#39;7&#39; rx=&#39;1.5&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-link&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M10.5 13.5a3.5 3.5 0 005 0l2.5-2.5a3.5 3.5 0 00-5-5l-1 1&#39;/&gt;&lt;path d=&#39;M13.5 10.5a3.5 3.5 0 00-5 0L6 13a3.5 3.5 0 005 5l1-1&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-fit&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-spinner&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M12 4a8 8 0 018 8&#39; opacity=&#39;.9&#39;/&gt;&lt;path d=&#39;M20 12a8 8 0 01-8 8&#39;/&gt;&lt;path d=&#39;M12 20a8 8 0 01-8-8&#39;/&gt;&lt;path d=&#39;M4 12a8 8 0 018-8&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-chev-right&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M9 5l7 7-7 7&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-copy&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;rect x=&#39;9&#39; y=&#39;9&#39; width=&#39;11&#39; height=&#39;11&#39; rx=&#39;2&#39;/&gt;&lt;path d=&#39;M15 5H6a1 1 0 00-1 1v9&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-message&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M20 11.8c0 3.3-3.6 6-8 6-1 0-1.9-.14-2.8-.4L4 19l1.2-3.3A5.9 5.9 0 014 11.8C4 8.5 7.6 5.8 12 5.8s8 2.7 8 6z&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-more&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;circle cx=&#39;6&#39; cy=&#39;12&#39; r=&#39;1.3&#39; fill=&#39;currentColor&#39; stroke=&#39;none&#39;/&gt;&lt;circle cx=&#39;12&#39; cy=&#39;12&#39; r=&#39;1.3&#39; fill=&#39;currentColor&#39; stroke=&#39;none&#39;/&gt;&lt;circle cx=&#39;18&#39; cy=&#39;12&#39; r=&#39;1.3&#39; fill=&#39;currentColor&#39; stroke=&#39;none&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-warning&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M12 4l8.5 15h-17z&#39;/&gt;&lt;path d=&#39;M12 10v4&#39;/&gt;&lt;path d=&#39;M12 16.6v.9&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-check&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M4 12.5l5 5L20 6.5&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-note&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M5 5h14v9l-5 5H5z&#39;/&gt;&lt;path d=&#39;M19 14h-5v5&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-inspect&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M4 9V5.5A1.5 1.5 0 015.5 4H9&#39;/&gt;&lt;path d=&#39;M15 4h3.5A1.5 1.5 0 0120 5.5V9&#39;/&gt;&lt;path d=&#39;M20 15v3.5a1.5 1.5 0 01-1.5 1.5H15&#39;/&gt;&lt;path d=&#39;M9 20H5.5A1.5 1.5 0 014 18.5V15&#39;/&gt;&lt;path d=&#39;M9.5 9.5h5v5h-5z&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-send&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;path d=&#39;M7 17L17 7&#39;/&gt;&lt;path d=&#39;M9 7h8v8&#39;/&gt;&lt;/symbol&gt;
+  &lt;symbol id=&#39;i-user&#39; viewBox=&#39;0 0 24 24&#39;&gt;&lt;circle cx=&#39;11&#39; cy=&#39;9&#39; r=&#39;3.5&#39;/&gt;&lt;path d=&#39;M5 19c1.1-3.2 3.6-4.8 6-4.8s4.9 1.6 6 4.8&#39;/&gt;&lt;/symbol&gt;
+&lt;/defs&gt;&lt;/svg&gt;
+
+&lt;div class=&#39;win&#39;&gt;
+  &lt;header class=&#39;titlebar&#39;&gt;
+    &lt;div class=&#39;logo&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:16px;height:16px;color:var(--accent-text)&#39;&gt;&lt;use href=&#39;#i-mark&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+    &lt;span class=&#39;brand&#39;&gt;AdaKaki&lt;/span&gt;
+    &lt;span class=&#39;chip&#39;&gt;v0.2&lt;/span&gt;
+    &lt;div class=&#39;ghost&#39; style=&#39;margin-left:2px&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:14px;height:14px&#39;&gt;&lt;use href=&#39;#i-ratio&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+    &lt;div class=&#39;rule&#39;&gt;&lt;/div&gt;
+    &lt;div class=&#39;sect&#39;&gt;
+      &lt;div class=&#39;dot&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/div&gt;
+      &lt;span class=&#39;sess-title&#39;&gt;PowerShell&lt;/span&gt;
+      &lt;span class=&#39;chip&#39;&gt;本地&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
+    &lt;div class=&#39;ai-btn on&#39;&gt;
+      &lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px&#39;&gt;&lt;use href=&#39;#i-message&#39;/&gt;&lt;/svg&gt;
+      &lt;span&gt;AI 操作&lt;/span&gt;
+      &lt;span class=&#39;ai-badge&#39;&gt;4&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=&#39;rule&#39;&gt;&lt;/div&gt;
+    &lt;div class=&#39;ghost&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-list&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+    &lt;div class=&#39;ghost&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-settings&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+    &lt;div class=&#39;ghost&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-theme&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+  &lt;/header&gt;
+
+  &lt;div class=&#39;body&#39;&gt;
+    &lt;aside class=&#39;sidebar&#39;&gt;
+      &lt;div class=&#39;side-top&#39;&gt;
+        &lt;div class=&#39;action&#39;&gt;
+          &lt;svg class=&#39;ic&#39; style=&#39;color:var(--muted)&#39;&gt;&lt;use href=&#39;#i-plus&#39;/&gt;&lt;/svg&gt;
+          &lt;span class=&#39;action-label&#39;&gt;新建会话&lt;/span&gt;
+          &lt;span class=&#39;kbd&#39;&gt;Ctrl + Shift + T&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div class=&#39;field&#39;&gt;
+          &lt;svg class=&#39;ic&#39; style=&#39;width:12px;height:12px&#39;&gt;&lt;use href=&#39;#i-search&#39;/&gt;&lt;/svg&gt;
+          &lt;span&gt;筛选会话…&lt;/span&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&#39;sessions&#39;&gt;
+        &lt;div class=&#39;group-head&#39;&gt;&lt;b&gt;本地&lt;/b&gt;&lt;em&gt;2&lt;/em&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:11px;height:11px;margin-left:4px;opacity:.7&#39;&gt;&lt;use href=&#39;#i-chev-down&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+        &lt;div class=&#39;rows&#39;&gt;
+          &lt;div class=&#39;row active&#39;&gt;
+            &lt;div class=&#39;edge&#39;&gt;&lt;/div&gt;
+            &lt;svg class=&#39;ic glyph&#39;&gt;&lt;use href=&#39;#i-chev-right&#39;/&gt;&lt;/svg&gt;
+            &lt;span class=&#39;name&#39;&gt;PowerShell&lt;/span&gt;
+            &lt;div class=&#39;dot&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class=&#39;row&#39;&gt;
+            &lt;div class=&#39;edge&#39;&gt;&lt;/div&gt;
+            &lt;svg class=&#39;ic glyph&#39;&gt;&lt;use href=&#39;#i-chev-right&#39;/&gt;&lt;/svg&gt;
+            &lt;span class=&#39;name&#39;&gt;Git Bash&lt;/span&gt;
+            &lt;div class=&#39;dot&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&#39;group-head&#39;&gt;&lt;b&gt;SSH&lt;/b&gt;&lt;em&gt;1&lt;/em&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:11px;height:11px;margin-left:4px;opacity:.7&#39;&gt;&lt;use href=&#39;#i-chev-down&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+        &lt;div class=&#39;rows&#39;&gt;
+          &lt;div class=&#39;row&#39;&gt;
+            &lt;div class=&#39;edge&#39;&gt;&lt;/div&gt;
+            &lt;svg class=&#39;ic glyph&#39;&gt;&lt;use href=&#39;#i-link&#39;/&gt;&lt;/svg&gt;
+            &lt;span class=&#39;name&#39;&gt;build@10.0.0.12&lt;/span&gt;
+            &lt;div class=&#39;dot&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class=&#39;new-ssh&#39;&gt;
+            &lt;svg class=&#39;ic&#39; style=&#39;width:11px;height:11px&#39;&gt;&lt;use href=&#39;#i-plus&#39;/&gt;&lt;/svg&gt;
+            新建 SSH 连接
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&#39;agent-card&#39;&gt;
+        &lt;div class=&#39;hd&#39;&gt;
+          &lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px&#39;&gt;&lt;use href=&#39;#i-spinner&#39;/&gt;&lt;/svg&gt;
+          AI Agent 操作中
+          &lt;span class=&#39;n&#39;&gt;1&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div class=&#39;cmd&#39;&gt;run_command · Git Bash&lt;/div&gt;
+        &lt;div class=&#39;ft&#39;&gt;&lt;span&gt;输入已锁定&lt;/span&gt;&lt;span class=&#39;spacer&#39;&gt;&lt;/span&gt;&lt;span&gt;详情见右侧 AI 栏&lt;/span&gt;&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/aside&gt;
+
+    &lt;main class=&#39;content&#39;&gt;
+      &lt;div class=&#39;tabbar&#39;&gt;
+        &lt;div class=&#39;tab on&#39;&gt;
+          &lt;div class=&#39;dot&#39; style=&#39;width:5px;height:5px;background:var(--success);margin-right:1px&#39;&gt;&lt;/div&gt;
+          &lt;span class=&#39;t&#39;&gt;PowerShell&lt;/span&gt;
+          &lt;span class=&#39;multi&#39;&gt;×2&lt;/span&gt;
+          &lt;div class=&#39;x&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:11px;height:11px&#39;&gt;&lt;use href=&#39;#i-close&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&#39;tab&#39;&gt;
+          &lt;div class=&#39;dot&#39; style=&#39;width:5px;height:5px;background:var(--success);margin-right:1px&#39;&gt;&lt;/div&gt;
+          &lt;span class=&#39;t&#39;&gt;build@10.0.0.12&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div class=&#39;tab-end&#39;&gt;
+          &lt;div class=&#39;ghost&#39; style=&#39;width:24px;height:24px&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px&#39;&gt;&lt;use href=&#39;#i-plus&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+          &lt;div class=&#39;ghost&#39; style=&#39;width:24px;height:24px&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px&#39;&gt;&lt;use href=&#39;#i-grid&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+          &lt;div class=&#39;ghost&#39; style=&#39;width:24px;height:24px&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px&#39;&gt;&lt;use href=&#39;#i-search&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&#39;panes&#39;&gt;
+        &lt;div class=&#39;pane focus&#39;&gt;
+          &lt;div class=&#39;phead&#39;&gt;
+            &lt;div class=&#39;dot&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/div&gt;
+            &lt;svg class=&#39;ic glyph&#39; style=&#39;width:13px;height:13px&#39;&gt;&lt;use href=&#39;#i-chev-right&#39;/&gt;&lt;/svg&gt;
+            &lt;span class=&#39;title&#39;&gt;PowerShell&lt;/span&gt;
+            &lt;span class=&#39;dim&#39;&gt;·&lt;/span&gt;
+            &lt;span class=&#39;cwd&#39;&gt;ada_kaki&lt;/span&gt;
+            &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
+            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-ratio&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-grid&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-fit&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-close&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class=&#39;term&#39;&gt;
+&lt;div class=&#39;ln&#39;&gt;&lt;span class=&#39;acc&#39;&gt;PS&lt;/span&gt; &lt;span class=&#39;b&#39;&gt;ada_kaki&lt;/span&gt;&lt;span class=&#39;m&#39;&gt; &amp;gt; &lt;/span&gt;&lt;span&gt;go test ./... -count=1&lt;/span&gt;&lt;/div&gt;
+&lt;div class=&#39;ln g&#39;&gt;ok   adakaki  0.812s&lt;/div&gt;
+&lt;div class=&#39;ln&#39;&gt;&lt;span class=&#39;acc&#39;&gt;PS&lt;/span&gt; &lt;span class=&#39;b&#39;&gt;ada_kaki&lt;/span&gt;&lt;span class=&#39;m&#39;&gt; &amp;gt; &lt;/span&gt;&lt;span&gt;.\build_windows.ps1&lt;/span&gt;&lt;/div&gt;
+&lt;div class=&#39;ln m&#39;&gt;built adakaki.exe&lt;/div&gt;
+&lt;div class=&#39;ln&#39;&gt;&lt;span class=&#39;acc&#39;&gt;PS&lt;/span&gt; &lt;span class=&#39;b&#39;&gt;ada_kaki&lt;/span&gt;&lt;span class=&#39;m&#39;&gt; &amp;gt; &lt;/span&gt;&lt;span class=&#39;cursor&#39;&gt;&lt;/span&gt;&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class=&#39;pane mask&#39;&gt;
+          &lt;div class=&#39;phead&#39;&gt;
+            &lt;div class=&#39;dot&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/div&gt;
+            &lt;svg class=&#39;ic glyph&#39; style=&#39;width:13px;height:13px&#39;&gt;&lt;use href=&#39;#i-chev-right&#39;/&gt;&lt;/svg&gt;
+            &lt;span class=&#39;title&#39;&gt;Git Bash&lt;/span&gt;
+            &lt;span class=&#39;cwd&#39;&gt;~/src/adakaki&lt;/span&gt;
+            &lt;span class=&#39;chip warn&#39;&gt;AI 操作中&lt;/span&gt;
+            &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
+            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-ratio&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-grid&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-fit&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+            &lt;div class=&#39;pbtn&#39;&gt;&lt;svg class=&#39;ic&#39;&gt;&lt;use href=&#39;#i-close&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class=&#39;term&#39;&gt;
+&lt;div class=&#39;ln&#39;&gt;&lt;span class=&#39;g&#39;&gt;user@build&lt;/span&gt;&lt;span class=&#39;m&#39;&gt;:&lt;/span&gt;&lt;span class=&#39;b&#39;&gt;~/src/adakaki&lt;/span&gt;&lt;span class=&#39;m&#39;&gt;$ &lt;/span&gt;&lt;span class=&#39;t&#39;&gt;git status --short&lt;/span&gt;&lt;/div&gt;
+&lt;div class=&#39;ln m&#39;&gt; M app.go&lt;/div&gt;
+&lt;div class=&#39;ln m&#39;&gt; M ui_chrome.go&lt;/div&gt;
+&lt;div class=&#39;ln&#39;&gt;&lt;span class=&#39;g&#39;&gt;user@build&lt;/span&gt;&lt;span class=&#39;m&#39;&gt;:&lt;/span&gt;&lt;span class=&#39;b&#39;&gt;~/src/adakaki&lt;/span&gt;&lt;span class=&#39;m&#39;&gt;$ &lt;/span&gt;&lt;span class=&#39;cursor&#39;&gt;&lt;/span&gt;&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/main&gt;
+
+    &lt;aside class=&#39;dock&#39;&gt;
+      &lt;div class=&#39;dock-hd&#39;&gt;
+        &lt;svg class=&#39;ic&#39; style=&#39;width:14px;height:14px;color:var(--accent)&#39;&gt;&lt;use href=&#39;#i-message&#39;/&gt;&lt;/svg&gt;
+        &lt;span class=&#39;dock-title&#39;&gt;AI 操作&lt;/span&gt;
+        &lt;span class=&#39;steps&#39;&gt;4 步&lt;/span&gt;
+        &lt;div class=&#39;dbtn&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:14px;height:14px&#39;&gt;&lt;use href=&#39;#i-more&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+        &lt;div class=&#39;dbtn&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:14px;height:14px&#39;&gt;&lt;use href=&#39;#i-chev-right&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&#39;dock-target&#39;&gt;
+        &lt;div class=&#39;dot&#39; style=&#39;background:var(--success)&#39;&gt;&lt;/div&gt;
+        &lt;span&gt;目标会话 local_0002 · bash.exe&lt;/span&gt;
+        &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
+        &lt;span class=&#39;audit-link&#39;&gt;审计&lt;svg class=&#39;ic&#39; style=&#39;width:10px;height:10px&#39;&gt;&lt;use href=&#39;#i-chev-right&#39;/&gt;&lt;/svg&gt;&lt;/span&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&#39;timeline&#39;&gt;
+        &lt;div class=&#39;ai-msg&#39;&gt;
+          &lt;div class=&#39;n&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:11px;height:11px&#39;&gt;&lt;use href=&#39;#i-message&#39;/&gt;&lt;/svg&gt;AI&lt;/div&gt;
+          &lt;div class=&#39;p&#39;&gt;先跑一遍测试确认基线，再决定要不要动 ui/。&lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class=&#39;op&#39;&gt;
+          &lt;div class=&#39;op-hd&#39;&gt;
+            &lt;span class=&#39;op-icon&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:12px;height:12px&#39;&gt;&lt;use href=&#39;#i-inspect&#39;/&gt;&lt;/svg&gt;&lt;/span&gt;
+            &lt;span class=&#39;op-tool&#39;&gt;run_command&lt;/span&gt;
+            &lt;span class=&#39;op-badge ok&#39;&gt;完成&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&#39;op-cmd&#39;&gt;go test ./... -count=1&lt;/div&gt;
+          &lt;div class=&#39;op-out&#39;&gt;ok  adakaki  0.812s&lt;/div&gt;
+          &lt;div class=&#39;op-ft&#39;&gt;&lt;span&gt;812ms&lt;/span&gt;&lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
+            &lt;span class=&#39;op-link&#39;&gt;查看审计&lt;svg class=&#39;ic&#39; style=&#39;width:10px;height:10px&#39;&gt;&lt;use href=&#39;#i-chev-right&#39;/&gt;&lt;/svg&gt;&lt;/span&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class=&#39;op&#39;&gt;
+          &lt;div class=&#39;op-hd&#39;&gt;
+            &lt;span class=&#39;op-icon&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:12px;height:12px&#39;&gt;&lt;use href=&#39;#i-note&#39;/&gt;&lt;/svg&gt;&lt;/span&gt;
+            &lt;span class=&#39;op-tool&#39;&gt;write_file&lt;/span&gt;
+            &lt;span class=&#39;op-badge ok&#39;&gt;完成&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&#39;op-cmd&#39;&gt;ui/settings_mcp.go  +12 −3&lt;/div&gt;
+          &lt;div class=&#39;op-ft&#39;&gt;&lt;span&gt;18ms&lt;/span&gt;&lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
+            &lt;span class=&#39;op-link&#39;&gt;查看审计&lt;svg class=&#39;ic&#39; style=&#39;width:10px;height:10px&#39;&gt;&lt;use href=&#39;#i-chev-right&#39;/&gt;&lt;/svg&gt;&lt;/span&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class=&#39;op system&#39;&gt;
+          &lt;div class=&#39;op-hd&#39;&gt;
+            &lt;span class=&#39;op-icon&#39; style=&#39;color:var(--warning)&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:12px;height:12px&#39;&gt;&lt;use href=&#39;#i-warning&#39;/&gt;&lt;/svg&gt;&lt;/span&gt;
+            &lt;span class=&#39;op-tool&#39;&gt;run_command&lt;/span&gt;
+            &lt;span class=&#39;op-badge warn&#39;&gt;已放行&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&#39;op-cmd&#39;&gt;rm -rf node_modules&lt;/div&gt;
+          &lt;div class=&#39;op-out&#39;&gt;内置规则：递归 / 强制删除 · 你已人工确认&lt;/div&gt;
+          &lt;div class=&#39;op-ft&#39;&gt;&lt;span&gt;需人工放行&lt;/span&gt;&lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
+            &lt;span class=&#39;op-link&#39;&gt;查看审计&lt;svg class=&#39;ic&#39; style=&#39;width:10px;height:10px&#39;&gt;&lt;use href=&#39;#i-chev-right&#39;/&gt;&lt;/svg&gt;&lt;/span&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class=&#39;op&#39;&gt;
+          &lt;div class=&#39;op-hd&#39;&gt;
+            &lt;span class=&#39;op-icon&#39; style=&#39;color:var(--accent)&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:12px;height:12px&#39;&gt;&lt;use href=&#39;#i-spinner&#39;/&gt;&lt;/svg&gt;&lt;/span&gt;
+            &lt;span class=&#39;op-tool&#39;&gt;run_command&lt;/span&gt;
+            &lt;span class=&#39;op-badge wait&#39;&gt;执行中&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&#39;op-cmd&#39;&gt;go build ./... &amp;amp;&amp;amp; go vet ./...&lt;/div&gt;
+          &lt;div class=&#39;op-out&#39;&gt;等待输出…&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&#39;composer&#39;&gt;
+        &lt;div class=&#39;input&#39;&gt;
+          &lt;span&gt;追问这次操作，或让它继续…&lt;/span&gt;
+          &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
+          &lt;span class=&#39;hint&#39;&gt;Enter&lt;/span&gt;
+          &lt;div class=&#39;send&#39;&gt;&lt;svg class=&#39;ic&#39; style=&#39;width:13px;height:13px&#39;&gt;&lt;use href=&#39;#i-send&#39;/&gt;&lt;/svg&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&#39;dock-meta&#39;&gt;
+          &lt;svg class=&#39;ic&#39; style=&#39;width:10px;height:10px&#39;&gt;&lt;use href=&#39;#i-spinner&#39;/&gt;&lt;/svg&gt;
+          &lt;span&gt;deepseek-v4.1&lt;/span&gt;&lt;span&gt;·&lt;/span&gt;&lt;span&gt;1.2k tokens&lt;/span&gt;
+          &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
+          &lt;span&gt;42s&lt;/span&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/aside&gt;
+
+  &lt;/div&gt;
+
+  &lt;footer class=&#39;footer&#39;&gt;
+    &lt;div class=&#39;on&#39;&gt;&lt;div class=&#39;dot&#39; style=&#39;width:5px;height:5px;background:var(--success)&#39;&gt;&lt;/div&gt;MCP 已就绪&lt;/div&gt;
+    &lt;span class=&#39;mono&#39;&gt;:8731&lt;/span&gt;
+    &lt;svg class=&#39;ic&#39; style=&#39;width:11px;height:11px&#39;&gt;&lt;use href=&#39;#i-copy&#39;/&gt;&lt;/svg&gt;
+    &lt;div class=&#39;sep&#39;&gt;&lt;/div&gt;
+    &lt;div class=&#39;on&#39;&gt;&lt;div class=&#39;dot&#39; style=&#39;width:5px;height:5px;background:var(--success)&#39;&gt;&lt;/div&gt;3 个会话&lt;/div&gt;
+    &lt;span style=&#39;opacity:.5&#39;&gt;·&lt;/span&gt;
+    &lt;span&gt;PowerShell&lt;/span&gt;
+    &lt;div class=&#39;spacer&#39;&gt;&lt;/div&gt;
+    &lt;div class=&#39;on&#39; style=&#39;color:var(--accent)&#39;&gt;
+      &lt;svg class=&#39;ic&#39; style=&#39;width:12px;height:12px&#39;&gt;&lt;use href=&#39;#i-message&#39;/&gt;&lt;/svg&gt;AI 操作栏已展开
+    &lt;/div&gt;
+    &lt;div class=&#39;sep&#39;&gt;&lt;/div&gt;
+    &lt;span&gt;stdio 可用&lt;/span&gt;
+  &lt;/footer&gt;
 &lt;/div&gt;
 &lt;/body&gt;
 &lt;/html&gt;" scrolling="auto"></iframe></div>

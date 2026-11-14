@@ -1,23 +1,26 @@
 # AdaKaki 控制台 · UI 设计图（v0.2）
 
 由 adago-design MCP 生成，**对齐当前代码现状**（不是另做一套风格）：每张画板都按
-`ui_style.go` / `ui_chrome.go` / `settings_ui.go` / `icons.go` 里的实际数值还原——柿色
+`ui/ui_theme.go` / `ui/ui_main.go` / `ui/settings_view.go` / `ui/icons.go` 里的实际数值还原——柿色
 （persimmon）强调色、墨/纸双主题、纸条式标题栏、分格卡片、56px 收缩栏。
 
 - 画布（在线）：<http://127.0.0.1:8788>
-- 导出（离线单文件）：[adakaki-ui-design.html](adakaki-ui-design.html)（7 张画板，0 外部依赖）
+- 导出（离线单文件）：[adakaki-ui-design.html](adakaki-ui-design.html)（10 张画板，0 外部依赖；2026-11-14 同步）
 
 ## 画板清单
 
 | # | 画板 | 对应代码 |
 |---|---|---|
-| 01 | 主窗口 · 深色：标题条 + 260 侧栏 + 标签条 + 双分格卡片 + Agent 蒙版 + 28 状态条 | `mainView` / `appHeader` / `sidebarPane` / `tabBar` / `paneCard` / `agentMask` / `appFooter` |
-| 02 | 主窗口 · 浅色：分屏 8px 缝 + `Ctrl+F` 浮层搜索卡（钉在聚焦分格内右上） | `paneDivider` / `findOverlay` / `webTheme` 浅色分支 |
-| 03 | 侧栏收缩态：56 DIP 单列网格（36×36 控件、gap 8、28×1 分隔线、激活 2px 柿色左条） | `sidebarRail` / `railAction` / `railSession` |
-| 04 | 设置窗口：208 分类导航 + 外观页（主题分段 / 当前方案卡 / 312 配色方案搜索） | `settingsView` / `settingsNav` / `appearanceSettings` |
-| 05 | 审计窗口：筛选（全部/成功/失败/被拦截）+ 搜索 + 六列列表 + 330 详情栏 | `auditView` / `auditFilters` / `auditRow` / `auditDetail` |
-| 06 | 护栏确认弹窗 + Agent 蒙版卡 + 空状态键位引导 | `mainDialogs` / `agentMask` / `emptyPanes` |
-| 07 | 视觉规范：双主题 Token、字号阶梯、尺寸与圆角、字体栈 | `webTheme` / `ui_style.go` 常量 / `monoFamily` |
+| 01 | 主窗口 · 深色：标题条 + 260 侧栏 + 标签条 + 双分格卡片 + Agent 蒙版 + 28 状态条 | `ui/ui_main.go` / `ui/ui_header.go` / `ui/ui_sidebar.go` / `ui/ui_tabs.go` / `ui/ui_pane_card.go` |
+| 02 | 主窗口 · 浅色：分屏 8px 缝 + `Ctrl+F` 浮层搜索卡（钉在聚焦分格内右上） | `ui/ui_panes.go` / `ui/ui_find.go` / `ui/ui_theme.go` 浅色分支 |
+| 03 | 侧栏收缩态：56 DIP 单列网格（36×36 控件、gap 8、28×1 分隔线、激活 2px 柿色左条） | `ui/ui_sidebar.go` 的 `sidebarRail` / `railAction` / `railSession` |
+| 04 | 设置窗口：208 分类导航 + 外观页（主题分段 / 当前方案卡 / 312 配色方案搜索），导航含 AI 分类 | `ui/settings_view.go` / `ui/settings_appearance.go` / `ui/settings_ai.go` |
+| 05 | 审计窗口：筛选（全部/成功/失败/被拦截）+ 搜索 + 六列列表 + 330 详情栏 | `ui/ui_audit.go` |
+| 06 | 护栏确认弹窗 + Agent 蒙版卡 + 空状态键位引导 | `ui/ui_dialogs.go` / `ui/ui_pane_card.go` / `ui/ui_panes.go` |
+| 07 | 视觉规范：双主题 Token、字号阶梯、尺寸与圆角、字体栈 | `ui/ui_theme.go` / `monoFamily` |
+| 08 | 主窗口 + 右侧 AI 操作栏（340 展开，四形态操作卡、消息气泡、输入区） | `ui/ai_dock.go` / `ui/app_ai.go` / `ui/ui_main.go` |
+| 09 | AI 操作栏交互规范（按钮四态 / 展开收起 / 栏内结构 / 取舍） | `ui/ai_dock.go` / `ui/ui_header.go` |
+| 10 | 设置 · AI 页（模型 / 凭据（API Key 直接填写，DPAPI 加密）/ 行为 / 护栏 / 审计） | `ui/settings_ai.go` / `internal/store` 的 `ai` 段 |
 
 ## 关键规格（与代码一致）
 
@@ -51,3 +54,13 @@
 节点级走查 90 分（通过 3 / 警告 1 / 失败 0），唯一警告是画板里用 `var(--ui)` / `var(--mono)`
 间接声明字族、机器读不到具体可商用字族——落到代码时字体栈已在上表写明（Inter / JetBrains
 Mono / Maple Mono NF CN 均为可商用）。
+
+## v0.2.1 AI 增补（2026-11-14 同步）
+
+- **08 主窗口 + AI 操作栏**：340 右栏（拖 280–420、宽度记忆），头部只留图标 + 「AI 操作」+ 步数 + 收起；
+  会话信息在目标行（`local_0002 · bash.exe`，短标题取路径末段 ≤28 字）；时间线列消息气泡与四种工具卡。
+- **09 AI 操作栏规范**：AI 按钮四态与徽标、收起把手 36、动效 160ms、<1280 覆盖式、`Ctrl+Alt+A`；
+  栏内 36 / 24 / 自适应 / 56 / 24 的纵向节奏。
+- **10 设置 · AI 页**：凭据改为 **API Key 直接填写**（Windows DPAPI 加密存 `ai.api_key_dpapi`）+ 或环境变量兜底；
+  按使用反馈**移除两条预算步进**（上下文窗口保留只读，运行时默认不设上限）。
+- 画板截图见 [docs/assets/ai](assets/ai/)；与实现差异见 [AI-功能规划与设计](./AI-功能规划与设计.md) §11。

@@ -97,14 +97,10 @@ to see the result. The console's guardrail may ask the user before dangerous com
 if a call is blocked, say so plainly and suggest a safer alternative. Answer in the user's
 language, keep replies short, and never claim success you did not observe in a tool result.`
 
-// New returns an agent; options missing budgets get the documented defaults.
+// New returns an agent. A zero or negative MaxToolCalls/SessionTokenLimit
+// means no limit: the settings page no longer offers those budgets,
+// though a hand-edited config may still set them.
 func New(o Options) *Agent {
-	if o.MaxToolCalls <= 0 {
-		o.MaxToolCalls = 40
-	}
-	if o.SessionTokenLimit <= 0 {
-		o.SessionTokenLimit = 200_000
-	}
 	if o.Transport == "" {
 		o.Transport = "inapp"
 	}
@@ -129,12 +125,8 @@ func New(o Options) *Agent {
 // Configure updates the budgets and reasoning for the next turn; call it
 // only while no turn is running.
 func (a *Agent) Configure(maxToolCalls, sessionTokens int, reasoning string) {
-	if maxToolCalls > 0 {
-		a.opts.MaxToolCalls = maxToolCalls
-	}
-	if sessionTokens > 0 {
-		a.opts.SessionTokenLimit = sessionTokens
-	}
+	a.opts.MaxToolCalls = maxToolCalls
+	a.opts.SessionTokenLimit = sessionTokens
 	a.opts.Reasoning = reasoning
 }
 
@@ -183,14 +175,14 @@ func (a *Agent) Turn(ctx context.Context, prompt string) error {
 				Tokens: a.tokens, Reason: "done"})
 			return nil
 		}
-		if a.tokens >= a.opts.SessionTokenLimit {
+		if a.opts.SessionTokenLimit > 0 && a.tokens >= a.opts.SessionTokenLimit {
 			a.opts.Emit(Event{Kind: EventTurnDone, ToolCalls: usedTools,
 				Tokens: a.tokens, Reason: "tokens"})
 			return nil
 		}
 
 		for _, call := range resp.ToolCalls {
-			if usedTools >= a.opts.MaxToolCalls {
+			if a.opts.MaxToolCalls > 0 && usedTools >= a.opts.MaxToolCalls {
 				a.history = append(a.history, toolMessage(call,
 					fmt.Sprintf("not run: the turn's tool budget (%d) is spent; ask the user to continue.",
 						a.opts.MaxToolCalls)))

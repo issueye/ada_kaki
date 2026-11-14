@@ -76,9 +76,12 @@ const (
 	DefaultAIModel         = "deepseek-v4.1-flash-eco"
 	DefaultAIKeyEnv        = "OPENDESIGN_API_KEY"
 	DefaultAIContextWindow = 1_000_000
-	DefaultAIMaxToolCalls  = 40
-	DefaultAISessionTokens = 200_000
 	DefaultAIDockWidth     = 340
+
+	// Legacy defaults of the two budget fields, kept only so Normalize can
+	// recognise (and clear) values written by the removed settings rows.
+	legacyAIMaxToolCalls   = 40
+	legacyAISessionTokens  = 200_000
 	AIDockWidthMin         = 280
 	AIDockWidthMax         = 420
 	DefaultAIRetentionDays = 30
@@ -141,16 +144,26 @@ func (a *AISettings) Normalize() {
 	if a.ContextWindow <= 0 {
 		a.ContextWindow = DefaultAIContextWindow
 	}
-	if a.MaxToolCalls <= 0 {
-		a.MaxToolCalls = DefaultAIMaxToolCalls
+	// The budget rows were removed from the settings page: 0 means "no
+	// limit". Values equal to the old built-in defaults are treated as
+	// leftovers and cleared, so behaviour matches the UI; a hand-edited
+	// positive value is still honoured.
+	if a.MaxToolCalls == legacyAIMaxToolCalls {
+		a.MaxToolCalls = 0
+	}
+	if a.MaxToolCalls < 0 {
+		a.MaxToolCalls = 0
 	}
 	if a.MaxToolCalls > 200 {
 		a.MaxToolCalls = 200
 	}
-	if a.SessionTokenLimit <= 0 {
-		a.SessionTokenLimit = DefaultAISessionTokens
+	if a.SessionTokenLimit == legacyAISessionTokens {
+		a.SessionTokenLimit = 0
 	}
-	if a.SessionTokenLimit < 1_000 {
+	if a.SessionTokenLimit < 0 {
+		a.SessionTokenLimit = 0
+	}
+	if a.SessionTokenLimit > 0 && a.SessionTokenLimit < 1_000 {
 		a.SessionTokenLimit = 1_000
 	}
 	if a.SessionTokenLimit > 1_000_000 {
@@ -225,11 +238,11 @@ func (a AISettings) Validate() error {
 	default:
 		return fmt.Errorf("ai: guard_mode %q must be confirm_all|high_only|allow", a.GuardMode)
 	}
-	if a.MaxToolCalls < 1 || a.MaxToolCalls > 200 {
-		return fmt.Errorf("ai: max_tool_calls %d must be 1–200", a.MaxToolCalls)
+	if a.MaxToolCalls < 0 || a.MaxToolCalls > 200 {
+		return fmt.Errorf("ai: max_tool_calls %d must be 0 (no limit) or 1–200", a.MaxToolCalls)
 	}
-	if a.SessionTokenLimit < 1_000 || a.SessionTokenLimit > 1_000_000 {
-		return fmt.Errorf("ai: session_token_limit %d must be 1k–1M", a.SessionTokenLimit)
+	if a.SessionTokenLimit < 0 || a.SessionTokenLimit > 1_000_000 {
+		return fmt.Errorf("ai: session_token_limit %d must be 0 (no limit) or 1k–1M", a.SessionTokenLimit)
 	}
 	if a.DockWidth < AIDockWidthMin || a.DockWidth > AIDockWidthMax {
 		return fmt.Errorf("ai: dock_width %d must be %d–%d", a.DockWidth, AIDockWidthMin, AIDockWidthMax)

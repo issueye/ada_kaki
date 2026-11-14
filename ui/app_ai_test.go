@@ -344,4 +344,9 @@ func TestSettingsAIShowsKeyField(t *testing.T) {
 			t.Fatalf("settings page does not show %q; texts = %v", want, tt.Texts())
 		}
 	}
+	for _, gone := range []string{"单轮工具调用上限", "每会话 token 上限"} {
+		if tt.HasText(gone) {
+			t.Fatalf("settings page still shows the removed budget row %q", gone)
+		}
+	}
 }

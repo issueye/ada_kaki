@@ -131,8 +131,6 @@ type app struct {
 	aiBaseText    string
 	aiKeyEnvText  string
 	aiKeyText     string // the API key draft, before it is encrypted
-	aiMaxCalls    float64
-	aiTokens      float64
 	aiProbe       string // the connection probe's last outcome
 	aiProbeOK     bool
 
@@ -258,8 +256,6 @@ func newApp() *app {
 		aiModelText:   aiCfg.Model,
 		aiBaseText:    aiCfg.BaseURL,
 		aiKeyEnvText:  aiCfg.APIKeyEnv,
-		aiMaxCalls:    float64(aiCfg.MaxToolCalls),
-		aiTokens:      float64(aiCfg.SessionTokenLimit),
 		aiDockOpen:    aiCfg.DockOpenOn(),
 		aiDockW:       float32(aiCfg.DockWidth),
 		aiDockSaved:   aiCfg.DockWidth,

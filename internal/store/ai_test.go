@@ -30,11 +30,11 @@ func TestAINormalizeDefaults(t *testing.T) {
 	if a.ContextWindow != DefaultAIContextWindow {
 		t.Fatalf("context_window = %d, want %d", a.ContextWindow, DefaultAIContextWindow)
 	}
-	if a.MaxToolCalls != DefaultAIMaxToolCalls {
-		t.Fatalf("max_tool_calls = %d, want %d", a.MaxToolCalls, DefaultAIMaxToolCalls)
+	if a.MaxToolCalls != 0 {
+		t.Fatalf("max_tool_calls = %d, want 0 (no limit: the row was removed)", a.MaxToolCalls)
 	}
-	if a.SessionTokenLimit != DefaultAISessionTokens {
-		t.Fatalf("session_token_limit = %d, want %d", a.SessionTokenLimit, DefaultAISessionTokens)
+	if a.SessionTokenLimit != 0 {
+		t.Fatalf("session_token_limit = %d, want 0 (no limit)", a.SessionTokenLimit)
 	}
 	if a.DockWidth != DefaultAIDockWidth {
 		t.Fatalf("dock_width = %d, want %d", a.DockWidth, DefaultAIDockWidth)
@@ -125,7 +125,7 @@ func TestAINormalizeClamps(t *testing.T) {
 		t.Fatalf("max_tool_calls = %d, want 200", a.MaxToolCalls)
 	}
 	if a.SessionTokenLimit != 1_000 {
-		t.Fatalf("session_token_limit = %d, want 1000", a.SessionTokenLimit)
+		t.Fatalf("session_token_limit = %d, want 1000 (a positive value still clamps into range)", a.SessionTokenLimit)
 	}
 	if a.AuditRetentionDays != 3_650 {
 		t.Fatalf("audit_retention_days = %d, want 3650", a.AuditRetentionDays)
@@ -153,8 +153,11 @@ func TestAIValidate(t *testing.T) {
 		{"bad guard mode", AISettings{Provider: AIProviderLocal, BaseURL: DefaultAIBaseURL,
 			Model: DefaultAIModel, Reasoning: "high", MaxToolCalls: 40, SessionTokenLimit: 200_000,
 			DockWidth: 340, ToolScope: "all", GuardMode: "open"}, true},
+		{"no limit is valid", AISettings{Provider: AIProviderLocal, BaseURL: DefaultAIBaseURL,
+			Model: DefaultAIModel, Reasoning: "high", MaxToolCalls: 0, SessionTokenLimit: 0,
+			DockWidth: 340, ToolScope: "all", GuardMode: "confirm_all"}, false},
 		{"tools out of range", AISettings{Provider: AIProviderLocal, BaseURL: DefaultAIBaseURL,
-			Model: DefaultAIModel, Reasoning: "high", MaxToolCalls: 0, SessionTokenLimit: 200_000,
+			Model: DefaultAIModel, Reasoning: "high", MaxToolCalls: 300, SessionTokenLimit: 0,
 			DockWidth: 340, ToolScope: "all", GuardMode: "confirm_all"}, true},
 	}
 	for _, tc := range cases {
@@ -177,5 +180,21 @@ func TestAINormalizeIdempotent(t *testing.T) {
 	if *first.DockOpen != *a.DockOpen || first.DockWidth != a.DockWidth ||
 		first.MaxToolCalls != a.MaxToolCalls || *first.AuditEnabled != *a.AuditEnabled {
 		t.Fatalf("second Normalize changed the values: %+v -> %+v", first, a)
+	}
+}
+
+// Values equal to the removed rows' old defaults are cleared, while a
+// hand-edited positive value survives.
+func TestAIBudgetLegacyDefaultsCleared(t *testing.T) {
+	a := AISettings{MaxToolCalls: 40, SessionTokenLimit: 200_000}
+	a.Normalize()
+	if a.MaxToolCalls != 0 || a.SessionTokenLimit != 0 {
+		t.Fatalf("legacy defaults survived: %d / %d", a.MaxToolCalls, a.SessionTokenLimit)
+	}
+
+	b := AISettings{MaxToolCalls: 12, SessionTokenLimit: 50_000}
+	b.Normalize()
+	if b.MaxToolCalls != 12 || b.SessionTokenLimit != 50_000 {
+		t.Fatalf("hand-edited budgets changed: %d / %d", b.MaxToolCalls, b.SessionTokenLimit)
 	}
 }

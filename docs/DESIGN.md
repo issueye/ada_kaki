@@ -258,7 +258,7 @@ type Session struct {
 |---|---|
 | `internal/tools` | 12 个工具的实现在这里（会话/SSH/命令）。`Backend.Call(name,args)` 与 `Specs()` 同时服务 MCP 与内置 Agent，`CommandOf` 取出命令供护栏与审计 |
 | `internal/ai` | Provider 抽象（本地/云端同一 `chat/completions`）、SSE 流式解析（按 `index` 合并 tool_calls 分片）、环境变量凭据（只存变量名）、token 估算 |
-| `internal/agent` | 回合循环：模型 → 工具 → 结果回填 → 再问；单轮工具上限（默认 40）与会话 token 上限（默认 200k）；每次调用发事件并写审计 |
+| `internal/agent` | 回合循环：模型 → 工具 → 结果回填 → 再问；预算可选（`ai.max_tool_calls` / `ai.session_token_limit` 手改为正数生效，0 或不设=不限制）；每次调用发事件并写审计 |
 | `ui/ai_dock.go` / `ui/app_ai.go` | 右侧操作栏与顶部 AI 按钮、回合运行、护栏/工具范围适配、审计与连接探测 |
 | `ui/settings_ai.go` | 六组设置：模型与推理 / 凭据与连接 / 上下文与预算 / Agent 行为 / 工具与护栏联动 / 审计与隐私 |
 

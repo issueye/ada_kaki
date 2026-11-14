@@ -120,7 +120,8 @@ AdaKaki 目前的定位是「给 AI 用的终端」：它以 MCP 服务端身份
 ### F7 · 上下文预算与用量
 
 - **职责**：防止一轮跑飞、一会话烧穿。
-- **三项**：上下文窗口（展示，默认 1,000,000）；单轮工具调用上限（默认 40，达到即暂停并请求“继续”）；每会话 token 上限（默认 200k，到顶提示开新会话，不中断已在跑的工具）。
+- **上下文窗口**：只读展示（默认 1,000,000，来自模型）。
+- **预算上限（已移除）**：设置页不再提供单轮工具数与每会话 token 两个步进（v0.2.2 按使用反馈移除），运行时**默认不设上限**；`ai.max_tool_calls` / `ai.session_token_limit` 仍保留在配置里，手改为正数即重新生效（单轮 1–200、token 1k–1M），0 = 不限制。
 - **计量**：provider 返回的 usage 为准；无 usage 时按字符估算（`~1 token / 2.5 CJK 字符`）并在元信息标注 `≈`。
 - **落点**：`internal/agent/budget.go`、`internal/ai/tokens.go`。
 
@@ -171,8 +172,8 @@ Lock:   run ∈ {thinking,tool_running} && ai.lock_input ──► 分格输入�
 | `api_key_env` | string | `OPENDESIGN_API_KEY` | 凭据与连接 · 或环境变量 | 作为兜底的环境变量名；直接保存的 Key 优先 |
 | `api_key_dpapi` | string（base64） | — | 凭据与连接 · API Key | 直接填写的 Key，经 Windows DPAPI 加密后落盘；设置页只显示「已保存」状态，不回显明文 |
 | `context_window` | int | `1000000` | 上下文与预算 | 展示用 |
-| `max_tool_calls` | int | `40` | 上下文与预算 | 单轮上限 |
-| `session_token_limit` | int | `200000` | 上下文与预算 | 每会话上限 |
+| `max_tool_calls` | int | `0`（不限制） | （已从设置页移除，配置可选） | 单轮工具数上限；0 = 不限制 |
+| `session_token_limit` | int | `0`（不限制） | （已从设置页移除，配置可选） | 每会话 token 上限；0 = 不限制 |
 | `dock_open` | bool | `true` | Agent 行为 | 重启还原 |
 | `dock_width` | int | `340` | （拖拽写入） | 280–420 |
 | `lock_input` | bool | `true` | Agent 行为 | 运行中锁终端 |
@@ -281,6 +282,7 @@ A1–A6 已完成并分阶段提交（提交信息以 `AI A<n>` 开头），`DES
 | 7 | `ai.audit_retention_days` 清理 | 只写入配置 | 审计仍按 5MB×3 轮转 |
 | 8 | 会话 token 计数 | 内存计数，重启归零 | 预算跨重启不连续 |
 | 9 | 画板 10「API Key 环境变量」行 | 实现改为「API Key 直接填写（DPAPI 加密）+ 或环境变量」 | v0.2 追加：用户要求直接保存 Key；画板待同步更新 |
+| 10 | 画板 10 的两条预算步进 | **已移除**（上下文窗口保留为只读），运行时默认不设上限 | v0.2.2 追加：按使用反馈移除；配置键保留，手改仍生效 |
 
 已落实的关键契约：`tools.Specs()` 与 MCP 目录 schema 深度一致（测试锁定）；护栏三档与 MCP 共用策略；GUI 确认通道 `confirmGuard` 真正接线；审计 `inapp`/`adakaki-ai` 且对 `password/token/secret` 字段脱敏。
 

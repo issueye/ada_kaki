@@ -92,8 +92,6 @@ func (a *app) aiSettings(c *myui.Context) {
 	a.aiReasonIdx = aiIndex(cfg.Reasoning, aiReasoningOptions)
 	a.aiScopeIdx = aiIndex(cfg.ToolScope, aiToolScopeOptions)
 	a.aiGuardIdx = aiIndex(cfg.GuardMode, aiGuardModeOptions)
-	a.aiMaxCalls = float64(cfg.MaxToolCalls)
-	a.aiTokens = float64(cfg.SessionTokenLimit)
 
 	settingsSection(c, "AI 操作员", func() {
 		if myui.Checkbox(c, &cfg.Enabled, "启用内置 AI 操作员（标题条出现 AI 按钮）").
@@ -212,27 +210,12 @@ func (a *app) aiSettings(c *myui.Context) {
 		})
 	})
 
-	settingsSection(c, "上下文与预算", func() {
+	settingsSection(c, "上下文", func() {
 		fieldRow(c, "上下文窗口", func() {
 			mono(c, thousands(cfg.ContextWindow)).FontSize(11).TextColor(t.Text)
 			chip(c, "只读", t.TextMuted, t.Surface)
 		})
-
-		fieldRow(c, "单轮工具调用上限", func() {
-			if myui.NumberInput(c, &a.aiMaxCalls, 1, 200, 1).Width(120).Changed() {
-				cfg.MaxToolCalls = int(a.aiMaxCalls)
-				a.saveSettingsNow()
-			}
-		})
-
-		fieldRow(c, "每会话 token 上限", func() {
-			if myui.NumberInput(c, &a.aiTokens, 1_000, 1_000_000, 10_000).
-				Width(140).Changed() {
-				cfg.SessionTokenLimit = int(a.aiTokens)
-				a.saveSettingsNow()
-			}
-		})
-		hint(c, "达到单轮上限会暂停并询问是否继续；token 到顶只提示开新会话，不打断已在跑的工具。写入 ai.max_tool_calls / ai.session_token_limit。")
+		hint(c, "来自模型的上下文窗口，仅供查看；单轮工具数与会话 token 不再设上限（配置里的 ai.max_tool_calls / ai.session_token_limit 置 0 即不限制，手改仍可生效）。")
 	})
 
 	settingsSection(c, "Agent 行为", func() {

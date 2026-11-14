@@ -118,7 +118,9 @@ func (a *app) settingsContent(c *myui.Context) {
 		})
 		myui.Divider(c)
 		myui.Scroll(c).Fill().Children(func() {
-			myui.Column(c).Padding(24, 28).Gap(22).Children(func() {
+			// The extra bottom padding keeps the last hint clear of the
+			// window edge when the page is scrolled to its end.
+			myui.Column(c).Padding(24, 28, 48, 28).Gap(22).Children(func() {
 				switch a.settingsCat {
 				case "终端":
 					a.terminalSettings(c)
@@ -133,6 +135,9 @@ func (a *app) settingsContent(c *myui.Context) {
 				default:
 					a.appearanceSettings(c)
 				}
+				// A trailing gap of its own: scrolled to the end, the last
+				// hint still clears the window's bottom edge.
+				myui.Spacer(c).Height(28)
 			})
 		})
 	})

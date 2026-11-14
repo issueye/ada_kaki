@@ -21,9 +21,9 @@ type Server struct {
 	transport string // "stdio" | "http", for the audit trail
 	hooks     Hooks
 
-	mu         sync.Mutex
+	mu          sync.Mutex
 	initialized bool
-	clientName string // the initializing client's name, for the audit
+	clientName  string // the initializing client's name, for the audit
 }
 
 // Call is one tool call as the rails see it, before it runs.

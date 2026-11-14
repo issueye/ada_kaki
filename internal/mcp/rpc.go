@@ -99,9 +99,9 @@ type toolDef struct {
 }
 
 type schema struct {
-	Type       string         `json:"type"`
+	Type       string                `json:"type"`
 	Properties map[string]schemaProp `json:"properties,omitempty"`
-	Required   []string       `json:"required,omitempty"`
+	Required   []string              `json:"required,omitempty"`
 }
 
 type schemaProp struct {

@@ -174,8 +174,23 @@ func (a *app) aiSettings(c *myui.Context) {
 			chip(c, name+" · "+state, color, t.Surface)
 			myui.Text(c, "密钥只存变量名，不写入配置文件，也不显示明文。").
 				FontSize(10.5).TextColor(t.TextMuted).Wrap().Grow(1)
+			if myui.Button(c, "测试连接").Height(26).Padding(0, 10).Radius(6).
+				FontSize(10.5).Clicked() {
+				a.probeAI()
+			}
 		})
-		hint(c, "写入 config.json 的 ai.api_key_env；“测试连接”在模型客户端接入后出现在这里。")
+		if a.aiProbe != "" {
+			probeColor := t.Warning
+			if a.aiProbeOK {
+				probeColor = t.Success
+			}
+			myui.Row(c).FillWidth().Gap(7).AlignItems(myui.Center).Children(func() {
+				dot(c, probeColor, 6)
+				myui.Text(c, a.aiProbe).FontSize(10.5).TextColor(probeColor).
+					Wrap().Grow(1)
+			})
+		}
+		hint(c, "写入 config.json 的 ai.api_key_env；测试连接发一次 1 token 的探测请求，不写审计。")
 	})
 
 	settingsSection(c, "上下文与预算", func() {

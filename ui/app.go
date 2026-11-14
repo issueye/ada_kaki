@@ -127,6 +127,8 @@ type app struct {
 	aiKeyEnvText  string
 	aiMaxCalls    float64
 	aiTokens      float64
+	aiProbe       string // the connection probe's last outcome
+	aiProbeOK     bool
 
 	// the split panes of the active tab: a binary tree of leaves, one
 	// session each, and the focused leaf, which activeID names too; zoom

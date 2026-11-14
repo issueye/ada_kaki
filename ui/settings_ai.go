@@ -248,6 +248,7 @@ func (a *app) aiSettings(c *myui.Context) {
 			}
 			if myui.Segmented(c, &a.aiGuardIdx, labels...).Changed() {
 				cfg.GuardMode = aiValue(a.aiGuardIdx, aiGuardModeOptions)
+				a.aiApplyGuardMode()
 				a.saveSettingsNow()
 			}
 		})

@@ -3,8 +3,7 @@
 //
 // The dock is a split pane: the divider resizes it between 280 and 420
 // DIPs, the width persists in the settings, and the timeline lists the
-// agent's operations. Until the agent loop lands the timeline is empty and
-// the composer says so plainly instead of pretending to run.
+// agent's operations as they stream in.
 
 package ui
 
@@ -16,12 +15,14 @@ import (
 	myui "github.com/egoist/mygo/ui"
 )
 
-// aiOp is one timeline entry: a tool call the agent made, its one-line
-// command, a short result and whether it succeeded.
+// aiOp is one timeline entry: an assistant message (kind "msg") or a tool
+// call the agent made (kind "op"), with its one-line command and result.
 type aiOp struct {
+	kind string // "msg" | "op"
 	tool string
 	cmd  string
 	out  string
+	err  string
 	ok   bool
 	ms   int64
 }
@@ -84,7 +85,7 @@ func (a *app) aiButton(c *myui.Context) {
 		myui.Row(c).Gap(5).AlignItems(myui.Center).Children(func() {
 			myui.Icon(c, icoMessage).FontSize(13).TextColor(color)
 			myui.Text(c, "AI 操作").FontSize(11).FontWeight(500).TextColor(color)
-			if n := len(a.aiOps); n > 0 {
+			if n := a.aiStepCount(); n > 0 {
 				count := fmt.Sprint(n)
 				if n > 99 {
 					count = "99+"
@@ -123,7 +124,7 @@ func (a *app) aiDockHead(c *myui.Context, t *myui.Theme) {
 			chip(c, s.Title(), t.TextMuted, t.Background)
 		}
 		myui.Spacer(c)
-		if n := len(a.aiOps); n > 0 {
+		if n := a.aiStepCount(); n > 0 {
 			chip(c, fmt.Sprintf("%d 步", n), t.TextMuted, t.Background)
 		}
 		ghostButton(c, icoChevronRight, "收起 AI 操作栏", "收起（Ctrl+Alt+A）",
@@ -133,6 +134,7 @@ func (a *app) aiDockHead(c *myui.Context, t *myui.Theme) {
 
 // aiDockTarget is the 24 DIP line naming what the agent is working on.
 func (a *app) aiDockTarget(c *myui.Context, t *myui.Theme) {
+	state, _, _, _, running := a.aiSnapshot()
 	color := t.TextMuted
 	label := "选择一个会话后开始"
 	if s := a.active(); s != nil {
@@ -141,6 +143,13 @@ func (a *app) aiDockTarget(c *myui.Context, t *myui.Theme) {
 			color = t.Success
 			label = "正在执行 " + tool + " · " + s.ID()
 		}
+	}
+	switch {
+	case state == "thinking":
+		color = t.Accent
+		label = "模型思考中…"
+	case state == "tool" || running:
+		color = t.Success
 	}
 	myui.Row(c).FillWidth().Height(24).Padding(0, 12).Gap(6).
 		AlignItems(myui.Center).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).
@@ -162,40 +171,70 @@ func (a *app) aiDockTarget(c *myui.Context, t *myui.Theme) {
 
 // aiDockTimeline lists the operations, or explains the empty state.
 func (a *app) aiDockTimeline(c *myui.Context, t *myui.Theme) {
+	state, errText, _, ops, running := a.aiSnapshot()
 	myui.Scroll(c).Fill().Padding(10, 12).Children(func() {
-		if len(a.aiOps) == 0 {
+		if len(ops) == 0 && !running && errText == "" {
 			myui.Column(c).FillWidth().Padding(6, 0).Gap(8).
 				AlignItems(myui.Center).Children(func() {
 				myui.Icon(c, icoMessage).FontSize(20).TextColor(t.TextMuted.Alpha(0.7))
 				myui.Text(c, "还没有操作").FontSize(12).TextColor(t.TextMuted)
-				myui.Text(c, "开启 Agent 后，它的每一步工具调用都会按顺序列在这里，并带审计入口。").
+				myui.Text(c, "在下面的输入框里让它做点什么；它的每一步工具调用都会按顺序列在这里，并带审计入口。").
 					FontSize(10.5).TextColor(t.TextMuted.Alpha(0.9)).Wrap()
 			})
 			return
 		}
-		for _, op := range a.aiOps {
-			a.aiOpCard(c, t, op)
+		for _, op := range ops {
+			a.aiOpEntry(c, t, op)
+		}
+		if state == "thinking" || state == "tool" {
+			myui.Row(c).FillWidth().Gap(7).AlignItems(myui.Center).Padding(4, 2).
+				Children(func() {
+					myui.Spinner(c)
+					myui.Text(c, "正在"+map[string]string{"thinking": "思考", "tool": "执行"}[state]+"…").
+						FontSize(10.5).TextColor(t.TextMuted)
+				})
+		}
+		if errText != "" {
+			myui.Column(c).FillWidth().Padding(8, 9).Gap(4).Radius(9).
+				Background(t.Warning.Alpha(0.10)).BorderWidth(1).
+				BorderColor(t.Warning.Alpha(0.35)).Children(func() {
+				myui.Row(c).Gap(6).AlignItems(myui.Center).Children(func() {
+					myui.Icon(c, icoAlert).FontSize(12).TextColor(t.Warning)
+					myui.Text(c, "需要你处理").FontSize(10.5).FontWeight(500).
+						TextColor(t.Warning)
+				})
+				myui.Text(c, errText).FontSize(10.5).TextColor(t.TextMuted).Wrap()
+			})
 		}
 	})
 }
 
-// aiOpCard renders one operation: tool, command, result, duration.
-func (a *app) aiOpCard(c *myui.Context, t *myui.Theme, op aiOp) {
+// aiOpEntry renders one timeline entry: a message bubble or a tool card.
+func (a *app) aiOpEntry(c *myui.Context, t *myui.Theme, op aiOp) {
+	if op.kind == "msg" {
+		myui.Column(c).FillWidth().Padding(8, 9).Gap(4).Radius(9).
+			Background(t.Accent.Alpha(0.08)).BorderWidth(1).
+			BorderColor(t.Accent.Alpha(0.22)).Children(func() {
+			myui.Row(c).Gap(5).AlignItems(myui.Center).Children(func() {
+				myui.Icon(c, icoMessage).FontSize(11).TextColor(t.Accent)
+				myui.Text(c, "AI").FontSize(10).FontWeight(500).TextColor(t.Accent)
+			})
+			myui.Text(c, op.out).FontSize(11.5).TextColor(t.Text).Wrap()
+		})
+		return
+	}
+
 	myui.Column(c).FillWidth().Padding(8, 9).Gap(5).Radius(9).
 		Background(t.Background).BorderWidth(1).BorderColor(t.Border).
 		Children(func() {
 			myui.Row(c).FillWidth().Gap(6).AlignItems(myui.Center).Children(func() {
-				icon, color := icoCheck, t.Success
+				icon, color, label := icoCheck, t.Success, "完成"
 				if !op.ok {
-					icon, color = icoAlert, t.Warning
+					icon, color, label = icoAlert, t.Warning, "未完成"
 				}
 				myui.Icon(c, icon).FontSize(12).TextColor(color)
 				mono(c, op.tool).FontSize(10).TextColor(t.Accent)
 				myui.Spacer(c)
-				label := "完成"
-				if !op.ok {
-					label = "失败"
-				}
 				chip(c, label, color, t.Surface)
 			})
 			if op.cmd != "" {
@@ -203,6 +242,9 @@ func (a *app) aiOpCard(c *myui.Context, t *myui.Theme, op aiOp) {
 			}
 			if op.out != "" {
 				myui.Text(c, op.out).FontSize(10).TextColor(t.TextMuted).
+					SingleLine().Ellipsis("…")
+			} else if op.err != "" {
+				myui.Text(c, op.err).FontSize(10).TextColor(t.Warning).
 					SingleLine().Ellipsis("…")
 			}
 			myui.Row(c).FillWidth().Gap(6).AlignItems(myui.Center).Children(func() {
@@ -225,6 +267,7 @@ func (a *app) aiOpCard(c *myui.Context, t *myui.Theme, op aiOp) {
 
 // aiComposer is the input under the timeline, with the model line beneath.
 func (a *app) aiComposer(c *myui.Context, t *myui.Theme) {
+	_, _, tokens, _, running := a.aiSnapshot()
 	myui.Column(c).FillWidth().Padding(8, 12, 0, 12).Gap(4).
 		BorderWidth(1, 0, 0, 0).BorderColor(t.Border).Children(func() {
 		myui.Row(c).FillWidth().Height(34).Padding(0, 6, 0, 9).Gap(6).Radius(8).
@@ -232,14 +275,22 @@ func (a *app) aiComposer(c *myui.Context, t *myui.Theme) {
 			AlignItems(myui.Center).Children(func() {
 			myui.TextInput(c.Key("ai-dock-input"), &a.aiInput).Grow(1).Height(26).
 				FontSize(11.5).BorderWidth(0).Background(myui.Transparent).
-				Placeholder("追问这次操作，或让它继续…").
+				Placeholder("让它做点什么，或继续上一轮…").
 				PlaceholderColor(t.TextMuted)
 			send := myui.Button(c, "").Label("发送").Width(26).Height(26).
 				Padding(0).Radius(7).Background(t.Accent).Children(func() {
 				myui.Icon(c, icoSend).FontSize(13).TextColor(t.AccentText)
 			})
+			if running {
+				send = send.Background(t.SurfacePressed)
+			}
 			if send.Clicked() {
-				a.sendAIPrompt()
+				if running {
+					a.pendingToast = "上一轮还在执行，等它结束再发"
+					a.refreshUI()
+				} else {
+					a.startAITurn()
+				}
 			}
 		})
 		myui.Row(c).FillWidth().Height(24).Gap(6).AlignItems(myui.Center).
@@ -247,23 +298,9 @@ func (a *app) aiComposer(c *myui.Context, t *myui.Theme) {
 				cfg := a.store.Settings.AI
 				mono(c, cfg.Model).FontSize(9.5).TextColor(t.TextMuted).
 					SingleLine().Ellipsis("…")
-				myui.Text(c, "· tokens 0").FontSize(9.5).TextColor(t.TextMuted)
+				myui.Text(c, fmt.Sprintf("· tokens %d", tokens)).FontSize(9.5).
+					TextColor(t.TextMuted)
 				myui.Spacer(c)
 			})
 	})
-}
-
-// sendAIPrompt reports why the composer is not wired yet, keeping the
-// draft. The agent loop turns this into a turn when A5 lands.
-func (a *app) sendAIPrompt() {
-	if !a.store.Settings.AI.Enabled {
-		a.pendingToast = "AI 操作员未启用：设置 → AI 打开开关"
-		a.refreshUI()
-		return
-	}
-	if a.aiInput == "" {
-		return
-	}
-	a.pendingToast = "AI 内核尚未接入：本版本只提供操作栏与设置，模型执行在下一阶段"
-	a.refreshUI()
 }

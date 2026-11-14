@@ -15,7 +15,6 @@ import (
 	"adakaki/internal/guard"
 	"adakaki/internal/mcp"
 	"adakaki/internal/store"
-	"adakaki/internal/tools"
 )
 
 // startControlPlane serves the MCP endpoint over HTTP on the loopback,
@@ -30,9 +29,13 @@ func (a *app) startControlPlane() {
 		port = 8731
 	}
 	token := a.loadToken()
-	backend := tools.NewBackend(a.mgr, a.store)
-	// MCP-made SSH connections follow the same host key policy.
-	backend.SetHostKeyPolicy(a.sshPolicy())
+	// The backend lives on the app: MCP and the built-in agent share it
+	// (host key policy and the agent mask are installed in newApp).
+	backend := a.toolBackend
+	if backend == nil {
+		log.Printf("mcp http: no tool backend")
+		return
+	}
 	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
 		log.Printf("mcp http: %v", err)
@@ -57,19 +60,8 @@ func (a *app) startControlPlane() {
 		Audit: func(e audit.Entry) { _ = a.auditLog.Record(e) },
 	})
 	// Every tool call masks the sessions it touches: the human watches,
-	// the input locks, and the mask lifts when the call ends.
-	backend.SetAgentTracker(func(id, tool string) func() {
-		s, ok := a.mgr.Get(id)
-		if !ok {
-			return func() {}
-		}
-		s.SetAgentLock(true, tool)
-		a.refreshUI()
-		return func() {
-			s.SetAgentLock(false, "")
-			a.refreshUI()
-		}
-	})
+	// the input locks, and the mask lifts when the call ends. The tracker
+	// itself is installed once on the shared backend.
 	mux := a.mcpMux(server, token)
 
 	a.mcpUp = true

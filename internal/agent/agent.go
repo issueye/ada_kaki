@@ -126,6 +126,18 @@ func New(o Options) *Agent {
 	return &Agent{opts: o}
 }
 
+// Configure updates the budgets and reasoning for the next turn; call it
+// only while no turn is running.
+func (a *Agent) Configure(maxToolCalls, sessionTokens int, reasoning string) {
+	if maxToolCalls > 0 {
+		a.opts.MaxToolCalls = maxToolCalls
+	}
+	if sessionTokens > 0 {
+		a.opts.SessionTokenLimit = sessionTokens
+	}
+	a.opts.Reasoning = reasoning
+}
+
 // Tokens is the session's token total as far as the provider reported it.
 func (a *Agent) Tokens() int { return a.tokens }
 

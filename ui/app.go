@@ -11,11 +11,15 @@ import (
 	"adakaki/internal/shells"
 	"adakaki/internal/sshc"
 	"adakaki/internal/store"
+	"adakaki/internal/tools"
+	"context"
 	"fmt"
 	"log"
 	"runtime"
+	"sync"
 	"time"
 
+	"adakaki/internal/agent"
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/plugins/terminal"
 	myui "github.com/egoist/mygo/ui"
@@ -138,6 +142,20 @@ type app struct {
 	aiInput     string
 	aiOps       []aiOp
 
+	// the AI operator's runtime: its agent, the turn's state and the token
+	// total; mu guards the fields the agent goroutine writes
+	aiMu         sync.Mutex
+	aiAgent      *agent.Agent
+	aiState      string // "" idle | thinking | tool | done | error
+	aiErr        string
+	aiTokenTotal int
+	aiRunning    bool
+	aiCancel     context.CancelFunc
+
+	// toolBackend is the shared tool layer: the MCP transport and the AI
+	// agent both call it, so the guard, the mask and the audit cover both
+	toolBackend *tools.Backend
+
 	// the split panes of the active tab: a binary tree of leaves, one
 	// session each, and the focused leaf, which activeID names too; zoom
 	// is the leaf shown over the whole area, nil for none
@@ -209,7 +227,7 @@ func newApp() *app {
 		log.Printf("audit: %v", err)
 	}
 	aiCfg := cfg.Settings.AI
-	return &app{
+	ap := &app{
 		mgr:           engine.NewManager(),
 		shells:        shells.Detect(),
 		sidebarWidth:  260,
@@ -234,9 +252,31 @@ func newApp() *app {
 		aiDockOpen:    aiCfg.DockOpenOn(),
 		aiDockW:       float32(aiCfg.DockWidth),
 		aiDockSaved:   aiCfg.DockWidth,
+		aiState:       "idle",
 		guard: guard.FromSettings(cfg.Settings.GuardDisabled, cfg.Settings.GuardHeadless,
 			cfg.Settings.GuardDeny, cfg.Settings.GuardConfirm),
 	}
+	// The guard asks a human in a dialog; with the AI operator and MCP
+	// both calling a.guard, this is the one confirm channel.
+	ap.guard.Confirm = ap.confirmGuard
+	ap.guard.SetMode(guard.ModeFromString(aiCfg.GuardMode))
+	// One tool backend for both entry points: MCP and the agent share the
+	// guard, the agent mask and the audit.
+	ap.toolBackend = tools.NewBackend(ap.mgr, cfg)
+	ap.toolBackend.SetHostKeyPolicy(ap.sshPolicy())
+	ap.toolBackend.SetAgentTracker(func(id, tool string) func() {
+		s, ok := ap.mgr.Get(id)
+		if !ok {
+			return func() {}
+		}
+		s.SetAgentLock(true, tool)
+		ap.refreshUI()
+		return func() {
+			s.SetAgentLock(false, "")
+			ap.refreshUI()
+		}
+	})
+	return ap
 }
 
 func sizeTextFor(n int) string {

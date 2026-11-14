@@ -17,7 +17,7 @@ func newAITestApp(t *testing.T) *app {
 	cfg.Settings.Normalize()
 	mgr := engine.NewManager()
 	t.Cleanup(mgr.CloseAll)
-	return &app{store: cfg, mgr: mgr, aiDockSaved: cfg.Settings.AI.DockWidth}
+	return &app{store: cfg, mgr: mgr, aiDockSaved: cfg.Settings.AI.DockWidth, aiState: "idle"}
 }
 
 func TestAIDockClamp(t *testing.T) {
@@ -88,7 +88,7 @@ func TestAIButtonStates(t *testing.T) {
 
 	a.store.Settings.AI.Enabled = true
 	a.aiDockOpen = true
-	a.aiOps = make([]aiOp, 3)
+	a.aiOps = []aiOp{{kind: "op"}, {kind: "op"}, {kind: "op"}}
 	tt = myui.NewTester(func(c *myui.Context) { a.aiButton(c) }, 400, 60)
 	tt.Frame()
 	if !tt.HasText("AI 操作") {

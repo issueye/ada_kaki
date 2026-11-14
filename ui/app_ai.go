@@ -144,6 +144,9 @@ func (a *app) startAITurn() {
 	}
 
 	client := ai.NewClient(provider, key, nil)
+	if a.aiClient != nil {
+		client = a.aiClient(provider, key)
+	}
 	ag := a.aiAgent
 	if ag == nil {
 		ag = agent.New(agent.Options{

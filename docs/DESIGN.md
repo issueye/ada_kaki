@@ -137,6 +137,9 @@ ada_kaki/
 │   ├── settings_session.go  # 默认 shell、启动恢复
 │   ├── settings_mcp.go      # MCP HTTP 端点
 │   ├── settings_security.go # 护栏、主机密钥、已信任主机
+│   ├── settings_ai.go       # AI 操作员设置（模型/凭据/行为/护栏/预算/审计）
+│   ├── ai_dock.go           # 右侧 AI 操作栏与顶部 AI 按钮
+│   ├── app_ai.go            # AI 回合运行、护栏/范围适配、审计与连接探测
 │   ├── tray.go              # 系统托盘与自绘菜单
 │   ├── controlplane.go      # GUI 内嵌 MCP HTTP 控制面
 │   ├── icons.go             # Lucide 风格单色 SVG 图标集
@@ -150,15 +153,17 @@ ada_kaki/
 │   ├── shells/              # shell 探测（cmd/powershell/pwsh/gitbash/custom）与启动命令
 │   ├── sshc/                # SSH 客户端：Dial/认证/交互 shell(实现 Conn 接口)/exec
 │   ├── store/               # config.json 持久化；DPAPI 加密（secret_windows.go）
-│   ├── guard/               # 危险命令护栏
-│   ├── audit/               # MCP 审计日志（JSONL 轮转）
+│   ├── guard/               # 危险命令护栏（deny/confirm 两级 + confirm_all/high_only/allow 三档）
+│   ├── audit/               # MCP/AI 审计日志（JSONL 轮转）
 │   ├── procjob/             # Windows Job Object 进程树清理
+│   ├── tools/               # 工具统一层：会话/SSH/命令（MCP 传输与内置 Agent 共用）
+│   ├── ai/                  # AI 操作员模型侧：Provider、chat/completions、凭据、token 估算
+│   ├── agent/               # AI 操作员回合循环：工具调用、护栏与审计挂钩、预算
 │   └── mcp/                 # MCP 协议层：JSON-RPC 2.0、Server、Tool 集
-│       ├── adapter.go       #   引擎后端（会话/工具适配）
 │       ├── rpc.go           #   JSON-RPC 编解码
 │       ├── server.go        #   握手、传输（stdio / HTTP）
-│       └── tools.go         #   11 个工具的 schema 与描述
-├── docs/                    # DESIGN.md、DEVPLAN.md、ROADMAP.md
+│       └── tools.go         #   12 个工具的 schema 与描述
+├── docs/                    # DESIGN.md、DEVPLAN.md、ROADMAP.md、AI 规划与实施计划
 └── go.mod                   # module adakaki；mygo 依赖
 ```
 
@@ -245,6 +250,26 @@ type Session struct {
 - 审计窗口：筛选（全部/成功/失败/被拦截）+ 搜索 + 列表（时间/结果/工具/命令/客户端/耗时）+ 右侧详情（元信息、命令块、护栏判定、复制命令/JSONL）。
 - Toast：`myui.Toast` 提示连接失败/会话退出/复制结果。
 
+### 4.7 AI 操作员（internal/ai · internal/agent · internal/tools）
+
+内置 AI 是「人机同屏」的另一半：外部 Agent 走 MCP 传输，内置 Agent 走进程内调用，两者共用同一工具层与同一张规则表（[功能规划与设计](./AI-功能规划与设计.md)）。
+
+| 组件 | 职责 |
+|---|---|
+| `internal/tools` | 12 个工具的实现在这里（会话/SSH/命令）。`Backend.Call(name,args)` 与 `Specs()` 同时服务 MCP 与内置 Agent，`CommandOf` 取出命令供护栏与审计 |
+| `internal/ai` | Provider 抽象（本地/云端同一 `chat/completions`）、SSE 流式解析（按 `index` 合并 tool_calls 分片）、环境变量凭据（只存变量名）、token 估算 |
+| `internal/agent` | 回合循环：模型 → 工具 → 结果回填 → 再问；单轮工具上限（默认 40）与会话 token 上限（默认 200k）；每次调用发事件并写审计 |
+| `ui/ai_dock.go` / `ui/app_ai.go` | 右侧操作栏与顶部 AI 按钮、回合运行、护栏/工具范围适配、审计与连接探测 |
+| `ui/settings_ai.go` | 六组设置：模型与推理 / 凭据与连接 / 上下文与预算 / Agent 行为 / 工具与护栏联动 / 审计与隐私 |
+
+**状态机**：`thinking → tool → … → done | error`；预算到顶发 `turn_done{reason:"budget"|"tokens"}`，取消走 `context` 并发 `canceled`。dock 的徽标与「N 步」只数工具卡，助手消息单独成气泡。
+
+**护栏三档**（`ai.guard_mode`）直接映射 `guard.Policy.Mode`：`confirm_all`（confirm 级问人）/ `high_only`（只问 deny 级，confirm 级放行，且先判 deny）/ `allow`（关闭护栏）。MCP 与内置 Agent 共享该策略；GUI 的人工确认通道是 `app.confirmGuard`（`win.Update` + channel，从工具协程阻塞等待）。
+
+**与蒙版的互斥**（设计画板 08/09 的取舍）：dock 展开时不再盖整块蒙版，分格只留「AI 操作中」chip；dock 收起且 Agent 仍在运行时才走原蒙版。
+
+**配置**：`config.json` 的 `ai` 段（缺段即默认值），键与默认值见功能规划 §7.1；设置页改动即时保存，切换护栏档位会立刻重建策略。
+
 ## 5. MCP 协议设计（internal/mcp）
 
 ### 5.1 范围
@@ -297,6 +322,7 @@ tools/call ──▶ ① 护栏 Guard（执行前）
 
 - **审计日志** `internal/audit`：`%AppData%\adakaki\audit.log`，JSON Lines（时间/传输/客户端/工具/参数/会话/命令/结果/输出字节数/耗时），5MB×3 轮转；`password/passphrase/secret` 参数脱敏为 `***`；**被拦截的调用同样入账**（`guard:"denied:<原因>"`，人工放行记 `confirmed`）
 - **规则库** `internal/guard`：内置 14 条（Windows+Unix，deny 级：format/diskpart/dd of=/dev/mkfs；confirm 级：rm -rf/del /s/Remove-Item -Recurse/shutdown/git push --force/git reset --hard/chmod 777/reg add HKLM…）+ config.json 自定义正则（`guard_deny`/`guard_confirm`）；`write_session` 只审"提交行"（以回车结尾的最后一行，vim 内按键不误伤）
+- **三档放行强度**（设置 → AI 的 `ai.guard_mode`，MCP 与内置 Agent 共用同一策略）：`confirm_all` 每个 confirm 级匹配都问人；`high_only` 只对 deny 级匹配问一次确认，其余 confirm 级静默放行（先判 deny，避免被后面的 confirm 规则掩盖）；`allow` 关闭护栏（状态条常显警示）。GUI 的人工确认由 `app.confirmGuard` 提供（`win.Update` + channel，从工具协程阻塞等待）
 - **护栏钩子**挂 MCP Server 层：`initialize` 的 clientInfo 记入审计（谁在操作）；护栏自身 panic 视为拒绝（fail-closed）；MCP HTTP 与 stdio 同一套规则，GUI 确认回调经 win.Update + channel 阻塞应答
 - **GUI**：侧栏 🛡 打开审计查看窗口（最近 200 条、每 2s 自刷、右键复制命令/错误）；⚙ 设置含护栏开关与规则计数
 
@@ -335,9 +361,14 @@ tools/call(run_command, id=X) ──▶ Adapter.begin(X, "run_command")
 
 ```
 %AppData%\adakaki\
-├── config.json   # { settings:{default_shell, font_size, mcp_http:{enabled,port}},
+├── config.json   # { settings:{default_shell, font_size, mcp_http:{enabled,port},
 │                 #   ssh_profiles:[{name, host, port, user, auth_kind, key_path,
-│                 #                    secret_dpapi(base64)|password}] }
+│                 #                    secret_dpapi(base64)|password}],
+│                 #   ai:{enabled, provider, base_url, model, reasoning, api_key_env,
+│                 #       context_window, max_tool_calls, session_token_limit,
+│                 #       dock_open, dock_width, lock_input, auto_restore,
+│                 #       tool_scope, guard_mode, audit_enabled, audit_redact,
+│                 #       audit_retention_days} }
 └── token         # HTTP MCP Bearer token
 ```
 
@@ -359,9 +390,10 @@ tools/call(run_command, id=X) ──▶ Adapter.begin(X, "run_command")
 | R5 | mygo 为本地开发版（replace 锁路径） | API 假设集中在 `ui/` 包与 `internal/engine`，便于随框架演进适配 |
 | R6 | SSH stderr/stdout 交错 | 单读循环聚合；窗口变化经 `WindowChange` 同步 |
 | R7 | `Text()` 全量读取对大回滚的性能 | MCP 读取用游标增量；`screen_session` 只取屏；必要时 P2 改用 `Snapshot()`/Mirror 精确化 |
+| R8 | 内置 AI 依赖外部 provider（网络/额度/凭据） | 凭据只引用环境变量；错误在 dock 与设置页「测试连接」里可读；单轮 40 次与会话 200k token 预算防跑飞；`ai.enabled` 默认关闭 |
 
 ## 9. 测试策略
 
-- **单元**：shells 探测与命令构造；store 读写 + DPAPI 往返；mcp 帧编解码/握手/错误码；engine 状态机（headless 真实进程）。
+- **单元**：shells 探测与命令构造；store 读写 + DPAPI 往返；mcp 帧编解码/握手/错误码；engine 状态机（headless 真实进程）；guard 三档模式矩阵；ai 客户端（SSE/工具分片/401/取消）；agent 回合（预算/拦截/取消/审计）；tools 目录与分发；UI headless（dock 右侧布局、空态、徽章、开关持久化、端到端回合）。
 - **集成**：engine 全流程（spawn→Send→Text→exit）；mcp stdio 端到端（测试内起 server，模拟客户端握手+工具调用闭环）；sshc 对本地 mock SSH server（x/crypto/ssh 服务端）。
 - **GUI 验收**：手动清单（见 DEVPLAN）。

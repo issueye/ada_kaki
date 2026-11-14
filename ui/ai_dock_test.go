@@ -5,6 +5,7 @@ import (
 
 	"adakaki/internal/engine"
 	"adakaki/internal/store"
+	"adakaki/internal/tools"
 
 	myui "github.com/egoist/mygo/ui"
 )
@@ -17,7 +18,9 @@ func newAITestApp(t *testing.T) *app {
 	cfg.Settings.Normalize()
 	mgr := engine.NewManager()
 	t.Cleanup(mgr.CloseAll)
-	return &app{store: cfg, mgr: mgr, aiDockSaved: cfg.Settings.AI.DockWidth, aiState: "idle"}
+	a := &app{store: cfg, mgr: mgr, aiDockSaved: cfg.Settings.AI.DockWidth, aiState: "idle"}
+	a.toolBackend = tools.NewBackend(mgr, cfg)
+	return a
 }
 
 func TestAIDockClamp(t *testing.T) {

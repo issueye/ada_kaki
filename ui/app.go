@@ -4,6 +4,7 @@
 package ui
 
 import (
+	"adakaki/internal/ai"
 	"adakaki/internal/audit"
 	"adakaki/internal/engine"
 	"adakaki/internal/guard"
@@ -151,6 +152,8 @@ type app struct {
 	aiTokenTotal int
 	aiRunning    bool
 	aiCancel     context.CancelFunc
+	// aiClient lets a test replace the provider client; nil means the real one
+	aiClient func(ai.Provider, string) *ai.Client
 
 	// toolBackend is the shared tool layer: the MCP transport and the AI
 	// agent both call it, so the guard, the mask and the audit cover both

@@ -1,8 +1,19 @@
 package ui
 
 import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
+
+	"adakaki/internal/ai"
+	"adakaki/internal/audit"
+	"adakaki/internal/guard"
+	"adakaki/internal/store"
 
 	myui "github.com/egoist/mygo/ui"
 )
@@ -122,5 +133,90 @@ func TestAIDockShowsRunningStep(t *testing.T) {
 		if !tt.HasText(want) {
 			t.Fatalf("dock does not show %q; texts = %v", want, tt.Texts())
 		}
+	}
+}
+
+// An end-to-end turn through the app runtime: settings -> key -> provider
+// (a fake JSON endpoint) -> agent -> tool layer -> audit -> dock snapshot.
+// It covers U4 (a tool card appears), U8's counting and U10's path, without
+// a real provider or GUI.
+func TestStartAITurnEndToEnd(t *testing.T) {
+	a := newAITestApp(t)
+	a.guard = guard.NewPolicy()
+
+	var calls int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		n := atomic.AddInt32(&calls, 1)
+		w.Header().Set("Content-Type", "application/json")
+		if n == 1 {
+			fmt.Fprint(w, `{"choices":[{"message":{"content":"","tool_calls":[{"id":"c1","function":{"name":"list_sessions","arguments":"{}"}}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":10,"completion_tokens":3,"total_tokens":13}}`)
+			return
+		}
+		fmt.Fprint(w, `{"choices":[{"message":{"content":"当前没有会话"},"finish_reason":"stop"}],"usage":{"prompt_tokens":12,"completion_tokens":4,"total_tokens":16}}`)
+	}))
+	defer srv.Close()
+
+	aiCfg := &a.store.Settings.AI
+	aiCfg.Enabled = true
+	aiCfg.Provider = store.AIProviderLocal
+	aiCfg.BaseURL = srv.URL
+	aiCfg.Model = "test-model"
+	aiCfg.APIKeyEnv = "ADAKAKI_E2E_KEY"
+	t.Setenv("ADAKAKI_E2E_KEY", "sk-test")
+
+	log, err := audit.Open(filepath.Join(t.TempDir(), "audit.log"))
+	if err != nil {
+		t.Fatalf("audit: %v", err)
+	}
+	t.Cleanup(func() { _ = log.Close() })
+	a.auditLog = log
+
+	a.aiClient = func(p ai.Provider, key string) *ai.Client {
+		return ai.NewClient(p, key, nil)
+	}
+	a.aiInput = "列一下会话"
+	a.startAITurn()
+
+	waitFor(t, 10*time.Second, func() bool {
+		_, _, _, _, running := a.aiSnapshot()
+		return !running
+	})
+
+	state, errText, tokens, ops, _ := a.aiSnapshot()
+	if state != "done" {
+		t.Fatalf("state = %q err = %q, want done", state, errText)
+	}
+	if tokens != 29 {
+		t.Fatalf("tokens = %d, want 29 (13+16)", tokens)
+	}
+	var sawTool, sawMessage bool
+	for _, op := range ops {
+		if op.kind == "op" && op.tool == "list_sessions" && op.ok {
+			sawTool = true
+		}
+		if op.kind == "msg" && strings.Contains(op.out, "没有会话") {
+			sawMessage = true
+		}
+	}
+	if !sawTool {
+		t.Fatalf("no tool card for list_sessions; ops = %+v", ops)
+	}
+	if !sawMessage {
+		t.Fatalf("no assistant message card; ops = %+v", ops)
+	}
+
+	entries, err := log.Tail(5)
+	if err != nil {
+		t.Fatalf("audit tail: %v", err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("audit entries = %d, want 1", len(entries))
+	}
+	e := entries[0]
+	if e.Transport != "inapp" || e.Client != "adakaki-ai" || e.Tool != "list_sessions" || !e.OK {
+		t.Fatalf("audit entry = %+v", e)
+	}
+	if strings.Count(fmt.Sprint(ops), "list_sessions") < 1 {
+		t.Fatal("timeline lost the tool name")
 	}
 }
